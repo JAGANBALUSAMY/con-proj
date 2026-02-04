@@ -29,10 +29,6 @@ const restrictTo = (...roles) => {
     };
 };
 
-/**
- * Restrict access to specific production sections (stages).
- * ADMIN bypasses all section restrictions.
- */
 const restrictToSection = (...allowedSections) => {
     return (req, res, next) => {
         // 1. Admin Bypass
