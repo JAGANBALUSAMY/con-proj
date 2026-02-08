@@ -47,6 +47,16 @@ const ManagerDashboard = () => {
         }
     };
 
+    const handleVerify = async (operatorId) => {
+        try {
+            await api.patch(`/users/${operatorId}/verify`);
+            alert('Operator verified successfully! They can now log in.');
+            fetchDashboard(); // Refresh team list
+        } catch (error) {
+            alert('Verification failed: ' + (error.response?.data?.error || 'Unknown error'));
+        }
+    };
+
     if (loading) return <div className="loading-screen">Loading Supervisor Console...</div>;
 
     return (
@@ -157,9 +167,19 @@ const ManagerDashboard = () => {
                                         <p className="member-name">{op.fullName}</p>
                                         <p className="member-code">{op.employeeCode}</p>
                                     </div>
-                                    <span className={`verify-status ${op.verificationStatus.toLowerCase()}`}>
-                                        {op.verificationStatus}
-                                    </span>
+                                    <div className="member-actions">
+                                        <span className={`verify-status ${op.verificationStatus.toLowerCase()}`}>
+                                            {op.verificationStatus}
+                                        </span>
+                                        {op.verificationStatus === 'PENDING' && (
+                                            <button
+                                                className="btn-verify"
+                                                onClick={() => handleVerify(op.id)}
+                                            >
+                                                <CheckCircle2 size={14} /> Verify
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             ))}
                         </div>

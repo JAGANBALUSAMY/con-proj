@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, User, Lock, UserPlus } from 'lucide-react';
 import api from '../../utils/api';
+import '../../styles/modal.css';
 
 const CreateOperatorModal = ({ isOpen, onClose, onSuccess }) => {
     const [formData, setFormData] = useState({
