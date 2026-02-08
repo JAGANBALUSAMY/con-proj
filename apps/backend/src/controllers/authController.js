@@ -8,13 +8,16 @@ const { signToken } = require('../utils/jwt');
  */
 const login = async (req, res) => {
     try {
-        const { employeeCode, password } = req.body;
+        let { employeeCode, password } = req.body;
 
         if (!employeeCode || !password) {
             return res.status(400).json({ error: 'Please provide employee code and password' });
         }
 
-        // Find user with section assignments
+        // 4. Normalize employeeCode (trim + uppercase)
+        employeeCode = employeeCode.trim().toUpperCase();
+
+        // 1. Log fetched user for MANAGER (audit)
         const user = await prisma.user.findUnique({
             where: { employeeCode },
             include: {
@@ -26,27 +29,47 @@ const login = async (req, res) => {
             },
         });
 
-        // 1. Validate existence and password
-        if (!user || !(await bcrypt.compare(password, user.password))) {
+        console.log(`[AUTH DEBUG] Fetching user: ${employeeCode} | Found: ${!!user}`);
+
+        if (!user) {
+            console.log(`Login failure: User ${employeeCode} not found`);
             return res.status(401).json({ error: 'Invalid employee code or password' });
         }
 
-        // 2. Validate Status (ACTIVE)
+        // 2 & 3. Log bcrypt.compare result and verify if hashed
+        console.log(`[AUTH DEBUG] Password is hashed: ${user.password.startsWith('$2a$')}`);
+        const isMatch = await bcrypt.compare(password, user.password);
+        console.log(`[AUTH DEBUG] Password match for ${employeeCode}: ${isMatch}`);
+
+        if (!isMatch) {
+            return res.status(401).json({ error: 'Invalid employee code or password' });
+        }
+
+        // 6. Verify status === 'ACTIVE'
+        console.log(`[AUTH DEBUG] User status: ${user.status}`);
         if (user.status !== 'ACTIVE') {
             return res.status(403).json({ error: 'Account is inactive. Contact Administrator.' });
         }
 
-        // 3. Validate Verification (VERIFIED)
-        // CRITICAL: Deny login for PENDING or REJECTED users as per CONSTRAINTS.md
+        // 5. Verify verificationStatus === 'VERIFIED'
+        console.log(`[AUTH DEBUG] Verification status: ${user.verificationStatus}`);
         if (user.verificationStatus !== 'VERIFIED') {
             return res.status(403).json({
                 error: `Account status is ${user.verificationStatus}. Login denied until verified by Manager.`
             });
         }
 
-        // Prepare JWT Payload
+        // 7. Verify manager has ≥1 SectionAssignment
         const sections = user.sectionAssignments.map(sa => sa.stage);
+        console.log(`[AUTH DEBUG] Sections: ${sections.length}`);
 
+        // Only block if role is not ADMIN (Admins are global)
+        if (user.role !== 'ADMIN' && sections.length === 0) {
+            console.log(`[AUTH DEBUG] Blocking login: ${user.role} has no sections`);
+            return res.status(403).json({ error: 'No production sections assigned. Contact Administrator.' });
+        }
+
+        // Prepare JWT Payload
         const token = signToken({
             userId: user.id,
             role: user.role,

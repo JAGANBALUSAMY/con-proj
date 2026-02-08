@@ -20,8 +20,6 @@ const protect = (req, res, next) => {
 
 const restrictTo = (...roles) => {
     return (req, res, next) => {
-        if (req.user.role === 'ADMIN') return next();
-
         if (!roles.includes(req.user.role)) {
             return res.status(403).json({ error: 'Permission denied: insufficient role' });
         }
@@ -31,12 +29,12 @@ const restrictTo = (...roles) => {
 
 const restrictToSection = (...allowedSections) => {
     return (req, res, next) => {
-        // 1. Admin Bypass
+        // Governance Bypass: ADMIN can read across all sections
         if (req.user.role === 'ADMIN') return next();
 
         const userSections = req.user.sections || [];
 
-        // 2. Check if user is assigned to the specific section required by the route
+        // Check if user is assigned to the specific section required by the route
         const hasAccess = allowedSections.some(section => userSections.includes(section));
 
         if (!hasAccess) {

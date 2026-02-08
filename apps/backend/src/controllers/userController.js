@@ -174,7 +174,98 @@ const createOperator = async (req, res) => {
     }
 };
 
+/**
+ * Manager verifies an Operator
+ * Requirements:
+ * 1. Manager only (handled by middleware)
+ * 2. Only the Manager who created the operator can verify it
+ * 3. Update status to VERIFIED, record who and when
+ */
+const verifyOperator = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const managerId = req.user.userId;
+
+        // 1. Fetch the user to be verified
+        const operator = await prisma.user.findUnique({
+            where: { id: parseInt(id) }
+        });
+
+        if (!operator) {
+            return res.status(404).json({ error: 'Operator not found' });
+        }
+
+        // 2. Hierarchy Check: Only the creating manager can verify
+        if (operator.createdByUserId !== managerId) {
+            return res.status(403).json({
+                error: 'Unauthorized: Only the Manager who created this Operator can verify them'
+            });
+        }
+
+        // 3. Status Check: Only PENDING users can be verified
+        if (operator.verificationStatus !== 'PENDING') {
+            return res.status(400).json({
+                error: `User is already ${operator.verificationStatus}`
+            });
+        }
+
+        // 4. Update Operator
+        const updatedOperator = await prisma.user.update({
+            where: { id: parseInt(id) },
+            data: {
+                verificationStatus: 'VERIFIED',
+                verifiedByUserId: managerId,
+                verifiedAt: new Date()
+            }
+        });
+
+        return res.status(200).json({
+            message: 'Operator verified successfully. They can now log in.',
+            user: {
+                id: updatedOperator.id,
+                employeeCode: updatedOperator.employeeCode,
+                fullName: updatedOperator.fullName,
+                verificationStatus: updatedOperator.verificationStatus,
+                verifiedAt: updatedOperator.verifiedAt
+            }
+        });
+
+    } catch (error) {
+        console.error('Verify operator error:', error);
+        return res.status(500).json({ error: 'Internal server error during verification' });
+    }
+};
+
+/**
+ * Admin: Get all users
+ */
+const getUsers = async (req, res) => {
+    try {
+        const users = await prisma.user.findMany({
+            include: {
+                sectionAssignments: { select: { stage: true } }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        // Remove passwords
+        const sanitizedUsers = users.map(u => {
+            const { password, ...rest } = u;
+            return {
+                ...rest,
+                sections: u.sectionAssignments.map(sa => sa.stage)
+            };
+        });
+
+        return res.status(200).json(sanitizedUsers);
+    } catch (error) {
+        return res.status(500).json({ error: 'Failed to fetch users' });
+    }
+};
+
 module.exports = {
     createManager,
     createOperator,
+    verifyOperator,
+    getUsers,
 };

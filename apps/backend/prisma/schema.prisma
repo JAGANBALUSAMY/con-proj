@@ -9,7 +9,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// --- Enums ---
+// ---------- ENUMS ----------
 
 enum UserRole {
   ADMIN
@@ -17,10 +17,22 @@ enum UserRole {
   OPERATOR
 }
 
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
 enum ProductionStage {
   CUTTING
   STITCHING
   QUALITY_CHECK
+  REWORK
   LABELING
   FOLDING
   PACKING
@@ -45,10 +57,15 @@ enum Severity {
   CRITICAL
 }
 
-enum VerificationStatus {
+enum ApprovalStatus {
   PENDING
-  VERIFIED
+  APPROVED
   REJECTED
+}
+
+enum ReworkStage {
+  CUTTING
+  STITCHING
 }
 
 enum ReworkOutcome {
@@ -56,19 +73,9 @@ enum ReworkOutcome {
   SCRAPPED
 }
 
-enum UserStatus {
-  ACTIVE
-  INACTIVE
-}
-
 enum ReworkStatus {
   PENDING
   COMPLETED
-}
-
-enum ReworkStage {
-  CUTTING
-  STITCHING
 }
 
 enum BoxStatus {
@@ -77,48 +84,54 @@ enum BoxStatus {
   DELIVERED
 }
 
-// --- Models ---
+// ---------- MODELS ----------
 
 model User {
   id                 Int                @id @default(autoincrement())
-  email              String?            @unique // Optional as login is employeeCode-based
+  employeeCode       String             @unique
+  email              String?            @unique
   password           String
   fullName           String
-  employeeCode       String             @unique
-  role               UserRole           @default(OPERATOR)
+  role               UserRole
   status             UserStatus         @default(ACTIVE)
   verificationStatus VerificationStatus @default(PENDING)
   verifiedAt         DateTime?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
 
-  // Hierarchy & Ownership
-  createdByUserId    Int?
-  verifiedByUserId   Int?
-  
-  // Relations
-  creator            User?               @relation("UserOwnership", fields: [createdByUserId], references: [id])
-  createdUsers       User[]              @relation("UserOwnership")
-  
-  verifier           User?               @relation("UserVerification", fields: [verifiedByUserId], references: [id])
-  verifiedUsers      User[]              @relation("UserVerification")
+  // Hierarchy
+  createdByUserId  Int?
+  verifiedByUserId Int?
 
+  creator User?  @relation("UserCreated", fields: [createdByUserId], references: [id])
+  created User[] @relation("UserCreated")
+
+  verifier User?  @relation("UserVerified", fields: [verifiedByUserId], references: [id])
+  verified User[] @relation("UserVerified")
+
+  // Section ownership
   sectionAssignments SectionAssignment[]
-  logsRecorded       ProductionLog[]     @relation("RecordedLog")
-  logsPerformed      ProductionLog[]     @relation("PerformedLog")
-  defectsDetected    DefectRecord[]
-  reworkManaged      ReworkRecord[]      @relation("ManagedRework")
-  reworkPerformed    ReworkRecord[]      @relation("PerformedRework")
+
+  // Production logs
+  performedLogs ProductionLog[] @relation("PerformedLogs")
+  recordedLogs  ProductionLog[] @relation("RecordedLogs")
+  approvedLogs  ProductionLog[] @relation("ApprovedLogs")
+
+  // Defects
+  detectedDefects DefectRecord[] @relation("DetectedDefects")
+
+  // Rework
+  performedRework ReworkRecord[] @relation("PerformedRework")
+  managedRework   ReworkRecord[] @relation("ManagedRework")
+  approvedRework  ReworkRecord[] @relation("ApprovedRework")
 }
 
-// NOTE: MANAGER users MUST have at least one SectionAssignment (Backend Enforced)
 model SectionAssignment {
   id        Int             @id @default(autoincrement())
   userId    Int
   stage     ProductionStage
   createdAt DateTime        @default(now())
 
-  // Relations
   user User @relation(fields: [userId], references: [id])
 
   @@unique([userId, stage])
@@ -127,17 +140,16 @@ model SectionAssignment {
 model Batch {
   id                Int             @id @default(autoincrement())
   batchNumber       String          @unique
-  briefTypeName     String          
-  totalQuantity     Int             
-  usableQuantity    Int             @default(0) 
-  defectiveQuantity Int             @default(0) 
-  scrappedQuantity  Int             @default(0) 
+  briefTypeName     String
+  totalQuantity     Int
+  usableQuantity    Int             @default(0)
+  defectiveQuantity Int             @default(0)
+  scrappedQuantity  Int             @default(0)
   currentStage      ProductionStage @default(CUTTING)
   status            BatchStatus     @default(PENDING)
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
 
-  // Relations
   productionLogs ProductionLog[]
   defectRecords  DefectRecord[]
   reworkRecords  ReworkRecord[]
@@ -145,86 +157,95 @@ model Batch {
 }
 
 model Machine {
-  id                  Int           @id @default(autoincrement())
-  machineCode         String        @unique
-  name                String
-  type                String?       
-  status              MachineStatus @default(OPERATIONAL)
-  location            String?
-  lastMaintenanceDate DateTime?
-  nextMaintenanceDate DateTime?
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
+  id          Int           @id @default(autoincrement())
+  machineCode String        @unique
+  name        String
+  type        String?
+  status      MachineStatus @default(OPERATIONAL)
+  location    String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
-  // Relations
   productionLogs ProductionLog[]
 }
 
 model ProductionLog {
-  id              Int             @id @default(autoincrement())
-  batchId         Int
-  stage           ProductionStage
-  operatorUserId  Int             // The OPERATOR who did the work
-  recordedByUserId Int             // The person (Manager/Op/Admin) who logged it
-  machineId       Int?
-  startTime       DateTime
-  endTime         DateTime?
-  quantityIn      Int             
-  quantityOut     Int?            
-  createdAt       DateTime        @default(now())
+  id               Int             @id @default(autoincrement())
+  batchId          Int
+  stage            ProductionStage
+  operatorUserId   Int
+  recordedByUserId Int
+  machineId        Int?
+  startTime        DateTime
+  endTime          DateTime?
+  quantityIn       Int
+  quantityOut      Int?
 
-  // Relations
+  // Approval gate (CRITICAL)
+  approvalStatus   ApprovalStatus @default(PENDING)
+  approvedByUserId Int?
+  approvedAt       DateTime?
+  rejectionReason  String?
+
+  createdAt DateTime @default(now())
+
   batch      Batch    @relation(fields: [batchId], references: [id])
-  operator   User     @relation("PerformedLog", fields: [operatorUserId], references: [id])
-  recordedBy User     @relation("RecordedLog", fields: [recordedByUserId], references: [id])
+  operator   User     @relation("PerformedLogs", fields: [operatorUserId], references: [id])
+  recordedBy User     @relation("RecordedLogs", fields: [recordedByUserId], references: [id])
+  approvedBy User?    @relation("ApprovedLogs", fields: [approvedByUserId], references: [id])
   machine    Machine? @relation(fields: [machineId], references: [id])
 }
 
 model DefectRecord {
-  id              Int             @id @default(autoincrement())
-  batchId         Int
-  stage           ProductionStage @default(QUALITY_CHECK) 
-  defectCode      String
-  quantity        Int             
-  severity        Severity
+  id               Int             @id @default(autoincrement())
+  batchId          Int
+  stage            ProductionStage @default(QUALITY_CHECK)
+  defectCode       String
+  quantity         Int
+  severity         Severity
   detectedByUserId Int
-  createdAt       DateTime        @default(now())
+  createdAt        DateTime        @default(now())
 
-  // Relations
   batch      Batch @relation(fields: [batchId], references: [id])
-  detectedBy User  @relation(fields: [detectedByUserId], references: [id])
+  detectedBy User  @relation("DetectedDefects", fields: [detectedByUserId], references: [id])
 }
 
 model ReworkRecord {
-  id               Int             @id @default(autoincrement())
+  id               Int            @id @default(autoincrement())
   batchId          Int
-  reworkStage      ReworkStage 
-  quantity         Int             
-  operatorUserId   Int             // The OPERATOR doing the rework
-  managedByUserId  Int             // The MANAGER managing the rework
-  status           ReworkStatus    @default(PENDING) 
+  reworkStage      ReworkStage
+  quantity         Int
+  operatorUserId   Int
+  managedByUserId  Int
+  status           ReworkStatus   @default(PENDING)
   outcome          ReworkOutcome?
-  curedQuantity    Int             @default(0)
-  scrappedQuantity Int             @default(0)
-  startTime        DateTime        @default(now())
+  curedQuantity    Int            @default(0)
+  scrappedQuantity Int            @default(0)
+  startTime        DateTime       @default(now())
   endTime          DateTime?
-  createdAt        DateTime        @default(now())
 
-  // Relations
-  batch     Batch    @relation(fields: [batchId], references: [id])
-  operator  User     @relation("PerformedRework", fields: [operatorUserId], references: [id])
-  managedBy User     @relation("ManagedRework", fields: [managedByUserId], references: [id])
+  // Approval gate (STRICTLY ENFORCED)
+  approvalStatus   ApprovalStatus @default(PENDING)
+  approvedByUserId Int?
+  approvedAt       DateTime?
+  rejectionReason  String?
+
+  createdAt DateTime @default(now())
+
+  batch      Batch @relation(fields: [batchId], references: [id])
+  operator   User  @relation("PerformedRework", fields: [operatorUserId], references: [id])
+  managedBy  User  @relation("ManagedRework", fields: [managedByUserId], references: [id])
+  approvedBy User? @relation("ApprovedRework", fields: [approvedByUserId], references: [id])
 }
 
 model Box {
-  id          Int       @id @default(autoincrement())
-  boxCode     String    @unique
-  batchId     Int
-  quantity    Int       // Must match items inside
-  status      BoxStatus @default(PACKED)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id        Int       @id @default(autoincrement())
+  boxCode   String    @unique
+  batchId   Int
+  quantity  Int
+  status    BoxStatus @default(PACKED)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
-  // Relations
   batch Batch @relation(fields: [batchId], references: [id])
 }
