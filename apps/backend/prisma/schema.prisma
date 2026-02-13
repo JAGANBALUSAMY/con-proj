@@ -84,6 +84,12 @@ enum BoxStatus {
   DELIVERED
 }
 
+enum TransferStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
 // ---------- MODELS ----------
 
 model User {
@@ -124,6 +130,12 @@ model User {
   performedRework ReworkRecord[] @relation("PerformedRework")
   managedRework   ReworkRecord[] @relation("ManagedRework")
   approvedRework  ReworkRecord[] @relation("ApprovedRework")
+
+  // Section transfers
+  operatorTransfers  SectionTransferRequest[] @relation("OperatorTransfers")
+  requestedTransfers SectionTransferRequest[] @relation("RequestedTransfers")
+  targetTransfers    SectionTransferRequest[] @relation("TargetTransfers")
+  resolvedTransfers  SectionTransferRequest[] @relation("ResolvedTransfers")
 }
 
 model SectionAssignment {
@@ -248,4 +260,27 @@ model Box {
   updatedAt DateTime  @updatedAt
 
   batch Batch @relation(fields: [batchId], references: [id])
+}
+
+model SectionTransferRequest {
+  id              Int             @id @default(autoincrement())
+  operatorId      Int
+  fromSection     ProductionStage
+  toSection       ProductionStage
+  requestedBy     Int
+  targetManagerId Int
+  status          TransferStatus  @default(PENDING)
+  requestedAt     DateTime        @default(now())
+  resolvedAt      DateTime?
+  resolvedBy      Int?
+  rejectionReason String?
+
+  operator      User  @relation("OperatorTransfers", fields: [operatorId], references: [id])
+  requester     User  @relation("RequestedTransfers", fields: [requestedBy], references: [id])
+  targetManager User  @relation("TargetTransfers", fields: [targetManagerId], references: [id])
+  resolver      User? @relation("ResolvedTransfers", fields: [resolvedBy], references: [id])
+
+  @@index([operatorId])
+  @@index([targetManagerId, status])
+  @@index([requestedBy])
 }

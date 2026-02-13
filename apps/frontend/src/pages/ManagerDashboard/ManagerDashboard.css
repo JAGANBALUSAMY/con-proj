@@ -1,23 +1,65 @@
 .manager-dashboard {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 2.5rem;
+  padding: 1rem;
+}
+
+.dashboard-top-section {
+  margin-bottom: -1rem;
+}
+
+.dashboard-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
 }
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 1.5rem;
 }
 
 .stat-card {
   background: white;
-  padding: 1.5rem;
+  padding: 1.75rem;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid #f1f5f9;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
   border-radius: 12px;
   display: flex;
   align-items: center;
-  gap: 1rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  justify-content: center;
+}
+
+.stat-icon.team {
+  background: #eff6ff;
+  color: #3b82f6;
+}
+
+.stat-icon.approval {
+  background: #ecfdf5;
+  color: #10b981;
+}
+
+.stat-icon.rework {
+  background: #fef2f2;
+  color: #ef4444;
 }
 
 .stat-info {
@@ -29,19 +71,22 @@
   font-size: 0.875rem;
   color: #64748b;
   font-weight: 500;
+  margin-bottom: 0.25rem;
 }
 
 .stat-value {
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-size: 1.75rem;
+  font-weight: 800;
   color: #1e293b;
+  line-height: 1;
 }
 
 .approval-section {
   background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  border: 1px solid #f1f5f9;
 }
 
 .approval-section h3 {
@@ -59,33 +104,46 @@
 
 table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 th {
   text-align: left;
-  padding: 1rem;
+  padding: 1.25rem 1rem;
   background: #f8fafc;
-  color: #64748b;
-  font-weight: 600;
-  font-size: 0.875rem;
-  border-bottom: 2px solid #f1f5f9;
+  color: #475569;
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 td {
-  padding: 1rem;
+  padding: 1.25rem 1rem;
   border-bottom: 1px solid #f1f5f9;
-  font-size: 0.875rem;
+  font-size: 0.9rem;
   color: #334155;
+  transition: background 0.2s ease;
+}
+
+tr:hover td {
+  background: #fdfdff;
+}
+
+tr:last-child td {
+  border-bottom: none;
 }
 
 .badge-stage {
-  background: #eef2ff;
-  color: #4f46e5;
-  padding: 0.25rem 0.6rem;
-  border-radius: 4px;
+  background: #eff6ff;
+  color: #2563eb;
+  padding: 4px 10px;
+  border-radius: 6px;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
+  border: 1px solid #dbeafe;
 }
 
 .actions {
@@ -93,7 +151,8 @@ td {
   gap: 0.5rem;
 }
 
-.btn-approve, .btn-reject {
+.btn-approve,
+.btn-reject {
   padding: 0.5rem 0.75rem;
   border-radius: 6px;
   font-size: 0.75rem;
@@ -130,11 +189,12 @@ td {
   gap: 1.5rem;
 }
 
-.active-batches, .team-overview {
+.active-batches,
+.team-overview {
   background: white;
   border-radius: 12px;
   padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .batch-grid {
@@ -180,6 +240,10 @@ td {
   background: #f8fafc;
 }
 
+.member-info {
+  flex: 1;
+}
+
 .member-name {
   font-weight: 600;
   font-size: 0.875rem;
@@ -192,6 +256,12 @@ td {
   margin: 0;
 }
 
+.member-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .verify-status {
   font-size: 0.7rem;
   font-weight: 700;
@@ -200,5 +270,144 @@ td {
   border-radius: 4px;
 }
 
-.verify-status.verified { background: #dcfce7; color: #166534; }
-.verify-status.pending { background: #fef9c3; color: #854d0e; }
+.verify-status.verified {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.verify-status.pending {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.btn-verify {
+  background: #3b82f6;
+  color: white;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  border: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: background 0.2s ease;
+}
+
+.btn-verify:hover {
+  background: #2563eb;
+}
+
+.btn-verify:active {
+  background: #1d4ed8;
+}
+
+.empty-msg {
+  text-align: center;
+  color: #94a3b8;
+  padding: 2rem;
+  font-size: 0.875rem;
+}
+
+.rework-overview {
+  background: white;
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  border: 1px solid #f1f5f9;
+}
+
+.rework-overview h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rework-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.rework-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: #fffafa;
+  border: 1px solid #fee2e2;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.rework-item:hover {
+  background: #fef2f2;
+  transform: translateX(4px);
+}
+
+.rework-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.rework-batch {
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: #1e293b;
+}
+
+.rework-op {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.rework-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-approve-sm,
+.btn-reject-sm {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-approve-sm {
+  background: #ecfdf5;
+  color: #10b981;
+}
+
+.btn-approve-sm:hover {
+  background: #10b981;
+  color: white;
+}
+
+.btn-reject-sm {
+  background: #fef2f2;
+  color: #ef4444;
+}
+
+.btn-reject-sm:hover {
+  background: #ef4444;
+  color: white;
+}
+
+.empty-msg-sm {
+  text-align: center;
+  color: #94a3b8;
+  padding: 1rem;
+  font-size: 0.8rem;
+  font-style: italic;
+}

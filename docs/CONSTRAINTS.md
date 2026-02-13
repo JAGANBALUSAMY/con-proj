@@ -260,7 +260,34 @@ PACKED → SHIPPED → DELIVERED
 
 ---
 
-## 20. Enforcement (MANDATORY)
+---
+
+## 21. Operator Section Mobility (CRITICAL)
+
+- Operators may be transferred between production sections.
+- **Approval Gate**: Section transfer MUST be requested by the current owning manager and accepted by the manager of the target section.
+- **Independence**: On acceptance, the operator's section assignment is updated, but their **ownership** (`createdByUserId`) remains with the original manager.
+- **Historical Integrity**: Completed production logs and historical batch associations must NOT be modified during a transfer.
+
+---
+
+## 22. Single Active Section Isolation (STRICT)
+
+- An operator must be assigned to **exactly ONE** active production section at any given time.
+- The system must prevent "dual section access" to maintain data isolation.
+- **Enforcement**: Accepting a section transfer must automatically terminate all previous section assignments before activating the new one.
+
+---
+
+## 23. Hybrid Visibility & Governance Separation
+
+- **Visibility**: Managers have full visibility and approval authority over **ALL** work performed in their assigned sections, regardless of which manager created the operator.
+- **Governance**: Only the **OWING MANAGER** (creator) can perform account-level actions (verify, reset password, force logout, update account status).
+- **Approval Delegation**: When an operator is working in a section not managed by their owner, the resident section manager becomes the primary authority for their production logs and rework approvals.
+
+---
+
+## 24. Enforcement (MANDATORY)
 
 - Constraints must be checked **BEFORE any database mutation**
 - Any violation → **reject request**

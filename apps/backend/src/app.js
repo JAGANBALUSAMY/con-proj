@@ -7,6 +7,8 @@ const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const approvalRoutes = require('./routes/approvalRoutes');
+const productionRoutes = require('./routes/productionRoutes');
+const sectionTransferRoutes = require('./routes/sectionTransferRoutes');
 
 const app = express();
 
@@ -20,6 +22,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/approvals', approvalRoutes);
+app.use('/api/production', productionRoutes);
+app.use('/api/section-transfers', sectionTransferRoutes);
 
 // Root test route
 app.get('/', (req, res) => {

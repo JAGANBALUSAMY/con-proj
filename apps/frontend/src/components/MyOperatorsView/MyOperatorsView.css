@@ -1,0 +1,132 @@
+.my-operators-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+    padding: 1rem;
+}
+
+.my-operators-modal {
+    background: white;
+    width: 100%;
+    max-width: 1200px;
+    max-height: 90vh;
+    border-radius: 16px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Header */
+.my-operators-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.header-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.header-title h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.close-button {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.close-button:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+/* Content */
+.my-operators-content {
+    padding: 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.operators-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+/* Empty State */
+.empty-operators {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    text-align: center;
+}
+
+.empty-icon {
+    color: #cbd5e1;
+    margin-bottom: 1rem;
+}
+
+.empty-operators p {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.empty-hint {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: #94a3b8;
+}
+
+/* Scrollbar */
+.my-operators-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.my-operators-content::-webkit-scrollbar-track {
+    background: #f8fafc;
+}
+
+.my-operators-content::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+.my-operators-content::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .operators-grid {
+        grid-template-columns: 1fr;
+    }
+}

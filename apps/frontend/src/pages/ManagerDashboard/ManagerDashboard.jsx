@@ -2,8 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import Layout from '../../components/Layout/Layout';
 import api from '../../utils/api';
-import { Users, ClipboardCheck, Factory, CheckCircle2, AlertCircle, XCircle, UserPlus } from 'lucide-react';
+import { Users, ClipboardCheck, Factory, CheckCircle2, AlertCircle, XCircle, UserPlus, Package, Eye, ArrowRightLeft, Clock } from 'lucide-react';
 import CreateOperatorModal from './CreateOperatorModal';
+import CreateBatchModal from './CreateBatchModal';
+import MyOperatorsView from '../../components/MyOperatorsView/MyOperatorsView';
+import SectionTransferModal from '../../components/SectionTransferModal/SectionTransferModal';
+import TransferRequestsView from '../../components/TransferRequestsView/TransferRequestsView';
+import ActionCard from '../../components/ActionCard/ActionCard';
+import RoleInfoBanner from '../../components/RoleInfoBanner/RoleInfoBanner';
 import './ManagerDashboard.css';
 
 const ManagerDashboard = () => {
@@ -11,6 +17,14 @@ const ManagerDashboard = () => {
     const [dashboardData, setDashboardData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [showCreateBatchModal, setShowCreateBatchModal] = useState(false);
+    const [isOperatorsViewVisible, setIsOperatorsViewVisible] = useState(false);
+    const [operators, setOperators] = useState([]);
+    const [showTransferModal, setShowTransferModal] = useState(false);
+    const [showPendingTransfers, setShowPendingTransfers] = useState(false);
+    const [pendingTransfers, setPendingTransfers] = useState([]);
+    const [sentTransfers, setSentTransfers] = useState([]);
+    const [historyTransfers, setHistoryTransfers] = useState([]);
 
     const fetchDashboard = async () => {
         try {
@@ -20,6 +34,34 @@ const ManagerDashboard = () => {
             console.error('Error fetching dashboard:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchMyOperators = async () => {
+        try {
+            const response = await api.get('/users/my-operators');
+            setOperators(response.data);
+            setIsOperatorsViewVisible(true);
+        } catch (error) {
+            console.error('Failed to fetch operators');
+            alert('Failed to load operators');
+        }
+    };
+
+    const fetchPendingTransfers = async () => {
+        try {
+            const [pendingRes, sentRes, historyRes] = await Promise.all([
+                api.get('/section-transfers/pending'),
+                api.get('/section-transfers/my-requests'),
+                api.get('/section-transfers/history')
+            ]);
+            setPendingTransfers(pendingRes.data);
+            setSentTransfers(sentRes.data);
+            setHistoryTransfers(historyRes.data);
+            setShowPendingTransfers(true);
+        } catch (error) {
+            console.error('Failed to fetch transfers');
+            alert('Failed to load transfers');
         }
     };
 
@@ -33,6 +75,26 @@ const ManagerDashboard = () => {
             fetchDashboard(); // Refresh
         } catch (error) {
             alert('Approval failed: ' + (error.response?.data?.error || 'Unknown error'));
+        }
+    };
+
+    const handleReworkApprove = async (reworkId) => {
+        try {
+            await api.patch(`/approvals/rework/${reworkId}/approve`);
+            fetchDashboard();
+        } catch (error) {
+            alert('Rework approval failed: ' + (error.response?.data?.error || 'Unknown error'));
+        }
+    };
+
+    const handleReworkReject = async (reworkId) => {
+        const reason = prompt('Please enter rejection reason:');
+        if (!reason) return;
+        try {
+            await api.patch(`/approvals/rework/${reworkId}/reject`, { reason });
+            fetchDashboard();
+        } catch (error) {
+            alert('Rework rejection failed: ' + (error.response?.data?.error || 'Unknown error'));
         }
     };
 
@@ -62,31 +124,67 @@ const ManagerDashboard = () => {
     return (
         <Layout title="Manager Production Hub">
             <div className="manager-dashboard">
-                <div className="dashboard-header">
-                    <button className="btn-create-operator" onClick={() => setShowCreateModal(true)}>
-                        <UserPlus size={18} /> Create New Operator
-                    </button>
+                <div className="dashboard-top-section">
+                    <RoleInfoBanner
+                        role="MANAGER"
+                        message={`You are managing: ${user?.sections?.join(', ') || 'No sections assigned'}`}
+                    />
                 </div>
+
+                <div className="dashboard-actions-grid">
+                    <ActionCard
+                        icon={UserPlus}
+                        label="Create Operator"
+                        onClick={() => setShowCreateModal(true)}
+                    />
+                    <ActionCard
+                        icon={Package}
+                        label="Create Batch"
+                        onClick={() => setShowCreateBatchModal(true)}
+                    />
+                    <ActionCard
+                        icon={Eye}
+                        label="My Operators"
+                        onClick={fetchMyOperators}
+                    />
+                    <ActionCard
+                        icon={ArrowRightLeft}
+                        label="Transfer Operator"
+                        onClick={() => setShowTransferModal(true)}
+                    />
+                    <ActionCard
+                        icon={Clock}
+                        label={`Transfers ${pendingTransfers.length > 0 ? `(${pendingTransfers.length})` : ''}`}
+                        onClick={fetchPendingTransfers}
+                    />
+                </div>
+
                 <div className="stats-grid">
                     <div className="stat-card">
-                        <Users size={24} color="#3b82f6" />
+                        <div className="stat-icon team">
+                            <Users size={24} />
+                        </div>
                         <div className="stat-info">
                             <span className="stat-label">My Team</span>
-                            <span className="stat-value">{dashboardData?.team?.length || 0} Operators</span>
+                            <span className="stat-value">{dashboardData?.team?.length || 0}</span>
                         </div>
                     </div>
                     <div className="stat-card">
-                        <ClipboardCheck size={24} color="#10b981" />
+                        <div className="stat-icon approval">
+                            <ClipboardCheck size={24} />
+                        </div>
                         <div className="stat-info">
-                            <span className="stat-label">Pending Approvals</span>
-                            <span className="stat-value">{dashboardData?.approvalQueue?.length || 0} tasks</span>
+                            <span className="stat-label">Queue</span>
+                            <span className="stat-value">{dashboardData?.approvalQueue?.length || 0}</span>
                         </div>
                     </div>
                     <div className="stat-card">
-                        <Factory size={24} color="#8b5cf6" />
+                        <div className="stat-icon rework">
+                            <AlertCircle size={24} />
+                        </div>
                         <div className="stat-info">
-                            <span className="stat-label">Active Sections</span>
-                            <span className="stat-value">{user?.sections?.join(', ')}</span>
+                            <span className="stat-label">Reworks</span>
+                            <span className="stat-value">{dashboardData?.reworkQueue?.length || 0}</span>
                         </div>
                     </div>
                 </div>
@@ -158,30 +256,28 @@ const ManagerDashboard = () => {
                         </div>
                     </section>
 
-                    <section className="team-overview">
-                        <h3><Users size={18} /> My Operators</h3>
-                        <div className="team-list">
-                            {dashboardData?.team?.map(op => (
-                                <div key={op.id} className="team-member">
-                                    <div className="member-info">
-                                        <p className="member-name">{op.fullName}</p>
-                                        <p className="member-code">{op.employeeCode}</p>
+                    <section className="rework-overview">
+                        <h3><AlertCircle size={18} /> Rework Queue</h3>
+                        <div className="rework-list">
+                            {dashboardData?.reworkQueue?.map(rework => (
+                                <div key={rework.id} className="rework-item">
+                                    <div className="rework-info">
+                                        <p className="rework-batch">{rework.batch.batchNumber}</p>
+                                        <p className="rework-op">{rework.operator.fullName}</p>
                                     </div>
-                                    <div className="member-actions">
-                                        <span className={`verify-status ${op.verificationStatus.toLowerCase()}`}>
-                                            {op.verificationStatus}
-                                        </span>
-                                        {op.verificationStatus === 'PENDING' && (
-                                            <button
-                                                className="btn-verify"
-                                                onClick={() => handleVerify(op.id)}
-                                            >
-                                                <CheckCircle2 size={14} /> Verify
-                                            </button>
-                                        )}
+                                    <div className="rework-actions">
+                                        <button className="btn-approve-sm" onClick={() => handleReworkApprove(rework.id)}>
+                                            <CheckCircle2 size={14} />
+                                        </button>
+                                        <button className="btn-reject-sm" onClick={() => handleReworkReject(rework.id)}>
+                                            <XCircle size={14} />
+                                        </button>
                                     </div>
                                 </div>
                             ))}
+                            {dashboardData?.reworkQueue?.length === 0 && (
+                                <p className="empty-msg-sm">No reworks pending.</p>
+                            )}
                         </div>
                     </section>
                 </div>
@@ -190,9 +286,44 @@ const ManagerDashboard = () => {
                     isOpen={showCreateModal}
                     onClose={() => setShowCreateModal(false)}
                     onSuccess={fetchDashboard}
+                    managerSections={dashboardData?.sections || []}
                 />
+
+                <CreateBatchModal
+                    isOpen={showCreateBatchModal}
+                    onClose={() => setShowCreateBatchModal(false)}
+                    onSuccess={fetchDashboard}
+                />
+
+                {isOperatorsViewVisible && (
+                    <MyOperatorsView
+                        operators={operators}
+                        onClose={() => setIsOperatorsViewVisible(false)}
+                        onRefresh={fetchMyOperators}
+                    />
+                )}
+
+                <SectionTransferModal
+                    isOpen={showTransferModal}
+                    onClose={() => setShowTransferModal(false)}
+                    onSuccess={fetchDashboard}
+                />
+
+                {showPendingTransfers && (
+                    <TransferRequestsView
+                        incoming={pendingTransfers}
+                        outgoing={sentTransfers}
+                        history={historyTransfers}
+                        onClose={() => setShowPendingTransfers(false)}
+                        onRefresh={() => {
+                            fetchPendingTransfers();
+                            fetchDashboard();
+                            if (isOperatorsViewVisible) fetchMyOperators();
+                        }}
+                    />
+                )}
             </div>
-        </Layout>
+        </Layout >
     );
 };
 

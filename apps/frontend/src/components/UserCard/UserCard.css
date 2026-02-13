@@ -1,0 +1,158 @@
+.user-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.25rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.user-card:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+/* Header */
+.user-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.role-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.role-badge.admin {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.role-badge.manager {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.role-badge.operator {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.verification-status {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.status-icon.verified {
+    color: #10b981;
+}
+
+.status-icon.pending {
+    color: #f59e0b;
+}
+
+.status-text {
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.status-text.verified {
+    color: #10b981;
+}
+
+.status-text.pending {
+    color: #f59e0b;
+}
+
+/* Body */
+.user-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.user-name {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.user-code {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #64748b;
+    font-family: 'Courier New', monospace;
+}
+
+.sections-container {
+    margin-top: 0.5rem;
+}
+
+.sections-label {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 500;
+    display: block;
+    margin-bottom: 0.375rem;
+}
+
+.sections-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+}
+
+.section-chip {
+    background: #f1f5f9;
+    color: #475569;
+    padding: 0.25rem 0.625rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* Footer */
+.user-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 0.75rem;
+    border-top: 1px solid #f1f5f9;
+}
+
+.footer-left {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    color: #94a3b8;
+    font-size: 0.75rem;
+}
+
+.manage-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.manage-btn:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+}

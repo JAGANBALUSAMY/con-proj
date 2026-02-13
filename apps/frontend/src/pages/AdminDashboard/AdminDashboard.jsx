@@ -1,17 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import Layout from '../../components/Layout/Layout';
+import StatCard from '../../components/StatCard/StatCard';
+import ActionCard from '../../components/ActionCard/ActionCard';
+import RoleInfoBanner from '../../components/RoleInfoBanner/RoleInfoBanner';
+import EmptyState from '../../components/EmptyState/EmptyState';
+import UserListView from '../../components/UserListView/UserListView';
 import api from '../../utils/api';
-import { ShieldCheck, Users, Settings, Activity, UserPlus } from 'lucide-react';
+import { ShieldCheck, Users, Settings, Activity, UserPlus, Package, Eye } from 'lucide-react';
 import './AdminDashboard.css';
 
 import CreateManagerModal from './CreateManagerModal';
+import CreateBatchModal from './CreateBatchModal';
 
 const AdminDashboard = () => {
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isCreateBatchModalOpen, setIsCreateBatchModalOpen] = useState(false);
     const [isHealthVisible, setIsHealthVisible] = useState(false);
+    const [isUserListVisible, setIsUserListVisible] = useState(false);
+    const [users, setUsers] = useState([]);
 
     const fetchStats = async () => {
         try {
@@ -21,6 +30,17 @@ const AdminDashboard = () => {
             console.error('Failed to fetch admin stats');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchUsers = async () => {
+        try {
+            const response = await api.get('/users');
+            setUsers(response.data);
+            setIsUserListVisible(true);
+        } catch (error) {
+            console.error('Failed to fetch users');
+            alert('Failed to load users');
         }
     };
 
@@ -34,46 +54,59 @@ const AdminDashboard = () => {
         <Layout title="Admin Governance Console">
             <div className="admin-dashboard">
                 <div className="stats-grid">
-                    <div className="stat-card">
-                        <Users size={24} color="#3b82f6" />
-                        <div className="stat-info">
-                            <span className="stat-label">Total Workforce</span>
-                            <span className="stat-value">{stats?.totalUsers || 0}</span>
-                        </div>
-                    </div>
-                    <div className="stat-card">
-                        <ShieldCheck size={24} color="#10b981" />
-                        <div className="stat-info">
-                            <span className="stat-label">Active Managers</span>
-                            <span className="stat-value">{stats?.managers || 0}</span>
-                        </div>
-                    </div>
-                    <div className="stat-card">
-                        <Activity size={24} color="#f59e0b" />
-                        <div className="stat-info">
-                            <span className="stat-label">Running Batches</span>
-                            <span className="stat-value">{stats?.activeBatches || 0}</span>
-                        </div>
-                    </div>
+                    <StatCard
+                        icon={Users}
+                        iconColor="#3b82f6"
+                        label="Total Workforce"
+                        value={stats?.totalUsers || 0}
+                    />
+                    <StatCard
+                        icon={ShieldCheck}
+                        iconColor="#10b981"
+                        label="Active Managers"
+                        value={stats?.managers || 0}
+                    />
+                    <StatCard
+                        icon={Activity}
+                        iconColor="#f59e0b"
+                        label="Running Batches"
+                        value={stats?.activeBatches || 0}
+                    />
                 </div>
 
                 <div className="admin-grid">
                     <section className="admin-tools">
                         <h3><Settings size={20} /> Governance Tools</h3>
                         <div className="tools-list">
-                            <button className="tool-btn" onClick={() => setIsCreateModalOpen(true)}>
-                                <UserPlus size={18} />
-                                <span>Create Manager Account</span>
-                            </button>
-                            <button className="tool-btn" onClick={() => setIsHealthVisible(!isHealthVisible)}>
-                                <Activity size={18} />
-                                <span>System Health Logs</span>
-                            </button>
+                            <ActionCard
+                                icon={UserPlus}
+                                label="Create Manager Account"
+                                onClick={() => setIsCreateModalOpen(true)}
+                            />
+                            <ActionCard
+                                icon={Package}
+                                label="Create New Batch"
+                                onClick={() => setIsCreateBatchModalOpen(true)}
+                            />
+                            <ActionCard
+                                icon={Eye}
+                                label="View Users"
+                                onClick={fetchUsers}
+                            />
+                            <ActionCard
+                                icon={Activity}
+                                label="System Health Logs"
+                                onClick={() => setIsHealthVisible(!isHealthVisible)}
+                            />
                         </div>
                     </section>
 
                     <section className="system-overview">
                         <h3><ShieldCheck size={20} /> System Overview (Read-Only)</h3>
+                        <RoleInfoBanner
+                            role="ADMIN"
+                            message="Governance-only role. No direct batch modification allowed."
+                        />
                         {isHealthVisible ? (
                             <div className="health-logs">
                                 <p className="log-entry">🟢 API Server: Operational (v1.0.2)</p>
@@ -82,12 +115,10 @@ const AdminDashboard = () => {
                                 <button className="btn-close-health" onClick={() => setIsHealthVisible(false)}>Minimize Logs</button>
                             </div>
                         ) : (
-                            <div className="info-placeholder">
-                                <p>Global production visibility is enabled. No manual batch modification allowed for ADMIN role.</p>
-                                <div className="dummy-chart">
-                                    [ System Throughput Chart Placeholder ]
-                                </div>
-                            </div>
+                            <EmptyState
+                                icon={Activity}
+                                message="System Throughput Chart Placeholder"
+                            />
                         )}
                     </section>
                 </div>
@@ -101,6 +132,22 @@ const AdminDashboard = () => {
                     alert('Manager account created successfully!');
                 }}
             />
+
+            <CreateBatchModal
+                isOpen={isCreateBatchModalOpen}
+                onClose={() => setIsCreateBatchModalOpen(false)}
+                onSuccess={() => {
+                    fetchStats();
+                }}
+            />
+
+            {isUserListVisible && (
+                <UserListView
+                    users={users}
+                    onClose={() => setIsUserListVisible(false)}
+                    onRefresh={fetchUsers}
+                />
+            )}
         </Layout>
     );
 };

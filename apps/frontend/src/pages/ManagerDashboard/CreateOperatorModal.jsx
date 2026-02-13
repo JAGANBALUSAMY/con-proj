@@ -3,11 +3,12 @@ import { X, User, Lock, UserPlus } from 'lucide-react';
 import api from '../../utils/api';
 import '../../styles/modal.css';
 
-const CreateOperatorModal = ({ isOpen, onClose, onSuccess }) => {
+const CreateOperatorModal = ({ isOpen, onClose, onSuccess, managerSections }) => {
     const [formData, setFormData] = useState({
         employeeCode: '',
         fullName: '',
-        password: ''
+        password: '',
+        section: managerSections && managerSections.length === 1 ? managerSections[0] : ''
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -17,12 +18,18 @@ const CreateOperatorModal = ({ isOpen, onClose, onSuccess }) => {
         setLoading(true);
         setError('');
 
+        if (!formData.section) {
+            setError('Please select a section for the operator');
+            setLoading(false);
+            return;
+        }
+
         try {
             await api.post('/users/operator', formData);
             alert('Operator created successfully! They will appear in your team after verification.');
             onSuccess();
             onClose();
-            setFormData({ employeeCode: '', fullName: '', password: '' });
+            setFormData({ employeeCode: '', fullName: '', password: '', section: '' });
         } catch (err) {
             setError(err.response?.data?.error || 'Failed to create operator');
         } finally {
@@ -78,8 +85,25 @@ const CreateOperatorModal = ({ isOpen, onClose, onSuccess }) => {
                         />
                     </div>
 
+                    <div className="form-group">
+                        <label><Users size={16} /> Assign Section *</label>
+                        <select
+                            value={formData.section}
+                            onChange={(e) => setFormData({ ...formData, section: e.target.value })}
+                            required
+                        >
+                            <option value="">-- Select Section --</option>
+                            {managerSections && managerSections.map(section => (
+                                <option key={section} value={section}>
+                                    {section}
+                                </option>
+                            ))}
+                        </select>
+                        <span className="helper-text">Operator will only have access to this section.</span>
+                    </div>
+
                     <div className="info-box">
-                        <p><strong>Note:</strong> The operator will automatically inherit your assigned sections and will be in PENDING status until you verify them.</p>
+                        <p><strong>Note:</strong> The operator will be assigned to the selected section and will be in PENDING status until you verify them.</p>
                     </div>
 
                     <div className="modal-actions">

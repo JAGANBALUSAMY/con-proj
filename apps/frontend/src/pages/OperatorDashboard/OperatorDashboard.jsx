@@ -2,15 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import Layout from '../../components/Layout/Layout';
 import api from '../../utils/api';
-import { Play, CheckCircle, Clock, Package, AlertTriangle } from 'lucide-react';
+import { Play, Clock, Package, AlertTriangle } from 'lucide-react';
+import WorkLogModal from './WorkLogModal';
 import './OperatorDashboard.css';
 
 const OperatorDashboard = () => {
     const { user } = useAuth();
     const [dashboardData, setDashboardData] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [loggingBatch, setLoggingBatch] = useState(null);
-    const [quantityIn, setQuantityIn] = useState('');
+    const [selectedBatch, setSelectedBatch] = useState(null);
 
     const fetchDashboard = async () => {
         try {
@@ -26,20 +26,6 @@ const OperatorDashboard = () => {
     useEffect(() => {
         fetchDashboard();
     }, []);
-
-    const handleLogWork = async (e) => {
-        e.preventDefault();
-        try {
-            // NOTE: In Phase 16 we will create a dedicated production logging controller
-            // For now, we simulate the submission
-            alert(`Work submitted for ${loggingBatch.batchNumber}. Awaiting Manager Approval.`);
-            setLoggingBatch(null);
-            setQuantityIn('');
-            fetchDashboard();
-        } catch (error) {
-            alert('Submission failed');
-        }
-    };
 
     if (loading) return <div className="loading-screen">Waking up Station...</div>;
 
@@ -62,15 +48,15 @@ const OperatorDashboard = () => {
                                     <div className="batch-info">
                                         <h4>{batch.batchNumber}</h4>
                                         <p>{batch.briefTypeName} • {batch.totalQuantity} units</p>
+                                        <span className={`batch-status ${batch.status.toLowerCase()}`}>
+                                            {batch.status}
+                                        </span>
                                     </div>
                                     <button
                                         className="btn-start"
-                                        onClick={() => {
-                                            setLoggingBatch(batch);
-                                            setQuantityIn(batch.totalQuantity);
-                                        }}
+                                        onClick={() => setSelectedBatch(batch)}
                                     >
-                                        <Play size={16} /> Record Work
+                                        <Play size={16} /> Log Work
                                     </button>
                                 </div>
                             ))}
@@ -81,49 +67,36 @@ const OperatorDashboard = () => {
                     </section>
 
                     <aside className="activity-panel">
-                        {loggingBatch ? (
-                            <div className="log-form-container">
-                                <h3>Record Work: {loggingBatch.batchNumber}</h3>
-                                <form onSubmit={handleLogWork} className="log-form">
-                                    <div className="form-group">
-                                        <label>Quantity Processed</label>
-                                        <input
-                                            type="number"
-                                            value={quantityIn}
-                                            onChange={(e) => setQuantityIn(e.target.value)}
-                                            max={loggingBatch.totalQuantity}
-                                            required
-                                        />
-                                    </div>
-                                    <div className="form-actions">
-                                        <button type="submit" className="btn-submit">Submit for Approval</button>
-                                        <button type="button" className="btn-cancel" onClick={() => setLoggingBatch(null)}>Cancel</button>
-                                    </div>
-                                </form>
-                            </div>
-                        ) : (
-                            <div className="history-section">
-                                <h3><Clock size={20} /> Recent Submissions</h3>
-                                <div className="history-list">
-                                    {dashboardData?.recentLogs?.map(log => (
-                                        <div key={log.id} className="history-item">
-                                            <div className="history-info">
-                                                <p className="batch-ref">{log.batch.batchNumber}</p>
-                                                <p className="log-time">{new Date(log.createdAt).toLocaleDateString()}</p>
-                                            </div>
-                                            <span className={`approval-badge ${log.approvalStatus.toLowerCase()}`}>
-                                                {log.approvalStatus}
-                                            </span>
+                        <div className="history-section">
+                            <h3><Clock size={20} /> Recent Submissions</h3>
+                            <div className="history-list">
+                                {dashboardData?.recentLogs?.map(log => (
+                                    <div key={log.id} className="history-item">
+                                        <div className="history-info">
+                                            <p className="batch-ref">{log.batch.batchNumber}</p>
+                                            <p className="log-time">
+                                                {new Date(log.createdAt).toLocaleDateString()}
+                                            </p>
                                         </div>
-                                    ))}
-                                    {dashboardData?.recentLogs?.length === 0 && (
-                                        <p className="empty-msg">No recent activity.</p>
-                                    )}
-                                </div>
+                                        <span className={`approval-badge ${log.approvalStatus.toLowerCase()}`}>
+                                            {log.approvalStatus}
+                                        </span>
+                                    </div>
+                                ))}
+                                {dashboardData?.recentLogs?.length === 0 && (
+                                    <p className="empty-msg">No recent activity.</p>
+                                )}
                             </div>
-                        )}
+                        </div>
                     </aside>
                 </div>
+
+                <WorkLogModal
+                    isOpen={!!selectedBatch}
+                    onClose={() => setSelectedBatch(null)}
+                    batch={selectedBatch}
+                    onSuccess={fetchDashboard}
+                />
             </div>
         </Layout>
     );

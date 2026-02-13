@@ -37,12 +37,30 @@ const getManagerDashboard = async (req, res) => {
         console.log(`[DASHBOARD DEBUG] Fetching dashboard for ${req.user.employeeCode} (ID: ${managerId})`);
         console.log(`[DASHBOARD DEBUG] Assigned Sections: ${assignedSections}`);
 
-        // 1. Fetch Operators created by this Manager
+        // 1. Fetch Operators: Either created by this Manager OR assigned to this Manager's sections
         let team = [];
         try {
             team = await prisma.user.findMany({
-                where: { createdByUserId: managerId, role: 'OPERATOR' },
-                select: { id: true, fullName: true, employeeCode: true, verificationStatus: true }
+                where: {
+                    role: 'OPERATOR',
+                    OR: [
+                        { createdByUserId: managerId },
+                        {
+                            sectionAssignments: {
+                                some: {
+                                    stage: { in: assignedSections }
+                                }
+                            }
+                        }
+                    ]
+                },
+                select: {
+                    id: true,
+                    fullName: true,
+                    employeeCode: true,
+                    verificationStatus: true,
+                    sectionAssignments: { select: { stage: true } }
+                }
             });
         } catch (e) {
             console.error('[DASHBOARD ERROR] Team Fetch Failed:', e.message);
@@ -77,7 +95,8 @@ const getManagerDashboard = async (req, res) => {
             reworkQueue = await prisma.reworkRecord.findMany({
                 where: {
                     operatorUserId: { in: operatorIds },
-                    approvalStatus: 'PENDING'
+                    approvalStatus: 'PENDING',
+                    reworkStage: { in: assignedSections }
                 },
                 include: {
                     batch: { select: { batchNumber: true } },
@@ -156,8 +175,86 @@ const getOperatorDashboard = async (req, res) => {
     }
 };
 
+/**
+ * CREATE BATCH (ADMIN or MANAGER)
+ * Cloth Intake - Planning Action
+ * 
+ * Rules:
+ * - ADMIN can create batches for any section
+ * - MANAGER can create batches ONLY if CUTTING is in their assigned sections
+ * - OPERATOR must NEVER be allowed
+ * - No approval workflow (this is planning, not production work)
+ * - Initial values auto-set: currentStage=CUTTING, status=PENDING, quantities=0
+ */
+const createBatch = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const userRole = req.user.role;
+        const { batchNumber, briefTypeName, totalQuantity } = req.body;
+
+        // 1. Validate required fields
+        if (!batchNumber || !briefTypeName || !totalQuantity) {
+            return res.status(400).json({ error: 'batchNumber, briefTypeName, and totalQuantity are required' });
+        }
+
+        // 2. Validate quantity is positive
+        if (totalQuantity <= 0) {
+            return res.status(400).json({ error: 'Total quantity must be greater than 0' });
+        }
+
+        // 3. Check for duplicate batch number
+        const existingBatch = await prisma.batch.findUnique({
+            where: { batchNumber }
+        });
+
+        if (existingBatch) {
+            return res.status(400).json({ error: 'Batch number already exists' });
+        }
+
+        // 4. Section isolation for MANAGER
+        // Batches always start at CUTTING stage
+        // MANAGER can only create batches if CUTTING is in their assigned sections
+        if (userRole === 'MANAGER') {
+            const assignedSections = req.user.sections || [];
+
+            if (!assignedSections.includes('CUTTING')) {
+                return res.status(403).json({
+                    error: 'Access denied: CUTTING stage is not in your assigned sections',
+                    yourSections: assignedSections,
+                    requiredSection: 'CUTTING'
+                });
+            }
+        }
+
+        // 5. Create batch with initial values
+        const batch = await prisma.batch.create({
+            data: {
+                batchNumber,
+                briefTypeName,
+                totalQuantity: parseInt(totalQuantity),
+                // Initial values (auto-set)
+                currentStage: 'CUTTING',
+                status: 'PENDING',
+                usableQuantity: 0,
+                defectiveQuantity: 0,
+                scrappedQuantity: 0
+            }
+        });
+
+        return res.status(201).json({
+            message: 'Batch created successfully',
+            batch
+        });
+
+    } catch (error) {
+        console.error('Create batch error:', error);
+        return res.status(500).json({ error: 'Failed to create batch' });
+    }
+};
+
 module.exports = {
     getAdminStats,
     getManagerDashboard,
-    getOperatorDashboard
+    getOperatorDashboard,
+    createBatch
 };
