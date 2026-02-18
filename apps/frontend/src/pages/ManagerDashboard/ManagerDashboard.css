@@ -131,6 +131,19 @@ td {
   font-size: 0.75rem;
   font-weight: 600;
   color: #475569;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.qty-out {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.time-col {
+  font-size: 0.825rem;
+  color: #64748b;
+  white-space: nowrap;
 }
 
 .actions {

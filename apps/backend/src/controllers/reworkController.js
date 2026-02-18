@@ -61,6 +61,37 @@ const createReworkLog = async (req, res) => {
             return res.status(400).json({ error: 'endTime must be greater than or equal to startTime' });
         }
 
+        const start = new Date(startTime);
+        const end = new Date(endTime);
+
+        // Operator Overlap Check (ProductionLogs)
+        const prodOverlap = await prisma.productionLog.findFirst({
+            where: {
+                operatorUserId: operatorId,
+                AND: [
+                    { startTime: { lt: end } },
+                    { endTime: { gt: start } }
+                ]
+            }
+        });
+        if (prodOverlap) {
+            return res.status(400).json({ error: `Operator overlap: You have a production log (#${prodOverlap.id}) during this time period.` });
+        }
+
+        // Operator Overlap Check (ReworkRecords)
+        const reworkOverlap = await prisma.reworkRecord.findFirst({
+            where: {
+                operatorUserId: operatorId,
+                AND: [
+                    { startTime: { lt: end } },
+                    { endTime: { gt: start } }
+                ]
+            }
+        });
+        if (reworkOverlap) {
+            return res.status(400).json({ error: `Operator overlap: You have a rework log (#${reworkOverlap.id}) during this time period.` });
+        }
+
         // ── 3. Fetch Operator & Verify ───────────────────────────────────────
         const operator = await prisma.user.findUnique({
             where: { id: operatorId },
@@ -72,34 +103,55 @@ const createReworkLog = async (req, res) => {
         }
 
         const operatorSections = operator.sectionAssignments.map(sa => sa.stage);
-        if (!operatorSections.includes('REWORK')) {
+        if (!operatorSections.includes(reworkStage)) {
             return res.status(403).json({
-                error: 'Access denied: You are not assigned to the REWORK section',
+                error: `Access denied: You are not assigned to the ${reworkStage} section. Rework must be performed by the origin section.`,
                 yourSections: operatorSections
             });
         }
 
         // ── 4. Fetch Batch & Validate ────────────────────────────────────────
         const batch = await prisma.batch.findUnique({
-            where: { id: parseInt(batchId) }
+            where: { id: parseInt(batchId) },
+            include: {
+                defectRecords: {
+                    where: { stage: reworkStage }
+                },
+                reworkRecords: {
+                    where: {
+                        reworkStage: reworkStage,
+                        approvalStatus: 'PENDING'
+                    }
+                }
+            }
         });
 
         if (!batch) return res.status(404).json({ error: 'Batch not found' });
 
-        if (batch.currentStage !== 'REWORK') {
+        if (batch.status === 'COMPLETED' || batch.status === 'CANCELLED') {
+            return res.status(400).json({ error: `Cannot log rework for a ${batch.status} batch.` });
+        }
+
+        // Logic Hole #1 Fix: Defect Origin Consistency
+        // Sum total defects recorded for this reworkStage
+        const totalDefectsForStage = batch.defectRecords.reduce((sum, d) => sum + d.quantity, 0);
+
+        if (totalDefectsForStage < qty) {
             return res.status(400).json({
-                error: `Batch is not in REWORK stage. Current stage: ${batch.currentStage}`
+                error: `Defect Origin Mismatch: Only ${totalDefectsForStage} defects were recorded for ${reworkStage}. Cannot rework ${qty} units.`,
+                recordedDefects: totalDefectsForStage
             });
         }
 
-        // Check if quantity validation against defectiveQuantity holds
-        // Note: multiple rework logs could be pending.
-        // We do strictly enforce: quantity <= batch.defectiveQuantity
-        // Ideally we should also check pending rework quantities, but let's stick to the base constraint first.
-        if (qty > batch.defectiveQuantity) {
+        // Logic Hole #2 Fix: Double Rework Guard (Pending Overlap)
+        const pendingReworkForStage = batch.reworkRecords.reduce((sum, r) => sum + r.quantity, 0);
+        const availableDefectiveForStage = totalDefectsForStage - pendingReworkForStage;
+
+        if (qty > availableDefectiveForStage) {
             return res.status(400).json({
-                error: `Cannot rework ${qty} units. Only ${batch.defectiveQuantity} defective units exist.`,
-                defectiveQuantity: batch.defectiveQuantity
+                error: `Double Rework Guard: ${qty} units requested, but only ${availableDefectiveForStage} units are available for rework after accounting for pending logs.`,
+                availableForRework: availableDefectiveForStage,
+                pendingAlready: pendingReworkForStage
             });
         }
 

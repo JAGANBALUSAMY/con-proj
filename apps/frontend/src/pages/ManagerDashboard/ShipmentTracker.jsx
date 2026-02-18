@@ -57,7 +57,7 @@ const ShipmentTracker = () => {
     return (
         <div className="shipment-tracker">
             <div className="tracker-header">
-                <h2>Shipment Tracker</h2>
+                <h2>Completed Packages</h2>
                 <div className="filter-tabs">
                     {['ALL', 'PACKED', 'SHIPPED', 'DELIVERED'].map(status => (
                         <button
@@ -88,28 +88,9 @@ const ShipmentTracker = () => {
                                 </div>
                             </div>
 
-                            <div className="shipment-actions">
-                                <span className={`status-badge ${box.status.toLowerCase()}`}>
-                                    {box.status}
-                                </span>
-
-                                {box.status === 'PACKED' && (
-                                    <button
-                                        className="btn-action ship"
-                                        onClick={() => updateStatus(box.id, 'SHIPPED')}
-                                    >
-                                        Mark Shipped
-                                    </button>
-                                )}
-                                {box.status === 'SHIPPED' && (
-                                    <button
-                                        className="btn-action deliver"
-                                        onClick={() => updateStatus(box.id, 'DELIVERED')}
-                                    >
-                                        Mark Delivered
-                                    </button>
-                                )}
-                            </div>
+                            <span className={`status-badge ${box.status.toLowerCase()}`}>
+                                {box.status}
+                            </span>
                         </div>
                     ))}
                     {filteredBoxes.length === 0 && (

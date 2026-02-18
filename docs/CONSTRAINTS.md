@@ -37,7 +37,7 @@ Any violation **MUST be rejected**.
 
 ## 3. Production Workflow (STRICT ORDER)
 
-CUTTING → STITCHING → QUALITY_CHECK → REWORK → LABELING → FOLDING → PACKING
+CUTTING → STITCHING → QUALITY_CHECK → LABELING → FOLDING → PACKING
 
 
 ### Rules
@@ -189,7 +189,8 @@ data from unassigned sections
 - Rework is a **sub-flow**, NOT backward batch movement
 
 ### Rework Rules
-- Target stage: CUTTING or STITCHING only
+- **Direct Routing**: Target stage must be the origin section: CUTTING or STITCHING only.
+- **Sectional Accountability**: Rework is performed by operators and approved by managers of the origin section. There is no separate "REWORK" department.
 - Rework quantity ≤ defective quantity
 - Batch stage does NOT change during rework
 - Rework outcome:
@@ -197,7 +198,7 @@ data from unassigned sections
   - SCRAPPED
 - CURED + SCRAPPED = rework quantity
 - Only CURED quantity rejoins the batch
-- Rework execution and completion require **manager approval**
+- Rework execution and completion require **manager approval** from the origin section.
 
 ---
 

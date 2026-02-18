@@ -7,6 +7,20 @@ const prisma = new PrismaClient();
 async function main() {
     console.log('🌱 Starting database seeding...');
 
+    // 0. Clean Database (Reverse order of dependencies)
+    console.log('🧹 Cleaning existing data...');
+    await prisma.defectRecord.deleteMany();
+    await prisma.productionLog.deleteMany();
+    await prisma.reworkRecord.deleteMany();
+    await prisma.box.deleteMany();
+    await prisma.sectionAssignment.deleteMany();
+    await prisma.batch.deleteMany();
+    // Keep users but update them if needed via upsert, or delete if we want total reset
+    // For now, let's just delete the transactional data.
+    // If we want total reset, we'd delete the users too (except admin maybe).
+    // Let's delete ALL to be safe as requested "deleted values in the DB".
+    await prisma.user.deleteMany({ where: { role: { not: 'ADMIN' } } });
+
     // 1. Initial Admin User
     const adminCode = 'ADMIN001';
     const adminPassword = 'AdminPassword123!'; // IMPORTANT: CHANGE THIS AFTER LOGIN
@@ -27,7 +41,7 @@ async function main() {
     });
 
     // 2. Production Stages
-    const stages = ['CUTTING', 'STITCHING', 'QUALITY_CHECK', 'REWORK', 'LABELING', 'FOLDING', 'PACKING'];
+    const stages = ['CUTTING', 'STITCHING', 'QUALITY_CHECK', 'LABELING', 'FOLDING', 'PACKING'];
 
     console.log('🏭 Seeding Production Staff...');
 
@@ -105,26 +119,8 @@ async function main() {
         }
     }
 
-    // 3. Create Sample Transactional Data (Batches & Logs)
-    console.log('📦 Seeding Sample Batches & Logs...');
-
-    // Batch 1: Pending in CUTTING (For Cutting Manager to see as START REQUEST)
-    // No log created yet. Manager must START it.
-
-    await prisma.batch.create({
-        data: {
-            batchNumber: 'BATCH-SEED-001',
-            briefTypeName: 'Seed Test Batch 1',
-            totalQuantity: 100,
-            usableQuantity: 0,
-            currentStage: 'CUTTING',
-            status: 'PENDING' // Manager sees this in queue
-        }
-    });
-    console.log(`   Created Batch BATCH-SEED-001 (PENDING Approval)`);
-
     console.log('✅ Staff seeding completed.');
-    console.log('🚀 Database ready.');
+    console.log('🚀 Database ready (Users only).');
 }
 
 main()

@@ -12,7 +12,6 @@ export const SocketProvider = ({ children }) => {
         // Connect to backend server
         // In a real app, this URL should come from an environment variable
         const newSocket = io('http://localhost:5000', {
-            transports: ['websocket'],
             autoConnect: true
         });
 

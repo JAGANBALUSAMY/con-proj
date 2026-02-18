@@ -50,60 +50,62 @@ const CreateOperatorModal = ({ isOpen, onClose, onSuccess, managerSections }) =>
                 </div>
 
                 <form onSubmit={handleSubmit} className="modal-form">
-                    {error && <div className="error-banner">{error}</div>}
+                    <div className="modal-body">
+                        {error && <div className="error-banner">{error}</div>}
 
-                    <div className="form-group">
-                        <label><User size={16} /> Employee Code</label>
-                        <input
-                            type="text"
-                            placeholder="e.g., OP001"
-                            value={formData.employeeCode}
-                            onChange={(e) => setFormData({ ...formData, employeeCode: e.target.value })}
-                            required
-                        />
-                    </div>
+                        <div className="form-group">
+                            <label><User size={16} /> Employee Code</label>
+                            <input
+                                type="text"
+                                placeholder="e.g., OP001"
+                                value={formData.employeeCode}
+                                onChange={(e) => setFormData({ ...formData, employeeCode: e.target.value })}
+                                required
+                            />
+                        </div>
 
-                    <div className="form-group">
-                        <label><User size={16} /> Full Name</label>
-                        <input
-                            type="text"
-                            placeholder="e.g., John Doe"
-                            value={formData.fullName}
-                            onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                            required
-                        />
-                    </div>
+                        <div className="form-group">
+                            <label><User size={16} /> Full Name</label>
+                            <input
+                                type="text"
+                                placeholder="e.g., John Doe"
+                                value={formData.fullName}
+                                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                                required
+                            />
+                        </div>
 
-                    <div className="form-group">
-                        <label><Lock size={16} /> Initial Password</label>
-                        <input
-                            type="password"
-                            placeholder="Set a secure password"
-                            value={formData.password}
-                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                            required
-                        />
-                    </div>
+                        <div className="form-group">
+                            <label><Lock size={16} /> Initial Password</label>
+                            <input
+                                type="password"
+                                placeholder="Set a secure password"
+                                value={formData.password}
+                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                required
+                            />
+                        </div>
 
-                    <div className="form-group">
-                        <label><Users size={16} /> Assign Section *</label>
-                        <select
-                            value={formData.section}
-                            onChange={(e) => setFormData({ ...formData, section: e.target.value })}
-                            required
-                        >
-                            <option value="">-- Select Section --</option>
-                            {managerSections && managerSections.map(section => (
-                                <option key={section} value={section}>
-                                    {section}
-                                </option>
-                            ))}
-                        </select>
-                        <span className="helper-text">Operator will only have access to this section.</span>
-                    </div>
+                        <div className="form-group">
+                            <label><Users size={16} /> Assign Section *</label>
+                            <select
+                                value={formData.section}
+                                onChange={(e) => setFormData({ ...formData, section: e.target.value })}
+                                required
+                            >
+                                <option value="">-- Select Section --</option>
+                                {managerSections && managerSections.map(section => (
+                                    <option key={section} value={section}>
+                                        {section}
+                                    </option>
+                                ))}
+                            </select>
+                            <span className="helper-text">Operator will only have access to this section.</span>
+                        </div>
 
-                    <div className="info-box">
-                        <p><strong>Note:</strong> The operator will be assigned to the selected section and will be in PENDING status until you verify them.</p>
+                        <div className="info-box">
+                            <p><strong>Note:</strong> The operator will be assigned to the selected section and will be in PENDING status until you verify them.</p>
+                        </div>
                     </div>
 
                     <div className="modal-actions">

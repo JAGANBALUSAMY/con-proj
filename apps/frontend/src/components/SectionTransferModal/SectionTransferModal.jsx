@@ -103,82 +103,84 @@ const SectionTransferModal = ({ isOpen, onClose, onSuccess }) => {
                 </div>
 
                 <form onSubmit={handleSubmit} className="section-transfer-form">
-                    {error && <div className="error-message">{error}</div>}
+                    <div className="section-transfer-body">
+                        {error && <div className="error-message">{error}</div>}
 
-                    <div className="form-group">
-                        <label>Select Operator *</label>
-                        <select
-                            value={selectedOperator}
-                            onChange={(e) => setSelectedOperator(e.target.value)}
-                            required
-                        >
-                            <option value="">{operators.length === 0 ? '-- No Operators Available --' : '-- Select Operator --'}</option>
-                            {operators.map(operator => (
-                                <option key={operator.id} value={operator.id}>
-                                    {operator.fullName} ({operator.employeeCode})
-                                </option>
-                            ))}
-                        </select>
-                        {operators.length === 0 && (
-                            <span className="helper-text error">You can only transfer operators you created. No owned operators found.</span>
-                        )}
-                    </div>
-
-                    {selectedOperator && (
-                        <div className="current-section-info">
-                            <span className="label">Current Section:</span>
-                            <span className="section-badge current">
-                                {getOperatorCurrentSection(selectedOperator)}
-                            </span>
+                        <div className="form-group">
+                            <label>Select Operator *</label>
+                            <select
+                                value={selectedOperator}
+                                onChange={(e) => setSelectedOperator(e.target.value)}
+                                required
+                            >
+                                <option value="">{operators.length === 0 ? '-- No Operators Available --' : '-- Select Operator --'}</option>
+                                {operators.map(operator => (
+                                    <option key={operator.id} value={operator.id}>
+                                        {operator.fullName} ({operator.employeeCode})
+                                    </option>
+                                ))}
+                            </select>
+                            {operators.length === 0 && (
+                                <span className="helper-text error">You can only transfer operators you created. No owned operators found.</span>
+                            )}
                         </div>
-                    )}
 
-                    <div className="form-group">
-                        <label>Target Section *</label>
-                        <select
-                            value={targetSection}
-                            onChange={(e) => setTargetSection(e.target.value)}
-                            required
-                            disabled={!selectedOperator}
-                        >
-                            <option value="">-- Select Target Section --</option>
-                            {sections.map(section => (
-                                <option
-                                    key={section}
-                                    value={section}
-                                    disabled={section === getOperatorCurrentSection(selectedOperator)}
-                                >
-                                    {section}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {targetSection && (
-                        <div className="transfer-arrow">
-                            <ArrowRight size={24} className="arrow-icon" />
-                            <span className="section-badge target">{targetSection}</span>
-                        </div>
-                    )}
-
-                    <div className="form-group">
-                        <label>Target Manager *</label>
-                        <select
-                            value={targetManager}
-                            onChange={(e) => setTargetManager(e.target.value)}
-                            required
-                            disabled={!targetSection}
-                        >
-                            <option value="">-- Select Target Manager --</option>
-                            {managers.map(manager => (
-                                <option key={manager.id} value={manager.id}>
-                                    {manager.fullName} ({manager.employeeCode})
-                                </option>
-                            ))}
-                        </select>
-                        {targetSection && managers.length === 0 && (
-                            <span className="helper-text">No managers found for this section</span>
+                        {selectedOperator && (
+                            <div className="current-section-info">
+                                <span className="label">Current Section:</span>
+                                <span className="section-badge current">
+                                    {getOperatorCurrentSection(selectedOperator)}
+                                </span>
+                            </div>
                         )}
+
+                        <div className="form-group">
+                            <label>Target Section *</label>
+                            <select
+                                value={targetSection}
+                                onChange={(e) => setTargetSection(e.target.value)}
+                                required
+                                disabled={!selectedOperator}
+                            >
+                                <option value="">-- Select Target Section --</option>
+                                {sections.map(section => (
+                                    <option
+                                        key={section}
+                                        value={section}
+                                        disabled={section === getOperatorCurrentSection(selectedOperator)}
+                                    >
+                                        {section}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {targetSection && (
+                            <div className="transfer-arrow">
+                                <ArrowRight size={24} className="arrow-icon" />
+                                <span className="section-badge target">{targetSection}</span>
+                            </div>
+                        )}
+
+                        <div className="form-group">
+                            <label>Target Manager *</label>
+                            <select
+                                value={targetManager}
+                                onChange={(e) => setTargetManager(e.target.value)}
+                                required
+                                disabled={!targetSection}
+                            >
+                                <option value="">-- Select Target Manager --</option>
+                                {managers.map(manager => (
+                                    <option key={manager.id} value={manager.id}>
+                                        {manager.fullName} ({manager.employeeCode})
+                                    </option>
+                                ))}
+                            </select>
+                            {targetSection && managers.length === 0 && (
+                                <span className="helper-text">No managers found for this section</span>
+                            )}
+                        </div>
                     </div>
 
                     <div className="form-actions">

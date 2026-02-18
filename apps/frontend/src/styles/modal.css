@@ -17,8 +17,12 @@
     background: white;
     width: 100%;
     max-width: 500px;
+    max-height: 90vh;
+    /* Prevent modal from exceeding viewport height */
     border-radius: 12px;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
 }
 
@@ -53,7 +57,16 @@
 }
 
 .modal-form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+}
+
+.modal-body {
     padding: 1.5rem;
+    overflow-y: auto;
+    flex: 1;
 }
 
 .form-group {
@@ -114,7 +127,10 @@
     display: flex;
     justify-content: flex-end;
     gap: 1rem;
-    margin-top: 1.5rem;
+    padding: 1.5rem;
+    border-top: 1px solid #f1f5f9;
+    background: #f8fafc;
+    border-radius: 0 0 12px 12px;
 }
 
 .btn-primary {

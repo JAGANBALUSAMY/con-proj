@@ -5,11 +5,15 @@ const prisma = require('../utils/prisma');
  */
 const getAdminStats = async (req, res) => {
     try {
-        const [userCount, managerCount, operatorCount, activeBatchCount] = await Promise.all([
+        const [userCount, managerCount, operatorCount, activeBatchCount, activeBatchList] = await Promise.all([
             prisma.user.count(),
             prisma.user.count({ where: { role: 'MANAGER' } }),
             prisma.user.count({ where: { role: 'OPERATOR' } }),
-            prisma.batch.count({ where: { status: 'IN_PROGRESS' } })
+            prisma.batch.count({ where: { status: 'IN_PROGRESS' } }),
+            prisma.batch.findMany({
+                where: { status: { in: ['PENDING', 'IN_PROGRESS'] } },
+                orderBy: { updatedAt: 'desc' }
+            })
         ]);
 
         return res.status(200).json({
@@ -17,7 +21,8 @@ const getAdminStats = async (req, res) => {
                 totalUsers: userCount,
                 managers: managerCount,
                 operators: operatorCount,
-                activeBatches: activeBatchCount
+                activeBatches: activeBatchCount,
+                activeBatchList
             }
         });
     } catch (error) {
@@ -79,7 +84,7 @@ const getManagerDashboard = async (req, res) => {
                     stage: { in: assignedSections }
                 },
                 include: {
-                    batch: { select: { batchNumber: true, briefTypeName: true } },
+                    batch: { select: { batchNumber: true, briefTypeName: true, updatedAt: true } },
                     operator: { select: { fullName: true } }
                 },
                 orderBy: { createdAt: 'desc' }
@@ -104,10 +109,16 @@ const getManagerDashboard = async (req, res) => {
                 const batchItems = pendingBatches.map(b => ({
                     id: b.id, // ID
                     type: 'BATCH', // Flag for frontend
-                    batch: { batchNumber: b.batchNumber, briefTypeName: b.briefTypeName },
+                    batch: {
+                        batchNumber: b.batchNumber,
+                        briefTypeName: b.briefTypeName,
+                        updatedAt: b.updatedAt
+                    },
                     operator: { fullName: 'System / Planning' }, // No operator yet
                     stage: 'CUTTING',
                     quantityIn: b.totalQuantity,
+                    quantityOut: null,
+                    startTime: null,
                     createdAt: b.createdAt
                 }));
 
@@ -180,11 +191,24 @@ const getOperatorDashboard = async (req, res) => {
         const operatorId = req.user.userId;
         const assignedSections = req.user.sections; // Usually one for Operator
 
-        // 1. Fetch batches currently in their assigned section
+        // 1. Fetch batches for this operator
+        // Logic: Show batches currently in their section OR batches with defects from their section (Sectional Rework)
         const batches = await prisma.batch.findMany({
             where: {
-                currentStage: { in: assignedSections },
+                OR: [
+                    { currentStage: { in: assignedSections } },
+                    {
+                        defectRecords: {
+                            some: {
+                                stage: { in: assignedSections }
+                            }
+                        }
+                    }
+                ],
                 status: { in: ['PENDING', 'IN_PROGRESS'] }
+            },
+            include: {
+                defectRecords: true // Need this to show rework counts on frontend
             }
         });
 
@@ -286,9 +310,63 @@ const createBatch = async (req, res) => {
     }
 };
 
+/**
+ * CANCEL BATCH (ADMIN or MANAGER)
+ * Allowed only if:
+ * 1. Status is PENDING or IN_PROGRESS
+ * 2. No PACKING approval exists
+ */
+const cancelBatch = async (req, res) => {
+    try {
+        const { batchId } = req.params;
+        const bId = parseInt(batchId);
+
+        const batch = await prisma.batch.findUnique({
+            where: { id: bId }
+        });
+
+        if (!batch) return res.status(404).json({ error: 'Batch not found' });
+
+        // Rule: Only status IN {PENDING, IN_PROGRESS}
+        if (!['PENDING', 'IN_PROGRESS'].includes(batch.status)) {
+            return res.status(400).json({ error: `Cannot cancel a batch with status: ${batch.status}` });
+        }
+
+        // Rule: No PACKING approval exists
+        const packingApproval = await prisma.productionLog.findFirst({
+            where: {
+                batchId: bId,
+                stage: 'PACKING',
+                approvalStatus: 'APPROVED'
+            }
+        });
+
+        if (packingApproval) {
+            return res.status(400).json({ error: 'Cannot cancel batch: PACKING stage has already been approved.' });
+        }
+
+        const updatedBatch = await prisma.$transaction(async (tx) => {
+            return await tx.batch.update({
+                where: { id: bId },
+                data: { status: 'CANCELLED' }
+            });
+        });
+
+        return res.status(200).json({
+            message: 'Batch cancelled successfully',
+            batch: updatedBatch
+        });
+
+    } catch (error) {
+        console.error('Cancel batch error:', error);
+        return res.status(500).json({ error: 'Failed to cancel batch' });
+    }
+};
+
 module.exports = {
     getAdminStats,
     getManagerDashboard,
     getOperatorDashboard,
-    createBatch
+    createBatch,
+    cancelBatch
 };

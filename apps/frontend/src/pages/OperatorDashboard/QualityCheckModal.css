@@ -15,10 +15,11 @@
     width: 100%;
     max-width: 760px;
     max-height: 92vh;
-    overflow-y: auto;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+    /* Prevent the modal itself from scrolling, scroll children instead */
 }
 
 /* ── Header ── */
@@ -118,10 +119,18 @@
 
 /* ── Form ── */
 .qc-form {
-    padding: 1.5rem 1.75rem;
+    padding: 0;
+    /* padding moved to sections or body */
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    flex: 1;
+    overflow: hidden;
+}
+
+.qc-body {
+    padding: 1.5rem 1.75rem;
+    overflow-y: auto;
+    flex: 1;
 }
 
 .qc-section {
@@ -303,8 +312,11 @@
     display: flex;
     justify-content: flex-end;
     gap: 0.75rem;
-    padding-top: 0.5rem;
+    padding: 1.25rem 1.75rem;
     border-top: 1px solid #e5e7eb;
+    background: #f9fafb;
+    border-radius: 0 0 16px 16px;
+    flex-shrink: 0;
 }
 
 .btn-qc-cancel {
@@ -320,6 +332,30 @@
 
 .btn-qc-cancel:hover:not(:disabled) {
     background: #f9fafb;
+}
+
+/* ── QC Complete Message ── */
+.qc-complete-msg {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background-color: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.qc-complete-msg strong {
+    display: block;
+    color: #166534;
+    font-size: 1.1rem;
+}
+
+.qc-complete-msg p {
+    color: #15803d;
+    margin: 0;
+    font-size: 0.9rem;
 }
 
 .btn-qc-submit {

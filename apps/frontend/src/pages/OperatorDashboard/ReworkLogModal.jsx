@@ -1,30 +1,47 @@
 import React, { useState, useEffect } from 'react';
-import { X, RefreshCw, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { X, RefreshCw, AlertTriangle, CheckCircle2, Clock, Wrench } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
 import './ReworkLogModal.css';
 
 const ReworkLogModal = ({ isOpen, onClose, batch, onSuccess }) => {
-    const [reworkStage, setReworkStage] = useState('STITCHING');
+    const { user } = useAuth();
+    const assignedSection = user?.sections?.[0] || 'STITCHING';
+
+    const [reworkStage, setReworkStage] = useState(assignedSection);
     const [quantity, setQuantity] = useState('');
     const [curedQuantity, setCuredQuantity] = useState('');
     const [scrappedQuantity, setScrappedQuantity] = useState('');
-    const [startTime, setStartTime] = useState('');
-    const [endTime, setEndTime] = useState('');
+    const [startTime, setStartTime] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [summary, setSummary] = useState(null);
     const [error, setError] = useState('');
 
     // Reset when modal opens
     useEffect(() => {
-        if (isOpen) {
+        if (isOpen && batch) {
             setError('');
             setQuantity('');
             setCuredQuantity('');
             setScrappedQuantity('');
-            setStartTime('');
-            setEndTime('');
-            setReworkStage('STITCHING');
+            setStartTime(null);
+            setReworkStage(assignedSection);
+            fetchSummary();
         }
-    }, [isOpen, batch]);
+    }, [isOpen, batch, assignedSection]);
+
+    const fetchSummary = async () => {
+        try {
+            const res = await api.get(`/quality/batch/${batch.id}/summary`);
+            setSummary(res.data);
+        } catch {
+            setSummary(null);
+        }
+    };
+
+    const handleStartWork = () => {
+        setStartTime(new Date().toISOString());
+    };
 
     // Auto-calculate logic (optional helper)
     // If user enters Total and Cured, auto-calc Scrapped
@@ -36,7 +53,7 @@ const ReworkLogModal = ({ isOpen, onClose, batch, onSuccess }) => {
         }
     }, [quantity, curedQuantity]);
 
-    const validate = () => {
+    const validate = (endTime) => {
         const q = parseInt(quantity);
         const c = parseInt(curedQuantity);
         const s = parseInt(scrappedQuantity);
@@ -50,8 +67,8 @@ const ReworkLogModal = ({ isOpen, onClose, batch, onSuccess }) => {
 
         if (c + s !== q) return `Cured (${c}) + Scrapped (${s}) must equal Total Reworked (${q}).`;
 
-        if (!startTime || !endTime) return 'Start time and end time are required.';
-        if (new Date(endTime) < new Date(startTime)) return 'End time must be after start time.';
+        if (!startTime) return 'Please click "Start Work" before submitting.';
+        if (new Date(endTime) < new Date(startTime)) return 'System time error: End time is before start time.';
 
         return null;
     };
@@ -60,7 +77,8 @@ const ReworkLogModal = ({ isOpen, onClose, batch, onSuccess }) => {
         e.preventDefault();
         setError('');
 
-        const validationError = validate();
+        const endTime = new Date().toISOString();
+        const validationError = validate(endTime);
         if (validationError) {
             setError(validationError);
             return;
@@ -115,85 +133,79 @@ const ReworkLogModal = ({ isOpen, onClose, batch, onSuccess }) => {
                 </div>
 
                 <form onSubmit={handleSubmit} className="rework-form">
-                    <div className="form-group">
-                        <label>Target Rework Stage</label>
-                        <select
-                            value={reworkStage}
-                            onChange={e => setReworkStage(e.target.value)}
-                        >
-                            <option value="CUTTING">Cutting</option>
-                            <option value="STITCHING">Stitching</option>
-                        </select>
-                        <small>Where was the rework performed?</small>
-                    </div>
+                    <div className="rework-body">
+                        <div className="work-timer-section" style={{ borderStyle: 'solid', borderColor: '#e2e8f0', background: '#f8fafc' }}>
+                            {!startTime ? (
+                                <button
+                                    type="button"
+                                    className="btn-start-work"
+                                    onClick={handleStartWork}
+                                >
+                                    <Clock size={20} /> Start Work
+                                </button>
+                            ) : (
+                                <div className="start-time-display">
+                                    <Clock size={16} /> Started at: {new Date(startTime).toLocaleTimeString()}
+                                </div>
+                            )}
+                        </div>
 
-                    <div className="form-row">
                         <div className="form-group">
-                            <label>Total Reworked *</label>
-                            <input
-                                type="number"
-                                value={quantity}
-                                onChange={e => setQuantity(e.target.value)}
-                                max={batch.defectiveQuantity}
-                                min="1"
-                                required
-                            />
+                            <label>Rework Section</label>
+                            <div className="static-field-value">
+                                <Wrench size={14} />
+                                <span>{assignedSection} ({summary?.batch?.defectCountByStage?.[assignedSection] || 0} defects available)</span>
+                            </div>
+                            <small>Rework is routed directly back to the origin section.</small>
                         </div>
-                    </div>
 
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label className="text-success">Cured (Fixed) *</label>
-                            <input
-                                type="number"
-                                value={curedQuantity}
-                                onChange={e => setCuredQuantity(e.target.value)}
-                                min="0"
-                                required
-                            />
+                        <div className="form-row">
+                            <div className="form-group">
+                                <label>Total Reworked *</label>
+                                <input
+                                    type="number"
+                                    value={quantity}
+                                    onChange={e => setQuantity(e.target.value)}
+                                    max={batch.defectiveQuantity}
+                                    min="1"
+                                    required
+                                />
+                            </div>
                         </div>
-                        <div className="form-group">
-                            <label className="text-danger">Scrapped (Failed) *</label>
-                            <input
-                                type="number"
-                                value={scrappedQuantity}
-                                onChange={e => setScrappedQuantity(e.target.value)}
-                                min="0"
-                                required
-                                readOnly // Auto-calc makes it safer, but let's allow manual if needed? No, auto-calc is better UX.
-                                style={{ backgroundColor: '#f3f4f6' }}
-                            />
-                        </div>
-                    </div>
 
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label>Start Time *</label>
-                            <input
-                                type="datetime-local"
-                                value={startTime}
-                                onChange={e => setStartTime(e.target.value)}
-                                required
-                            />
+                        <div className="form-row">
+                            <div className="form-group">
+                                <label className="text-success">Cured (Fixed) *</label>
+                                <input
+                                    type="number"
+                                    value={curedQuantity}
+                                    onChange={e => setCuredQuantity(e.target.value)}
+                                    min="0"
+                                    required
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label className="text-danger">Scrapped (Failed) *</label>
+                                <input
+                                    type="number"
+                                    value={scrappedQuantity}
+                                    onChange={e => setScrappedQuantity(e.target.value)}
+                                    min="0"
+                                    required
+                                    readOnly // Auto-calc makes it safer, but let's allow manual if needed? No, auto-calc is better UX.
+                                    style={{ backgroundColor: '#f3f4f6' }}
+                                />
+                            </div>
                         </div>
-                        <div className="form-group">
-                            <label>End Time *</label>
-                            <input
-                                type="datetime-local"
-                                value={endTime}
-                                onChange={e => setEndTime(e.target.value)}
-                                required
-                            />
-                        </div>
-                    </div>
 
-                    {error && <div className="rework-error">{error}</div>}
+                        {error && <div className="rework-error">{error}</div>}
+                    </div>
 
                     <div className="rework-actions">
                         <button type="button" className="btn-cancel" onClick={onClose} disabled={loading}>
                             Cancel
                         </button>
-                        <button type="submit" className="btn-submit" disabled={loading}>
+                        <button type="submit" className="btn-submit" disabled={loading || !startTime}>
                             <CheckCircle2 size={18} />
                             {loading ? 'Submitting...' : 'Submit for Approval'}
                         </button>

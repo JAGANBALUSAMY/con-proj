@@ -1,0 +1,55 @@
+{
+  "logId": 8,
+  "timestamp": "2026-02-18T16:51:15.239Z",
+  "log": {
+    "id": 8,
+    "batchId": 5,
+    "stage": "CUTTING",
+    "operatorUserId": 90,
+    "recordedByUserId": 90,
+    "machineId": null,
+    "startTime": "2026-02-18T16:47:53.384Z",
+    "endTime": "2026-02-18T16:48:01.094Z",
+    "quantityIn": 100,
+    "quantityOut": 98,
+    "approvalStatus": "PENDING",
+    "approvedByUserId": null,
+    "approvedAt": null,
+    "rejectionReason": null,
+    "createdAt": "2026-02-18T16:48:01.179Z",
+    "batch": {
+      "id": 5,
+      "batchNumber": "B-1",
+      "briefTypeName": "classic",
+      "totalQuantity": 100,
+      "usableQuantity": 100,
+      "defectiveQuantity": 0,
+      "scrappedQuantity": 0,
+      "currentStage": "CUTTING",
+      "status": "IN_PROGRESS",
+      "createdAt": "2026-02-18T16:27:21.014Z",
+      "updatedAt": "2026-02-18T16:27:30.899Z"
+    }
+  },
+  "batch": {
+    "id": 5,
+    "batchNumber": "B-1",
+    "briefTypeName": "classic",
+    "totalQuantity": 100,
+    "usableQuantity": 100,
+    "defectiveQuantity": 0,
+    "scrappedQuantity": 0,
+    "currentStage": "CUTTING",
+    "status": "IN_PROGRESS",
+    "createdAt": "2026-02-18T16:27:21.014Z",
+    "updatedAt": "2026-02-18T16:27:30.899Z"
+  },
+  "quantityCheck": {
+    "usableQuantity": 100,
+    "defectiveQuantity": 0,
+    "scrappedQuantity": 0,
+    "totalQuantity": 100,
+    "sum": 100,
+    "isConsistent": true
+  }
+}

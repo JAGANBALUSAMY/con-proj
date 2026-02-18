@@ -51,6 +51,34 @@ const approveProductionLog = async (req, res) => {
 
         // 2. Perform Transaction: Approve Log + Advance Batch Stage
         const result = await prisma.$transaction(async (tx) => {
+            // A. RACE CONDITION PROTECTION: Re-fetch batch and log inside transaction
+            const currentLog = await tx.productionLog.findUnique({
+                where: { id: log.id },
+                select: { approvalStatus: true }
+            });
+            if (!currentLog || currentLog.approvalStatus !== 'PENDING') {
+                throw new Error(`Log #${log.id} is no longer pending or has been deleted.`);
+            }
+
+            const currentBatch = await tx.batch.findUnique({
+                where: { id: log.batchId }
+            });
+            if (!currentBatch || currentBatch.status === 'COMPLETED' || currentBatch.status === 'CANCELLED') {
+                throw new Error(`Batch #${log.batchId} is ${currentBatch?.status || 'not found'} and cannot be modified.`);
+            }
+
+            // B. Single-Approval Enforcement: Max 1 APPROVED log per batch per stage
+            const existingApproved = await tx.productionLog.findFirst({
+                where: {
+                    batchId: log.batchId,
+                    stage: log.stage,
+                    approvalStatus: 'APPROVED'
+                }
+            });
+            if (existingApproved) {
+                throw new Error(`Stage ${log.stage} for batch #${log.batchId} is already approved.`);
+            }
+
             // Update Log
             const updatedLog = await tx.productionLog.update({
                 where: { id: log.id },
@@ -62,31 +90,25 @@ const approveProductionLog = async (req, res) => {
             });
 
             // Advance Batch Stage if it's not the final stage
-            const stages = ['CUTTING', 'STITCHING', 'QUALITY_CHECK', 'REWORK', 'LABELING', 'FOLDING', 'PACKING'];
-            const currentIndex = stages.indexOf(log.batch.currentStage);
+            const stages = ['CUTTING', 'STITCHING', 'QUALITY_CHECK', 'LABELING', 'FOLDING', 'PACKING'];
+            const currentIndex = stages.indexOf(currentBatch.currentStage);
 
-            if (log.batch.currentStage === 'PACKING') {
+            if (currentBatch.currentStage === 'PACKING') {
                 // Final stage (PACKING) completion
-                // Check if Box already exists (Double-check)
                 const existingBox = await tx.box.findUnique({ where: { batchId: log.batchId } });
                 if (existingBox) {
-                    // Since we are in a transaction, throwing error aborts it
                     throw new Error('A Box for this batch already exists.');
                 }
 
-                // Create Box
-                // Box Code format: BOX-{BatchNumber}
                 await tx.box.create({
                     data: {
-                        boxCode: `BOX-${log.batch.batchNumber}`,
+                        boxCode: `BOX-${currentBatch.batchNumber}`,
                         batchId: log.batchId,
                         quantity: log.quantityOut,
                         status: 'PACKED'
                     }
                 });
 
-                // Complete Batch
-                // NOTE: We do NOT change currentStage. It remains PACKING. Status becomes COMPLETED.
                 await tx.batch.update({
                     where: { id: log.batchId },
                     data: { status: 'COMPLETED' }
@@ -96,22 +118,27 @@ const approveProductionLog = async (req, res) => {
                 const nextStage = stages[currentIndex + 1];
                 const updateData = { currentStage: nextStage };
 
-                // SPECIAL HANDLING: CUTTING
-                // Cutting stage establishes the actual usable quantity of the batch
-                if (log.batch.currentStage === 'CUTTING') {
+                // CUTTING stage establishes the actual usable quantity
+                // Constraint 20: Any material loss at cutting must be accounted as scrap to preserve sum(usable, def, scrap) == total
+                if (currentBatch.currentStage === 'CUTTING') {
                     updateData.usableQuantity = log.quantityOut;
+                    const loss = currentBatch.totalQuantity - log.quantityOut;
+                    if (loss > 0) {
+                        updateData.scrappedQuantity = { increment: loss };
+                    }
                     updateData.status = 'IN_PROGRESS';
                 }
-
-                // For other stages, if quantityOut < quantityIn (e.g. minor loss), 
-                // we should arguably update usableQuantity, but for now we rely on explicit Defect/Rework flows.
-                // However, to be robust, if quantityOut is defined and different, we sync it?
-                // Let's stick to CUTTING initialization for now to fix the 0-quantity bug.
 
                 await tx.batch.update({
                     where: { id: log.batchId },
                     data: updateData
                 });
+            }
+
+            // C. Quantity Equation Assertion: usable + defective + scrapped === total
+            const finalBatch = await tx.batch.findUnique({ where: { id: log.batchId } });
+            if (finalBatch.usableQuantity + finalBatch.defectiveQuantity + finalBatch.scrappedQuantity !== finalBatch.totalQuantity) {
+                throw new Error(`Quantity Inconsistency: total(${finalBatch.totalQuantity}) != usable(${finalBatch.usableQuantity}) + def(${finalBatch.defectiveQuantity}) + scrap(${finalBatch.scrappedQuantity})`);
             }
 
             return updatedLog;
@@ -148,10 +175,10 @@ const approveRework = async (req, res) => {
         if (!rework) return res.status(404).json({ error: 'Rework record not found' });
 
         // Authorization: Constraint 23 (Section-based authority)
-        // Manager must be assigned to the section where rework happened (reworkStage)
+        // Rework approval authority belongs to the manager of the section where defects originated.
         if (!req.user.sections.includes(rework.reworkStage)) {
             return res.status(403).json({
-                error: `Unauthorized: You are not assigned to the ${rework.reworkStage} section`
+                error: `Unauthorized: You are not assigned to the ${rework.reworkStage} section. This rework must be approved by the origin section manager.`
             });
         }
 
@@ -161,6 +188,21 @@ const approveRework = async (req, res) => {
 
         // Transaction: Approve + Mutate Batch Quantities
         const result = await prisma.$transaction(async (tx) => {
+            // RACE CONDITION PROTECTION
+            const currentRework = await tx.reworkRecord.findUnique({
+                where: { id: rework.id }
+            });
+            if (!currentRework || currentRework.approvalStatus !== 'PENDING') {
+                throw new Error('Rework record is no longer pending.');
+            }
+
+            const currentBatch = await tx.batch.findUnique({
+                where: { id: rework.batchId }
+            });
+            if (!currentBatch || currentBatch.status === 'COMPLETED' || currentBatch.status === 'CANCELLED') {
+                throw new Error('Cannot modify a completed or cancelled batch.');
+            }
+
             // 1. Update ReworkRecord
             const updatedRework = await tx.reworkRecord.update({
                 where: { id: rework.id },
@@ -171,19 +213,20 @@ const approveRework = async (req, res) => {
                 }
             });
 
-            // 2. Update Batch Quantities (Critial Logic)
-            // defectiveQuantity -= quantity (removed from defective pool)
-            // usableQuantity += curedQuantity (returned to main flow)
-            // scrappedQuantity += scrappedQuantity (permanently lost)
+            // 2. Update Batch Quantities
             const updatedBatch = await tx.batch.update({
                 where: { id: rework.batchId },
                 data: {
                     defectiveQuantity: { decrement: rework.quantity },
                     usableQuantity: { increment: rework.curedQuantity },
                     scrappedQuantity: { increment: rework.scrappedQuantity },
-                    status: rework.batch.status === 'PENDING' ? 'IN_PROGRESS' : undefined
                 }
             });
+
+            // 3. Final Invariant Assertion
+            if (updatedBatch.usableQuantity + updatedBatch.defectiveQuantity + updatedBatch.scrappedQuantity !== updatedBatch.totalQuantity) {
+                throw new Error(`Quantity Inconsistency: total(${updatedBatch.totalQuantity}) != usable(${updatedBatch.usableQuantity}) + def(${updatedBatch.defectiveQuantity}) + scrap(${updatedBatch.scrappedQuantity})`);
+            }
 
             return { rework: updatedRework, batch: updatedBatch };
         });
@@ -227,14 +270,21 @@ const rejectRework = async (req, res) => {
             return res.status(400).json({ error: `Rework is already ${rework.approvalStatus}` });
         }
 
-        const updatedRework = await prisma.reworkRecord.update({
-            where: { id: rework.id },
-            data: {
-                approvalStatus: 'REJECTED',
-                approvedByUserId: managerId,
-                approvedAt: new Date(),
-                rejectionReason: reason || 'Rework rejected by manager'
+        const updatedRework = await prisma.$transaction(async (tx) => {
+            const currentRework = await tx.reworkRecord.findUnique({ where: { id: rework.id } });
+            if (!currentRework || currentRework.approvalStatus !== 'PENDING') {
+                throw new Error('Rework is no longer pending.');
             }
+
+            return await tx.reworkRecord.update({
+                where: { id: rework.id },
+                data: {
+                    approvalStatus: 'REJECTED',
+                    approvedByUserId: managerId,
+                    approvedAt: new Date(),
+                    rejectionReason: reason || 'Rework rejected by manager'
+                }
+            });
         });
 
         const responseData = { message: 'Rework rejected', rework: updatedRework };
@@ -268,14 +318,22 @@ const rejectProductionLog = async (req, res) => {
             return res.status(403).json({ error: 'Unauthorized' });
         }
 
-        const updatedLog = await prisma.productionLog.update({
-            where: { id: log.id },
-            data: {
-                approvalStatus: 'REJECTED',
-                approvedByUserId: managerId,
-                approvedAt: new Date(),
-                rejectionReason: reason || 'Work rejected by manager'
+        // Reject flow must also check status and apply terminal state
+        const updatedLog = await prisma.$transaction(async (tx) => {
+            const currentLog = await tx.productionLog.findUnique({ where: { id: log.id } });
+            if (!currentLog || currentLog.approvalStatus !== 'PENDING') {
+                throw new Error('Log is no longer pending.');
             }
+
+            return await tx.productionLog.update({
+                where: { id: log.id },
+                data: {
+                    approvalStatus: 'REJECTED',
+                    approvedByUserId: managerId,
+                    approvedAt: new Date(),
+                    rejectionReason: reason || 'Work rejected by manager'
+                }
+            });
         });
 
         const responseData = { message: 'Log rejected', log: updatedLog };
@@ -321,15 +379,15 @@ const startBatch = async (req, res) => {
             return res.status(400).json({ error: 'Batch start can only happen at CUTTING stage' });
         }
 
-        // Update Batch
-        const updatedBatch = await prisma.batch.update({
-            where: { id: batch.id },
-            data: {
-                status: 'IN_PROGRESS',
-                usableQuantity: batch.totalQuantity, // Material Issued
-                // We don't verifyByUserID on batch table currently, but logs track actions.
-                // Could add specific 'startedBy' if schema allowed, but status change is enough.
-            }
+        // Update Batch inside transaction
+        const updatedBatch = await prisma.$transaction(async (tx) => {
+            return await tx.batch.update({
+                where: { id: batch.id },
+                data: {
+                    status: 'IN_PROGRESS',
+                    usableQuantity: batch.totalQuantity,
+                }
+            });
         });
 
         const responseData = { message: 'Batch Started', batch: updatedBatch };

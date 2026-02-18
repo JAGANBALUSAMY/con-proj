@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
 import Layout from '../../components/Layout/Layout';
 import api from '../../utils/api';
-import { Users, ClipboardCheck, Factory, CheckCircle2, AlertCircle, XCircle, UserPlus, Package, Eye, ArrowRightLeft, Clock, RefreshCcw } from 'lucide-react';
+import { Users, ClipboardCheck, Factory, CheckCircle2, AlertCircle, XCircle, UserPlus, Package, Eye, ArrowRightLeft, Clock, RefreshCcw, BarChart3 } from 'lucide-react';
 import CreateOperatorModal from './CreateOperatorModal';
 import CreateBatchModal from './CreateBatchModal';
 import MyOperatorsView from '../../components/MyOperatorsView/MyOperatorsView';
@@ -29,6 +30,7 @@ const ManagerDashboard = () => {
     const [sentTransfers, setSentTransfers] = useState([]);
     const [historyTransfers, setHistoryTransfers] = useState([]);
     const [activeTab, setActiveTab] = useState('OVERVIEW'); // OVERVIEW, SHIPMENTS
+    const navigate = useNavigate();
 
     const fetchDashboard = async () => {
         try {
@@ -181,7 +183,7 @@ const ManagerDashboard = () => {
                             className={`tab-btn ${activeTab === 'SHIPMENTS' ? 'active' : ''}`}
                             onClick={() => setActiveTab('SHIPMENTS')}
                         >
-                            <Package size={18} /> Shipments
+                            <Package size={18} /> Completed
                         </button>
                     </div>
                 </div>
@@ -218,6 +220,11 @@ const ManagerDashboard = () => {
                                 icon={Clock}
                                 label={`Transfers ${pendingTransfers.length > 0 ? `(${pendingTransfers.length})` : ''}`}
                                 onClick={fetchPendingTransfers}
+                            />
+                            <ActionCard
+                                icon={BarChart3}
+                                label="Analytics"
+                                onClick={() => navigate('/analytics')}
                             />
                         </div>
 
@@ -270,7 +277,9 @@ const ManagerDashboard = () => {
                                             <th>Batch</th>
                                             <th>Operator</th>
                                             <th>Stage</th>
-                                            <th>Qty In</th>
+                                            <th>Qty (In/Out)</th>
+                                            <th>Arrived</th>
+                                            <th>Started</th>
                                             <th>Submitted</th>
                                             <th>Actions</th>
                                         </tr>
@@ -281,8 +290,15 @@ const ManagerDashboard = () => {
                                                 <td><strong>{log.batch.batchNumber}</strong></td>
                                                 <td>{log.operator.fullName}</td>
                                                 <td><span className="badge-stage">{log.stage}</span></td>
-                                                <td>{log.quantityIn}</td>
-                                                <td>{new Date(log.createdAt).toLocaleTimeString()}</td>
+                                                <td>
+                                                    <span title="Qty In">{log.quantityIn}</span>
+                                                    {log.quantityOut !== null && (
+                                                        <> / <span className="qty-out" title="Qty Out">{log.quantityOut}</span></>
+                                                    )}
+                                                </td>
+                                                <td className="time-col">{log.batch.updatedAt ? new Date(log.batch.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}</td>
+                                                <td className="time-col">{log.startTime ? new Date(log.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}</td>
+                                                <td className="time-col">{new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
                                                 <td className="actions">
                                                     {log.type === 'BATCH' ? (
                                                         <button className="btn-approve" onClick={() => handleBatchStart(log.id)}>

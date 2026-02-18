@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import Layout from '../../components/Layout/Layout';
 import StatCard from '../../components/StatCard/StatCard';
@@ -8,7 +9,7 @@ import EmptyState from '../../components/EmptyState/EmptyState';
 import UserListView from '../../components/UserListView/UserListView';
 import api from '../../utils/api';
 import { useSocket } from '../../context/SocketContext';
-import { ShieldCheck, Users, Settings, Activity, UserPlus, Package, Eye, RefreshCcw } from 'lucide-react';
+import { ShieldCheck, Users, Settings, Activity, UserPlus, Package, Eye, RefreshCcw, BarChart3 } from 'lucide-react';
 import './AdminDashboard.css';
 
 import CreateManagerModal from './CreateManagerModal';
@@ -23,6 +24,7 @@ const AdminDashboard = () => {
     const [isHealthVisible, setIsHealthVisible] = useState(false);
     const [isUserListVisible, setIsUserListVisible] = useState(false);
     const [users, setUsers] = useState([]);
+    const navigate = useNavigate();
 
     const fetchStats = async () => {
         try {
@@ -127,6 +129,11 @@ const AdminDashboard = () => {
                                 label="System Health Logs"
                                 onClick={() => setIsHealthVisible(!isHealthVisible)}
                             />
+                            <ActionCard
+                                icon={BarChart3}
+                                label="Analytics"
+                                onClick={() => navigate('/analytics')}
+                            />
                         </div>
                     </section>
 
@@ -154,10 +161,41 @@ const AdminDashboard = () => {
                                 <button className="btn-close-health" onClick={() => setIsHealthVisible(false)}>Minimize Logs</button>
                             </div>
                         ) : (
-                            <EmptyState
-                                icon={Activity}
-                                message="System Throughput Chart Placeholder"
-                            />
+                            <div className="batch-table-container">
+                                {stats?.activeBatchList && stats.activeBatchList.length > 0 ? (
+                                    <table className="batch-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Batch #</th>
+                                                <th>Type</th>
+                                                <th>Stage</th>
+                                                <th>Qty</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {stats.activeBatchList.map(batch => (
+                                                <tr key={batch.id}>
+                                                    <td><strong>{batch.batchNumber}</strong></td>
+                                                    <td>{batch.briefTypeName}</td>
+                                                    <td><span className="stage-badge">{batch.currentStage}</span></td>
+                                                    <td>{batch.totalQuantity}</td>
+                                                    <td>
+                                                        <span className={`status-tag ${batch.status.toLowerCase()}`}>
+                                                            {batch.status}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                ) : (
+                                    <EmptyState
+                                        icon={Package}
+                                        message="No active batches to display"
+                                    />
+                                )}
+                            </div>
                         )}
                     </section>
                 </div>

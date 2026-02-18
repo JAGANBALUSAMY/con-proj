@@ -1,14 +1,15 @@
 const express = require('express');
-const { protect, restrictTo } = require('../middleware/authMiddleware');
-const { recordDefect, getQualitySummary } = require('../controllers/qualityController');
-
 const router = express.Router();
+const { protect, restrictTo } = require('../middleware/authMiddleware');
+const { recordDefect, getBatchQualitySummary } = require('../controllers/qualityController');
 
 // All routes require authentication
-// POST: Operator records quality check defects
-router.post('/record-defect', protect, restrictTo('OPERATOR'), recordDefect);
+router.use(protect);
 
-// GET: Operator views quality summary for a batch
-router.get('/batch/:batchId/summary', protect, restrictTo('OPERATOR'), getQualitySummary);
+// Operators record defects
+router.post('/record-defect', restrictTo('OPERATOR'), recordDefect);
+
+// Get summary (for UI limits) - Accessible by Operators and Managers
+router.get('/batch/:batchId/summary', getBatchQualitySummary);
 
 module.exports = router;

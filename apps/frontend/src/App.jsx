@@ -7,6 +7,7 @@ import DashboardRedirect from './components/DashboardRedirect/DashboardRedirect'
 import Login from './pages/Login/Login';
 import AdminDashboard from './pages/AdminDashboard/AdminDashboard';
 import ManagerDashboard from './pages/ManagerDashboard/ManagerDashboard';
+import AnalyticsDashboard from './pages/ManagerDashboard/AnalyticsDashboard';
 import OperatorDashboard from './pages/OperatorDashboard/OperatorDashboard';
 
 function App() {
@@ -25,6 +26,15 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['ADMIN']}>
                   <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/analytics"
+              element={
+                <ProtectedRoute allowedRoles={['MANAGER', 'ADMIN']}>
+                  <AnalyticsDashboard />
                 </ProtectedRoute>
               }
             />

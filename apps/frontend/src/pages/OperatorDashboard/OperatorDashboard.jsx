@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
 import Layout from '../../components/Layout/Layout';
 import api from '../../utils/api';
-import { Play, Clock, Package, AlertTriangle, RefreshCcw, ShieldAlert } from 'lucide-react';
+import { Play, Clock, Package, AlertTriangle, RefreshCcw, ShieldAlert, RotateCcw } from 'lucide-react';
 import LabelingModal from './LabelingModal';
 import FoldingModal from './FoldingModal';
 import PackingModal from './PackingModal';
@@ -68,6 +68,11 @@ const OperatorDashboard = () => {
 
     const assignedSection = user?.sections?.[0] || 'UNASSIGNED';
 
+    const handleReworkClick = (batch) => {
+        setActiveBatchForModal(batch);
+        setIsReworkModalOpen(true);
+    };
+
     const openWorkModal = (batch) => {
         if (assignedSection === 'QUALITY_CHECK') {
             setActiveBatchForModal(batch);
@@ -120,17 +125,31 @@ const OperatorDashboard = () => {
                                             {batch.status}
                                         </span>
                                     </div>
-                                    <button
-                                        className="btn-start"
-                                        onClick={() => openWorkModal(batch)}
-                                    >
-                                        <Play size={16} />
-                                        {assignedSection === 'QUALITY_CHECK' ? 'Quality Check' :
-                                            assignedSection === 'REWORK' ? 'Log Rework' :
-                                                assignedSection === 'LABELING' ? 'Start Labeling' :
-                                                    assignedSection === 'FOLDING' ? 'Start Folding' :
-                                                        assignedSection === 'PACKING' ? 'Start Packing' : 'Log Work'}
-                                    </button>
+                                    <div className="batch-actions">
+                                        {/* Normal Work Button */}
+                                        {batch.currentStage === assignedSection && (
+                                            <button
+                                                className="btn-start"
+                                                onClick={() => openWorkModal(batch)}
+                                            >
+                                                <Play size={16} />
+                                                {assignedSection === 'QUALITY_CHECK' ? 'Quality Check' :
+                                                    assignedSection === 'LABELING' ? 'Start Labeling' :
+                                                        assignedSection === 'FOLDING' ? 'Start Folding' :
+                                                            assignedSection === 'PACKING' ? 'Start Packing' : 'Log Work'}
+                                            </button>
+                                        )}
+
+                                        {/* Rework Button (Side-Flow) */}
+                                        {batch.defectRecords?.some(d => d.stage === assignedSection) && (
+                                            <button
+                                                className="btn-rework"
+                                                onClick={() => handleReworkClick(batch)}
+                                            >
+                                                <RotateCcw size={16} /> Log Rework ({assignedSection})
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             ))}
                             {dashboardData?.batches?.length === 0 && (

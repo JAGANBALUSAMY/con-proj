@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 
 const { createBatch } = require('../src/controllers/dashboardController');
 const { createProductionLog } = require('../src/controllers/productionController');
-const { approveProductionLog } = require('../src/controllers/approvalController');
+const { approveProductionLog, startBatch } = require('../src/controllers/approvalController');
 const { updateBoxStatus } = require('../src/controllers/boxController');
 
 // Mock Req/Res
@@ -90,9 +90,26 @@ async function runTest() {
         console.log(`✅ Batch Created: ${resBatch.data.batch.batchNumber} (Qty: ${resBatch.data.batch.totalQuantity})`);
 
         // Check initial state
-        const b0 = await prisma.batch.findUnique({ where: { id: batchId } });
-        console.log(`   Initial State: Stage=${b0.currentStage}, Status=${b0.status}, Usable=${b0.usableQuantity}`);
-        if (b0.usableQuantity !== 0) throw new Error('Initial usableQuantity should be 0');
+        let b = await prisma.batch.findUnique({ where: { id: batchId } });
+        console.log(`   Initial State: Stage=${b.currentStage}, Status=${b.status}, Usable=${b.usableQuantity}`);
+        if (b.usableQuantity !== 0) throw new Error('Initial usableQuantity should be 0');
+
+        // 2.5 Start Batch (As CUTTING Manager)
+        console.log('\n--- Step 1.5: Start Batch (Cutting Manager) ---');
+        const reqStart = {
+            user: { userId: managers['CUTTING'].id, role: 'MANAGER', sections: ['CUTTING'] },
+            params: { batchId: batchId.toString() }
+        };
+        const resStart = mockRes();
+        await startBatch(reqStart, resStart);
+
+        if (resStart.statusCode !== 200) throw new Error(`Batch start failed: ${JSON.stringify(resStart.data)}`);
+        console.log(`✅ Batch Started.`);
+
+        b = await prisma.batch.findUnique({ where: { id: batchId } });
+        console.log(`   Started State: Stage=${b.currentStage}, Status=${b.status}, Usable=${b.usableQuantity}`);
+        if (b.status !== 'IN_PROGRESS') throw new Error('Batch should be IN_PROGRESS');
+        if (b.usableQuantity !== 100) throw new Error('Batch usableQuantity should be 100');
 
 
         // 3. Loop through stages

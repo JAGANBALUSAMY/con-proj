@@ -55,44 +55,46 @@ const CreateBatchModal = ({ isOpen, onClose, onSuccess }) => {
                 </div>
 
                 <form onSubmit={handleSubmit} className="modal-form">
-                    {error && <div className="error-banner">{error}</div>}
+                    <div className="modal-body">
+                        {error && <div className="error-banner">{error}</div>}
 
-                    <div className="info-box">
-                        <p><strong>Note:</strong> Batch will start at CUTTING stage with PENDING status.</p>
-                    </div>
+                        <div className="info-box">
+                            <p><strong>Note:</strong> Batch will start at CUTTING stage with PENDING status.</p>
+                        </div>
 
-                    <div className="form-group">
-                        <label>Batch Number *</label>
-                        <input
-                            type="text"
-                            placeholder="e.g., BATCH-001"
-                            value={formData.batchNumber}
-                            onChange={(e) => setFormData({ ...formData, batchNumber: e.target.value })}
-                            required
-                        />
-                    </div>
+                        <div className="form-group">
+                            <label>Batch Number *</label>
+                            <input
+                                type="text"
+                                placeholder="e.g., BATCH-001"
+                                value={formData.batchNumber}
+                                onChange={(e) => setFormData({ ...formData, batchNumber: e.target.value })}
+                                required
+                            />
+                        </div>
 
-                    <div className="form-group">
-                        <label>Brief Type Name *</label>
-                        <input
-                            type="text"
-                            placeholder="e.g., Classic Brief"
-                            value={formData.briefTypeName}
-                            onChange={(e) => setFormData({ ...formData, briefTypeName: e.target.value })}
-                            required
-                        />
-                    </div>
+                        <div className="form-group">
+                            <label>Brief Type Name *</label>
+                            <input
+                                type="text"
+                                placeholder="e.g., Classic Brief"
+                                value={formData.briefTypeName}
+                                onChange={(e) => setFormData({ ...formData, briefTypeName: e.target.value })}
+                                required
+                            />
+                        </div>
 
-                    <div className="form-group">
-                        <label>Total Quantity *</label>
-                        <input
-                            type="number"
-                            placeholder="e.g., 1000"
-                            min="1"
-                            value={formData.totalQuantity}
-                            onChange={(e) => setFormData({ ...formData, totalQuantity: e.target.value })}
-                            required
-                        />
+                        <div className="form-group">
+                            <label>Total Quantity *</label>
+                            <input
+                                type="number"
+                                placeholder="e.g., 1000"
+                                min="1"
+                                value={formData.totalQuantity}
+                                onChange={(e) => setFormData({ ...formData, totalQuantity: e.target.value })}
+                                required
+                            />
+                        </div>
                     </div>
 
                     <div className="modal-actions">

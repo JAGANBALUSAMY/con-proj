@@ -1,6 +1,7 @@
+const prisma = require('../utils/prisma');
 const { verifyToken } = require('../utils/jwt');
 
-const protect = (req, res, next) => {
+const protect = async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -10,10 +11,22 @@ const protect = (req, res, next) => {
         const token = authHeader.split(' ')[1];
         const decoded = verifyToken(token);
 
+        // Active Account Enforcement: JWT alone is NOT sufficient
+        // We must check the database for the current status
+        const user = await prisma.user.findUnique({
+            where: { id: decoded.userId },
+            select: { status: true }
+        });
+
+        if (!user || user.status !== 'ACTIVE') {
+            return res.status(403).json({ error: 'Account is inactive or disabled. Please contact your manager.' });
+        }
+
         // Attach user info to request
         req.user = decoded;
         next();
     } catch (error) {
+        console.error('Auth check error:', error);
         return res.status(401).json({ error: 'Not authorized, token failed' });
     }
 };

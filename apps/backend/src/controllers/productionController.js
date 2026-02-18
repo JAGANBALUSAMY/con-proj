@@ -55,6 +55,20 @@ const createProductionLog = async (req, res) => {
             });
         }
 
+        // 3b. Pending Transfer Guard
+        const pendingTransfer = await prisma.sectionTransferRequest.findFirst({
+            where: {
+                operatorId: operatorId,
+                status: 'PENDING'
+            }
+        });
+
+        if (pendingTransfer && batch.currentStage === pendingTransfer.toSection) {
+            return res.status(403).json({
+                error: `Access Denied: You have a pending transfer request to ${pendingTransfer.toSection}. You cannot log work there until it is ACCEPTED by the target manager.`
+            });
+        }
+
         // 4. Validate time range
         const start = new Date(startTime);
         const end = new Date(endTime);
@@ -63,10 +77,35 @@ const createProductionLog = async (req, res) => {
             return res.status(400).json({ error: 'End time must be greater than or equal to start time' });
         }
 
-        // 5. Validate machine (if provided)
+        // 4b. Completed Batch Lock
+        if (batch.status === 'COMPLETED') {
+            return res.status(400).json({ error: 'Cannot log work for a COMPLETED batch.' });
+        }
+
+        if (batch.status === 'CANCELLED') {
+            return res.status(400).json({ error: 'Cannot log work for a CANCELLED batch.' });
+        }
+
+        // 4c. Single Approved Log Lock
+        const existingApprovedLog = await prisma.productionLog.findFirst({
+            where: {
+                batchId: parseInt(batchId),
+                stage: batch.currentStage,
+                approvalStatus: 'APPROVED'
+            }
+        });
+
+        if (existingApprovedLog) {
+            return res.status(400).json({
+                error: `This stage (${batch.currentStage}) has already been approved. No further logs allowed.`
+            });
+        }
+
+        // 5. Machine Safety & Overlap
         if (machineId) {
+            const mId = parseInt(machineId);
             const machine = await prisma.machine.findUnique({
-                where: { id: parseInt(machineId) }
+                where: { id: mId }
             });
 
             if (!machine) {
@@ -74,65 +113,113 @@ const createProductionLog = async (req, res) => {
             }
 
             if (machine.status !== 'OPERATIONAL') {
-                return res.status(400).json({ error: 'Machine is not operational' });
+                return res.status(400).json({ error: `Machine ${machine.machineCode} is ${machine.status} and cannot be used.` });
+            }
+
+            // Machine Contention Overlap
+            const machineOverlap = await prisma.productionLog.findFirst({
+                where: {
+                    machineId: mId,
+                    AND: [
+                        { startTime: { lt: end } },
+                        { endTime: { gt: start } }
+                    ]
+                }
+            });
+
+            if (machineOverlap) {
+                return res.status(400).json({
+                    error: `Machine contention: Machine is already in use during this time period by log #${machineOverlap.id}`
+                });
             }
         }
 
-        // 6. Stage-Specific Validation
-        if (batch.currentStage === 'LABELING') {
+        // 5b. Operator Overlap Check
+        const operatorOverlap = await prisma.productionLog.findFirst({
+            where: {
+                operatorUserId: operatorId,
+                AND: [
+                    { startTime: { lt: end } },
+                    { endTime: { gt: start } }
+                ]
+            }
+        });
+
+        if (operatorOverlap) {
+            return res.status(400).json({
+                error: `Operator overlap: You already have a production log (#${operatorOverlap.id}) during this time period.`
+            });
+        }
+
+        // Operator Overlap Check (ReworkRecords)
+        const reworkOverlap = await prisma.reworkRecord.findFirst({
+            where: {
+                operatorUserId: operatorId,
+                AND: [
+                    { startTime: { lt: end } },
+                    { endTime: { gt: start } }
+                ]
+            }
+        });
+
+        if (reworkOverlap) {
+            return res.status(400).json({
+                error: `Operator overlap: You have a rework log (#${reworkOverlap.id}) during this time period.`
+            });
+        }
+
+        // 6. Generic Quantity Validation (All Stages)
+        const qIn = parseInt(quantityIn);
+        const qOut = parseInt(quantityOut);
+
+        if (qIn <= 0) {
+            return res.status(400).json({ error: 'Invalid Quantity: Input must be greater than 0.' });
+        }
+
+        if (quantityOut && qOut > qIn) {
+            return res.status(400).json({
+                error: `Invalid Quantity: Output (${qOut}) cannot exceed Input (${qIn}).`
+            });
+        }
+
+        // For non-cutting stages, Input cannot exceed Batch Usable Quantity
+        if (batch.currentStage !== 'CUTTING' && qIn > batch.usableQuantity) {
+            return res.status(400).json({
+                error: `Invalid Quantity: Input (${qIn}) cannot exceed Batch Usable Quantity (${batch.usableQuantity}).`
+            });
+        }
+
+        // Cutting stage specific: Out <= totalQuantity
+        if (batch.currentStage === 'CUTTING' && qOut > batch.totalQuantity) {
+            return res.status(400).json({
+                error: `Invalid Quantity: CUTTING stage output (${qOut}) cannot exceed Total Quantity (${batch.totalQuantity}).`
+            });
+        }
+
+        // 7. Stage-Specific Validation
+        if (['LABELING', 'FOLDING', 'PACKING'].includes(batch.currentStage)) {
             const requiredQuantity = batch.usableQuantity;
 
             // Enforce quantityIn matches usableQuantity
-            if (parseInt(quantityIn) !== requiredQuantity) {
+            if (qIn !== requiredQuantity) {
                 return res.status(400).json({
-                    error: `Labeling must process exact usable quantity: ${requiredQuantity}`,
+                    error: `${batch.currentStage} must process exact usable quantity: ${requiredQuantity}`,
                     required: requiredQuantity,
-                    received: quantityIn
+                    received: qIn
                 });
             }
 
-            // Enforce quantityOut equals quantityIn (No change allowed)
-            // If quantityOut is provided, it must match. If not, auto-set it.
-            if (quantityOut && parseInt(quantityOut) !== parseInt(quantityIn)) {
+            // Enforce quantityOut equals usableQuantity (STRICT)
+            if (qOut !== requiredQuantity) {
                 return res.status(400).json({
-                    error: 'Quantity cannot change during Labeling stage.',
-                    quantityIn,
-                    quantityOut
+                    error: `${batch.currentStage} stage MUST output exact usable quantity (${requiredQuantity}). No variation allowed.`,
+                    received: qOut
                 });
             }
         }
 
-        if (batch.currentStage === 'FOLDING') {
-            // Constraint: Quantity MUST match usable quantity exactly
-            if (parseInt(quantityIn) !== batch.usableQuantity) {
-                return res.status(400).json({
-                    error: `Invalid Quantity: FOLDING stage requires processing the exact usable quantity (${batch.usableQuantity}).`
-                });
-            }
-            // Constraint: Quantity OUT must match Quantity IN (No changes allowed)
-            if (parseInt(quantityOut) !== parseInt(quantityIn)) {
-                return res.status(400).json({
-                    error: 'Invalid Quantity: Quantity Out must match Quantity In for FOLDING stage.'
-                });
-            }
-        }
 
-        if (batch.currentStage === 'PACKING') {
-            // Constraint: Quantity MUST match usable quantity exactly
-            if (parseInt(quantityIn) !== batch.usableQuantity) {
-                return res.status(400).json({
-                    error: `Invalid Quantity: PACKING stage requires packing the exact usable quantity (${batch.usableQuantity}).`
-                });
-            }
-            // Constraint: Quantity OUT must match Quantity IN (No reduction allowed)
-            if (parseInt(quantityOut) !== parseInt(quantityIn)) {
-                return res.status(400).json({
-                    error: 'Invalid Quantity: No quantity reduction allowed during PACKING. Box must contain full batch quantity.'
-                });
-            }
-        }
-
-        // 7. Create ProductionLog with PENDING approval status
+        // 8. Create ProductionLog with PENDING approval status
         const productionLog = await prisma.productionLog.create({
             data: {
                 batch: { connect: { id: parseInt(batchId) } },

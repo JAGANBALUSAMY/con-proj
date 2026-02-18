@@ -553,12 +553,34 @@ Complete development timeline from Day 1 to Day 19.
 
 ---
 
+## 📅 Task 25: Direct Section Rework Alignment (February 19, 2026)
+
+**Objective:** Eliminate the redundant "REWORK" section and implement direct sectional rework routing (Cutting/Stitching handles its own fixes).
+
+**Backend Files:**
+- `src/controllers/reworkController.js` - Removed REWORK section dependency; authorized sectional operators.
+- `src/controllers/approvalController.js` - Authorized sectional managers for rework approval.
+- `src/controllers/dashboardController.js` - Sectional rework visibility filter.
+
+**Frontend Files:**
+- `src/pages/OperatorDashboard/OperatorDashboard.jsx` - Dynamic "Log Rework" buttons in station lists.
+- `src/pages/OperatorDashboard/ReworkLogModal.jsx` - Static section routing; removed select dropdown.
+
+**Rules Enforced:**
+- **No Mediator**: The specialized "REWORK" department is eliminated.
+- **Sectional Authority**: Rework is approved by the manager of the section that caused the defect.
+- **Database integrity**: Purged and reseeded database to remove "REWORK" entity.
+
+**Status:** ✅ Completed
+
+---
+
 ## Summary
 
-**Total Tasks:** 24
-**Total Files Created/Modified:** 135+
-**Backend Controllers:** 8
-**Frontend Components:** 28+
+**Total Tasks:** 25
+**Total Files Created/Modified:** 145+
+**Backend Controllers:** 9
+**Frontend Components:** 31+
 **Dashboard Pages:** 3 (Admin, Manager, Operator)
 
 **All work is fully implemented, tested, and compliant with CONSTRAINTS.md.**
