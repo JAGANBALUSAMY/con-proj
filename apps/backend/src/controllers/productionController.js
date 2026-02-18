@@ -1,4 +1,5 @@
 const prisma = require('../utils/prisma');
+const socketUtil = require('../utils/socket');
 
 /**
  * Create Production Log (Operator only)
@@ -98,13 +99,16 @@ const createProductionLog = async (req, res) => {
             }
         });
 
-        // CRITICAL: Batch.currentStage MUST NOT change
         // Stage advancement happens ONLY when Manager approves the log
-
-        return res.status(201).json({
+        const responseData = {
             message: 'Production log created successfully. Awaiting manager approval.',
             log: productionLog
-        });
+        };
+
+        // Real-time update for Manager
+        socketUtil.emitEvent('approval:updated', responseData.log);
+
+        return res.status(201).json(responseData);
 
     } catch (error) {
         console.error('Create production log error:', error);

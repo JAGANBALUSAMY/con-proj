@@ -3,6 +3,7 @@ const { protect, restrictTo } = require('../middleware/authMiddleware');
 const {
     requestSectionTransfer,
     reviewSectionTransfer,
+    cancelSectionTransfer,
     getPendingTransfers,
     getMyTransferRequests,
     getTransferHistory
@@ -18,6 +19,9 @@ router.post('/', requestSectionTransfer);
 
 // Review transfer (accept/reject)
 router.patch('/:id/review', reviewSectionTransfer);
+
+// Cancel transfer request
+router.patch('/:id/cancel', cancelSectionTransfer);
 
 // Get pending transfers (for target manager)
 router.get('/pending', getPendingTransfers);

@@ -88,6 +88,7 @@ enum TransferStatus {
   PENDING
   ACCEPTED
   REJECTED
+  CANCELLED
 }
 
 // ---------- MODELS ----------
@@ -147,6 +148,8 @@ model SectionAssignment {
   user User @relation(fields: [userId], references: [id])
 
   @@unique([userId, stage])
+  @@index([userId])
+  @@index([stage])
 }
 
 model Batch {
@@ -273,6 +276,8 @@ model SectionTransferRequest {
   requestedAt     DateTime        @default(now())
   resolvedAt      DateTime?
   resolvedBy      Int?
+  cancelledAt     DateTime?
+  cancelledBy     Int?
   rejectionReason String?
 
   operator      User  @relation("OperatorTransfers", fields: [operatorId], references: [id])
@@ -280,7 +285,7 @@ model SectionTransferRequest {
   targetManager User  @relation("TargetTransfers", fields: [targetManagerId], references: [id])
   resolver      User? @relation("ResolvedTransfers", fields: [resolvedBy], references: [id])
 
-  @@index([operatorId])
+  @@index([operatorId, status])
   @@index([targetManagerId, status])
   @@index([requestedBy])
 }

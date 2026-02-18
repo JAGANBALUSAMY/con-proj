@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { SocketProvider } from './context/SocketContext';
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
 import DashboardRedirect from './components/DashboardRedirect/DashboardRedirect';
 import Login from './pages/Login/Login';
@@ -10,51 +11,53 @@ import OperatorDashboard from './pages/OperatorDashboard/OperatorDashboard';
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
+    <SocketProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
 
-          {/* Protected Routes */}
-          <Route path="/" element={<DashboardRedirect />} />
+            {/* Protected Routes */}
+            <Route path="/" element={<DashboardRedirect />} />
 
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute allowedRoles={['ADMIN']}>
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN']}>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/manager"
-            element={
-              <ProtectedRoute allowedRoles={['MANAGER']}>
-                <ManagerDashboard />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/manager"
+              element={
+                <ProtectedRoute allowedRoles={['MANAGER']}>
+                  <ManagerDashboard />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/operator"
-            element={
-              <ProtectedRoute allowedRoles={['OPERATOR']}>
-                <OperatorDashboard />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/operator"
+              element={
+                <ProtectedRoute allowedRoles={['OPERATOR']}>
+                  <OperatorDashboard />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Fallback */}
-          <Route path="*" element={<DashboardRedirect />} />
-        </Routes>
-      </BrowserRouter>
+            {/* Fallback */}
+            <Route path="*" element={<DashboardRedirect />} />
+          </Routes>
+        </BrowserRouter>
 
-      <style>{`
-        body { margin: 0; background-color: #f1f5f9; }
-        * { box-sizing: border-box; }
-      `}</style>
-    </AuthProvider>
+        <style>{`
+          body { margin: 0; background-color: #f1f5f9; }
+          * { box-sizing: border-box; }
+        `}</style>
+      </AuthProvider>
+    </SocketProvider>
   );
 }
 

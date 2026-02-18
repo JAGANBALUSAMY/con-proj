@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs');
 const prisma = require('../utils/prisma');
+const socketUtil = require('../utils/socket');
 
 /**
  * Admin creates a Manager
@@ -63,7 +64,7 @@ const createManager = async (req, res) => {
         });
 
         // Return created manager (excluding password)
-        return res.status(201).json({
+        const responseData = {
             message: 'Manager created successfully',
             user: {
                 id: result.id,
@@ -72,7 +73,12 @@ const createManager = async (req, res) => {
                 role: result.role,
                 sections: sections
             }
-        });
+        };
+
+        // Real-time update for Admin
+        socketUtil.emitEvent('workforce:updated', responseData.user);
+
+        return res.status(201).json(responseData);
 
     } catch (error) {
         if (error.code === 'P2002') { // Prisma unique constraint error
@@ -174,7 +180,7 @@ const createOperator = async (req, res) => {
             return operator;
         });
 
-        return res.status(201).json({
+        const responseData = {
             message: 'Operator created successfully. Account is PENDING verification by Manager.',
             user: {
                 id: result.id,
@@ -184,7 +190,12 @@ const createOperator = async (req, res) => {
                 sections: [sectionToAssign],
                 verificationStatus: 'PENDING'
             }
-        });
+        };
+
+        // Real-time update for Admin (Workforce count)
+        socketUtil.emitEvent('workforce:updated', responseData.user);
+
+        return res.status(201).json(responseData);
 
     } catch (error) {
         console.error('Create operator error:', error);
@@ -431,7 +442,7 @@ const toggleManagerStatus = async (req, res) => {
             data: { status: status }
         });
 
-        return res.status(200).json({
+        const responseData = {
             message: `Manager account ${status === 'ACTIVE' ? 'activated' : 'deactivated'} successfully`,
             user: {
                 id: updatedManager.id,
@@ -439,7 +450,12 @@ const toggleManagerStatus = async (req, res) => {
                 fullName: updatedManager.fullName,
                 status: updatedManager.status
             }
-        });
+        };
+
+        // Real-time update for Admin (Active Managers count)
+        socketUtil.emitEvent('manager:status_updated', responseData.user);
+
+        return res.status(200).json(responseData);
 
     } catch (error) {
         console.error('Toggle manager status error:', error);

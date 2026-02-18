@@ -1,8 +1,10 @@
 const express = require('express');
+const http = require('http');
 const cors = require('cors');
 const morgan = require('morgan');
 require('dotenv').config();
 
+const socketUtil = require('./utils/socket');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
@@ -11,6 +13,10 @@ const productionRoutes = require('./routes/productionRoutes');
 const sectionTransferRoutes = require('./routes/sectionTransferRoutes');
 
 const app = express();
+const server = http.createServer(app);
+
+// Initialize Socket.IO
+socketUtil.init(server);
 
 // Middleware
 app.use(cors());
@@ -39,9 +45,9 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 
 if (require.main === module) {
-    app.listen(PORT, () => {
-        console.log(`🚀 Server running on port ${PORT}`);
+    server.listen(PORT, () => {
+        console.log(`🚀 Server running on port ${PORT} (with WebSockets)`);
     });
 }
 
-module.exports = app;
+module.exports = { app, server };

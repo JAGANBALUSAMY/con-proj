@@ -272,6 +272,10 @@ con-proj/
   - Manager approval workflow for rework logs
   - Real-time rework monitoring side-panel
 
+- **Dashboard Experience**
+  - Localized refresh buttons for all roles (REST-based re-fetching)
+  - Loading states and fetch-prevention during updates
+
 ### ❌ Not Yet Implemented
 
 - Defect recording
@@ -372,4 +376,4 @@ Proprietary - All rights reserved
 
 ---
 
-**Current Status**: ~90% Complete | **Last Updated**: February 8, 2026 (Task 19)
+**Current Status**: ~95% Complete | **Last Updated**: February 13, 2026 (Task 20)

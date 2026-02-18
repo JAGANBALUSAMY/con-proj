@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useSocket } from '../../context/SocketContext';
 import Layout from '../../components/Layout/Layout';
 import api from '../../utils/api';
-import { Play, Clock, Package, AlertTriangle } from 'lucide-react';
+import { Play, Clock, Package, AlertTriangle, RefreshCcw } from 'lucide-react';
 import WorkLogModal from './WorkLogModal';
 import './OperatorDashboard.css';
 
@@ -10,6 +11,7 @@ const OperatorDashboard = () => {
     const { user } = useAuth();
     const [dashboardData, setDashboardData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false);
     const [selectedBatch, setSelectedBatch] = useState(null);
 
     const fetchDashboard = async () => {
@@ -20,12 +22,37 @@ const OperatorDashboard = () => {
             console.error('Error fetching dashboard:', error);
         } finally {
             setLoading(false);
+            setIsRefreshing(false);
         }
+    };
+
+    const handleRefresh = () => {
+        setIsRefreshing(true);
+        fetchDashboard();
     };
 
     useEffect(() => {
         fetchDashboard();
     }, []);
+
+    // Socket.IO listeners
+    const socket = useSocket();
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleBatchUpdate = () => {
+            // Re-fetch to ensure single source of truth from DB
+            fetchDashboard();
+        };
+
+        socket.on('batch:assignment_changed', handleBatchUpdate);
+        socket.on('batch:status_updated', handleBatchUpdate);
+
+        return () => {
+            socket.off('batch:assignment_changed', handleBatchUpdate);
+            socket.off('batch:status_updated', handleBatchUpdate);
+        };
+    }, [socket]);
 
     if (loading) return <div className="loading-screen">Waking up Station...</div>;
 
@@ -41,7 +68,17 @@ const OperatorDashboard = () => {
 
                 <div className="dashboard-grid">
                     <section className="active-batches">
-                        <h3><Package size={20} /> Batches at this Station</h3>
+                        <h3>
+                            <Package size={20} /> Batches at this Station
+                            <button
+                                className={`btn-refresh ${isRefreshing ? 'spinning' : ''}`}
+                                onClick={handleRefresh}
+                                disabled={isRefreshing}
+                                title="Refresh Batches"
+                            >
+                                <RefreshCcw size={16} />
+                            </button>
+                        </h3>
                         <div className="batch-list">
                             {dashboardData?.batches?.map(batch => (
                                 <div key={batch.id} className="batch-item">

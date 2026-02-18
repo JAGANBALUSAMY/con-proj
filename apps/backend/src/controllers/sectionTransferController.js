@@ -1,4 +1,5 @@
 const prisma = require('../utils/prisma');
+const socketUtil = require('../utils/socket');
 
 // POST /api/section-transfers - Request section transfer
 const requestSectionTransfer = async (req, res) => {
@@ -144,18 +145,32 @@ const reviewSectionTransfer = async (req, res) => {
         if (action === 'ACCEPT') {
             // Accept flow: Update section assignment
             await prisma.$transaction(async (tx) => {
+                // RACE CONDITION PROTECTION: Re-fetch and check status inside transaction
+                const currentTransfer = await tx.sectionTransferRequest.findUnique({
+                    where: { id: parseInt(id) },
+                    select: { status: true, operatorId: true, toSection: true }
+                });
+
+                if (!currentTransfer) {
+                    throw new Error('Transfer request not found inside transaction');
+                }
+
+                if (currentTransfer.status !== 'PENDING') {
+                    throw new Error('Transfer request is no longer pending');
+                }
+
                 // Delete ALL previous section assignments for this operator (Enforce exactly one)
                 await tx.sectionAssignment.deleteMany({
                     where: {
-                        userId: transfer.operatorId
+                        userId: currentTransfer.operatorId
                     }
                 });
 
                 // Create new section assignment
                 await tx.sectionAssignment.create({
                     data: {
-                        userId: transfer.operatorId,
-                        stage: transfer.toSection
+                        userId: currentTransfer.operatorId,
+                        stage: currentTransfer.toSection
                     }
                 });
 
@@ -180,30 +195,101 @@ const reviewSectionTransfer = async (req, res) => {
                 }
             });
 
+            // Real-time updates
+            socketUtil.emitEvent('batch:assignment_changed', { operatorId: updatedTransfer.operatorId });
+            socketUtil.emitEvent('transfer:sync_approval', updatedTransfer);
+
             res.json(updatedTransfer);
         } else {
-            // Reject flow: Update status only
-            const updatedTransfer = await prisma.sectionTransferRequest.update({
-                where: { id: parseInt(id) },
-                data: {
-                    status: 'REJECTED',
-                    resolvedAt: new Date(),
-                    resolvedBy: managerId,
-                    rejectionReason: rejectionReason || null
-                },
-                include: {
-                    operator: { select: { id: true, fullName: true, employeeCode: true } },
-                    requester: { select: { id: true, fullName: true, employeeCode: true } },
-                    targetManager: { select: { id: true, fullName: true, employeeCode: true } },
-                    resolver: { select: { id: true, fullName: true, employeeCode: true } }
+            // Reject flow: Update status only within transaction for consistency
+            const updatedTransfer = await prisma.$transaction(async (tx) => {
+                const currentTransfer = await tx.sectionTransferRequest.findUnique({
+                    where: { id: parseInt(id) },
+                    select: { status: true }
+                });
+
+                if (!currentTransfer || currentTransfer.status !== 'PENDING') {
+                    throw new Error('Transfer request is no longer pending');
                 }
+
+                return await tx.sectionTransferRequest.update({
+                    where: { id: parseInt(id) },
+                    data: {
+                        status: 'REJECTED',
+                        resolvedAt: new Date(),
+                        resolvedBy: managerId,
+                        rejectionReason: rejectionReason || null
+                    },
+                    include: {
+                        operator: { select: { id: true, fullName: true, employeeCode: true } },
+                        requester: { select: { id: true, fullName: true, employeeCode: true } },
+                        targetManager: { select: { id: true, fullName: true, employeeCode: true } },
+                        resolver: { select: { id: true, fullName: true, employeeCode: true } }
+                    }
+                });
             });
+
+            // Real-time update for Manager
+            socketUtil.emitEvent('transfer:sync_approval', updatedTransfer);
 
             res.json(updatedTransfer);
         }
     } catch (error) {
         console.error('Review section transfer error:', error);
-        res.status(500).json({ error: 'Failed to review section transfer' });
+        res.status(error.message.includes('pending') ? 409 : 500).json({
+            error: error.message || 'Failed to review section transfer'
+        });
+    }
+};
+
+// PATCH /api/section-transfers/:id/cancel - Cancel transfer request (Requester only)
+const cancelSectionTransfer = async (req, res) => {
+    try {
+        const managerId = req.user.userId;
+        const { id } = req.params;
+
+        await prisma.$transaction(async (tx) => {
+            const transfer = await tx.sectionTransferRequest.findUnique({
+                where: { id: parseInt(id) }
+            });
+
+            if (!transfer) {
+                throw new Error('Transfer request not found');
+            }
+
+            // 1. Verify requester is the one who created it
+            if (transfer.requestedBy !== managerId) {
+                throw new Error('Only the requesting manager can cancel this transfer');
+            }
+
+            // 2. Verify status is PENDING
+            if (transfer.status !== 'PENDING') {
+                throw new Error(`Cannot cancel a transfer with status: ${transfer.status}`);
+            }
+
+            // 3. Update status
+            await tx.sectionTransferRequest.update({
+                where: { id: parseInt(id) },
+                data: {
+                    status: 'CANCELLED',
+                    cancelledAt: new Date(),
+                    cancelledBy: managerId
+                }
+            });
+        });
+
+        // Real-time update for Manager
+        socketUtil.emitEvent('transfer:sync_approval', { id: parseInt(id), status: 'CANCELLED' });
+
+        // Real-time update for Manager
+        socketUtil.emitEvent('transfer:sync_approval', { id: parseInt(id), status: 'CANCELLED' });
+
+        res.json({ message: 'Transfer request cancelled successfully' });
+    } catch (error) {
+        console.error('Cancel section transfer error:', error);
+        const status = error.message.includes('found') ? 404 :
+            error.message.includes('Only') ? 403 : 400;
+        res.status(status).json({ error: error.message });
     }
 };
 
@@ -268,7 +354,7 @@ const getTransferHistory = async (req, res) => {
                     { requestedBy: managerId },
                     { targetManagerId: managerId }
                 ],
-                status: { in: ['ACCEPTED', 'REJECTED'] }
+                status: { in: ['ACCEPTED', 'REJECTED', 'CANCELLED'] }
             },
             include: {
                 operator: { select: { id: true, fullName: true, employeeCode: true } },
@@ -289,6 +375,7 @@ const getTransferHistory = async (req, res) => {
 module.exports = {
     requestSectionTransfer,
     reviewSectionTransfer,
+    cancelSectionTransfer,
     getPendingTransfers,
     getMyTransferRequests,
     getTransferHistory

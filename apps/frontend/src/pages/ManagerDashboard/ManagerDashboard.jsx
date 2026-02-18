@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useSocket } from '../../context/SocketContext';
 import Layout from '../../components/Layout/Layout';
 import api from '../../utils/api';
-import { Users, ClipboardCheck, Factory, CheckCircle2, AlertCircle, XCircle, UserPlus, Package, Eye, ArrowRightLeft, Clock } from 'lucide-react';
+import { Users, ClipboardCheck, Factory, CheckCircle2, AlertCircle, XCircle, UserPlus, Package, Eye, ArrowRightLeft, Clock, RefreshCcw } from 'lucide-react';
 import CreateOperatorModal from './CreateOperatorModal';
 import CreateBatchModal from './CreateBatchModal';
 import MyOperatorsView from '../../components/MyOperatorsView/MyOperatorsView';
@@ -16,6 +17,7 @@ const ManagerDashboard = () => {
     const { user } = useAuth();
     const [dashboardData, setDashboardData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showCreateBatchModal, setShowCreateBatchModal] = useState(false);
     const [isOperatorsViewVisible, setIsOperatorsViewVisible] = useState(false);
@@ -34,7 +36,13 @@ const ManagerDashboard = () => {
             console.error('Error fetching dashboard:', error);
         } finally {
             setLoading(false);
+            setIsRefreshing(false);
         }
+    };
+
+    const handleRefresh = () => {
+        setIsRefreshing(true);
+        fetchDashboard();
     };
 
     const fetchMyOperators = async () => {
@@ -68,6 +76,28 @@ const ManagerDashboard = () => {
     useEffect(() => {
         fetchDashboard();
     }, []);
+
+    // Socket.IO listeners
+    const socket = useSocket();
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleSync = () => {
+            fetchDashboard();
+            if (showPendingTransfers) fetchPendingTransfers();
+            if (isOperatorsViewVisible) fetchMyOperators();
+        };
+
+        socket.on('approval:updated', handleSync);
+        socket.on('transfer:sync_approval', handleSync);
+        socket.on('batch:status_updated', handleSync);
+
+        return () => {
+            socket.off('approval:updated', handleSync);
+            socket.off('transfer:sync_approval', handleSync);
+            socket.off('batch:status_updated', handleSync);
+        };
+    }, [socket, showPendingTransfers, isOperatorsViewVisible]);
 
     const handleApprove = async (logId) => {
         try {
@@ -190,7 +220,17 @@ const ManagerDashboard = () => {
                 </div>
 
                 <section className="approval-section">
-                    <h3><CheckCircle2 size={20} /> Production Approval Queue</h3>
+                    <h3>
+                        <CheckCircle2 size={20} /> Production Approval Queue
+                        <button
+                            className={`btn-refresh ${isRefreshing ? 'spinning' : ''}`}
+                            onClick={handleRefresh}
+                            disabled={isRefreshing}
+                            title="Refresh Queue"
+                        >
+                            <RefreshCcw size={16} />
+                        </button>
+                    </h3>
                     <div className="table-container">
                         <table>
                             <thead>

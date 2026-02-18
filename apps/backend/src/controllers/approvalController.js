@@ -1,4 +1,5 @@
 const prisma = require('../utils/prisma');
+const socketUtil = require('../utils/socket');
 
 /**
  * Approve a Production Log
@@ -64,7 +65,13 @@ const approveProductionLog = async (req, res) => {
             return updatedLog;
         });
 
-        return res.status(200).json({ message: 'Log approved and batch advanced', log: result });
+        const responseData = { message: 'Log approved and batch advanced', log: result };
+
+        // Real-time update for Manager (Sync queue) and Operator (Sync batch stage)
+        socketUtil.emitEvent('approval:updated', responseData.log);
+        socketUtil.emitEvent('batch:status_updated', { batchId: result.batchId });
+
+        return res.status(200).json(responseData);
 
     } catch (error) {
         console.error('Approval Error:', error);
@@ -120,7 +127,12 @@ const approveRework = async (req, res) => {
             return updated;
         });
 
-        return res.status(200).json({ message: 'Rework approved', rework: result });
+        const responseData = { message: 'Rework approved', rework: result };
+
+        // Real-time update for Manager
+        socketUtil.emitEvent('approval:updated', responseData.rework);
+
+        return res.status(200).json(responseData);
     } catch (error) {
         return res.status(500).json({ error: 'Rework approval failed' });
     }
@@ -155,7 +167,12 @@ const rejectProductionLog = async (req, res) => {
             }
         });
 
-        return res.status(200).json({ message: 'Log rejected', log: updatedLog });
+        const responseData = { message: 'Log rejected', log: updatedLog };
+
+        // Real-time update for Manager
+        socketUtil.emitEvent('approval:updated', responseData.log);
+
+        return res.status(200).json(responseData);
     } catch (error) {
         return res.status(500).json({ error: 'Failed to reject log' });
     }

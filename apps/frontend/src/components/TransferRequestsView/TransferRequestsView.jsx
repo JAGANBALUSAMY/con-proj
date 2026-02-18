@@ -26,6 +26,21 @@ const TransferRequestsView = ({ incoming, outgoing, history, onClose, onRefresh 
         }
     };
 
+    const handleCancel = async (transferId) => {
+        if (!confirm('Are you sure you want to cancel this transfer request?')) return;
+
+        setLoading(true);
+        try {
+            await api.patch(`/section-transfers/${transferId}/cancel`);
+            alert('Transfer request cancelled successfully');
+            onRefresh();
+        } catch (error) {
+            alert(error.response?.data?.error || 'Failed to cancel transfer');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleReject = async (transferId) => {
         setLoading(true);
         try {
@@ -141,10 +156,16 @@ const TransferRequestsView = ({ incoming, outgoing, history, onClose, onRefresh 
 
                                         <div className="request-date">
                                             <span className="label">
-                                                {activeTab === 'history' ? 'Resolved:' : 'Requested:'}
+                                                {activeTab === 'history'
+                                                    ? (transfer.status === 'CANCELLED' ? 'Cancelled:' : 'Resolved:')
+                                                    : 'Requested:'}
                                             </span>
                                             <span className="value">
-                                                {new Date(activeTab === 'history' ? transfer.resolvedAt : transfer.requestedAt).toLocaleString()}
+                                                {new Date(
+                                                    activeTab === 'history'
+                                                        ? (transfer.status === 'CANCELLED' ? transfer.cancelledAt : transfer.resolvedAt)
+                                                        : transfer.requestedAt
+                                                ).toLocaleString()}
                                             </span>
                                         </div>
                                     </div>
@@ -166,6 +187,19 @@ const TransferRequestsView = ({ incoming, outgoing, history, onClose, onRefresh 
                                             >
                                                 <XCircle size={18} />
                                                 Reject
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {activeTab === 'outgoing' && transfer.status === 'PENDING' && (
+                                        <div className="transfer-actions">
+                                            <button
+                                                className="btn-cancel-request"
+                                                onClick={() => handleCancel(transfer.id)}
+                                                disabled={loading}
+                                            >
+                                                <X size={18} />
+                                                Cancel Request
                                             </button>
                                         </div>
                                     )}

@@ -92,11 +92,15 @@ const getManagerDashboard = async (req, res) => {
         // 3. Fetch Rework Approval Queue
         let reworkQueue = [];
         try {
+            // Filter to only stages that exist in ReworkStage enum (CUTTING, STITCHING)
+            const validReworkStages = ['CUTTING', 'STITCHING'];
+            const reworkQueryStages = assignedSections.filter(s => validReworkStages.includes(s));
+
             reworkQueue = await prisma.reworkRecord.findMany({
                 where: {
                     operatorUserId: { in: operatorIds },
                     approvalStatus: 'PENDING',
-                    reworkStage: { in: assignedSections }
+                    reworkStage: { in: reworkQueryStages }
                 },
                 include: {
                     batch: { select: { batchNumber: true } },

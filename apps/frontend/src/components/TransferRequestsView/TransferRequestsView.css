@@ -177,6 +177,11 @@
     color: #991b1b;
 }
 
+.status-badge.cancelled {
+    background: #f3f4f6;
+    color: #4b5563;
+}
+
 .employee-code {
     font-size: 0.875rem;
     color: #6b7280;
@@ -280,9 +285,31 @@
 }
 
 .btn-accept:disabled,
-.btn-reject:disabled {
+.btn-reject:disabled,
+.btn-cancel-request:disabled {
     background: #9ca3af;
     cursor: not-allowed;
+}
+
+.btn-cancel-request {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid #d1d5db;
+    background: white;
+    color: #374151;
+}
+
+.btn-cancel-request:hover:not(:disabled) {
+    background: #f9fafb;
+    border-color: #9ca3af;
+    color: #111827;
 }
 
 /* Reject Modal */

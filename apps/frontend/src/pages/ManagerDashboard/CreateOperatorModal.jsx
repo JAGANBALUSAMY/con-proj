@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, User, Lock, UserPlus } from 'lucide-react';
+import { X, User, Lock, UserPlus, Users } from 'lucide-react';
 import api from '../../utils/api';
 import '../../styles/modal.css';
 

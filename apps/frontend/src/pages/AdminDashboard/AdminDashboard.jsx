@@ -7,7 +7,8 @@ import RoleInfoBanner from '../../components/RoleInfoBanner/RoleInfoBanner';
 import EmptyState from '../../components/EmptyState/EmptyState';
 import UserListView from '../../components/UserListView/UserListView';
 import api from '../../utils/api';
-import { ShieldCheck, Users, Settings, Activity, UserPlus, Package, Eye } from 'lucide-react';
+import { useSocket } from '../../context/SocketContext';
+import { ShieldCheck, Users, Settings, Activity, UserPlus, Package, Eye, RefreshCcw } from 'lucide-react';
 import './AdminDashboard.css';
 
 import CreateManagerModal from './CreateManagerModal';
@@ -16,6 +17,7 @@ import CreateBatchModal from './CreateBatchModal';
 const AdminDashboard = () => {
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isCreateBatchModalOpen, setIsCreateBatchModalOpen] = useState(false);
     const [isHealthVisible, setIsHealthVisible] = useState(false);
@@ -30,7 +32,13 @@ const AdminDashboard = () => {
             console.error('Failed to fetch admin stats');
         } finally {
             setLoading(false);
+            setIsRefreshing(false);
         }
+    };
+
+    const handleRefresh = () => {
+        setIsRefreshing(true);
+        fetchStats();
     };
 
     const fetchUsers = async () => {
@@ -47,6 +55,27 @@ const AdminDashboard = () => {
     useEffect(() => {
         fetchStats();
     }, []);
+
+    // Socket.IO listeners
+    const socket = useSocket();
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleSync = () => {
+            fetchStats();
+            if (isUserListVisible) fetchUsers();
+        };
+
+        socket.on('workforce:updated', handleSync);
+        socket.on('manager:status_updated', handleSync);
+        socket.on('batch:status_updated', handleSync);
+
+        return () => {
+            socket.off('workforce:updated', handleSync);
+            socket.off('manager:status_updated', handleSync);
+            socket.off('batch:status_updated', handleSync);
+        };
+    }, [socket, isUserListVisible]);
 
     if (loading) return <div className="loading-screen">Initializing Governance Module...</div>;
 
@@ -102,7 +131,17 @@ const AdminDashboard = () => {
                     </section>
 
                     <section className="system-overview">
-                        <h3><ShieldCheck size={20} /> System Overview (Read-Only)</h3>
+                        <h3>
+                            <ShieldCheck size={20} /> System Overview (Read-Only)
+                            <button
+                                className={`btn-refresh ${isRefreshing ? 'spinning' : ''}`}
+                                onClick={handleRefresh}
+                                disabled={isRefreshing}
+                                title="Refresh Stats"
+                            >
+                                <RefreshCcw size={16} />
+                            </button>
+                        </h3>
                         <RoleInfoBanner
                             role="ADMIN"
                             message="Governance-only role. No direct batch modification allowed."
