@@ -256,7 +256,7 @@ model ReworkRecord {
 model Box {
   id        Int       @id @default(autoincrement())
   boxCode   String    @unique
-  batchId   Int
+  batchId   Int       @unique
   quantity  Int
   status    BoxStatus @default(PACKED)
   createdAt DateTime  @default(now())

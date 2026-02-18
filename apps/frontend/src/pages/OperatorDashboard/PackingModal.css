@@ -1,0 +1,235 @@
+.packing-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+}
+
+.packing-modal {
+    background: white;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.packing-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8fafc;
+    border-radius: 16px 16px 0 0;
+}
+
+.packing-header-title {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    color: #0f172a;
+}
+
+.packing-header-title svg {
+    color: #d97706;
+    /* Amber for Packing */
+}
+
+.packing-batch-ref {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.packing-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.packing-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #94a3b8;
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.packing-close:hover {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.packing-context-bar {
+    display: flex;
+    padding: 1rem 1.5rem;
+    background: #fffbeb;
+    /* Amber tint */
+    gap: 2rem;
+    border-bottom: 1px solid #fef3c7;
+}
+
+.packing-context-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.packing-context-item.active .ctx-value {
+    color: #d97706;
+}
+
+.ctx-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #78350f;
+    font-weight: 600;
+}
+
+.ctx-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #451a03;
+}
+
+.packing-info-box {
+    margin: 1.5rem 1.5rem 0 1.5rem;
+    padding: 0.75rem 1rem;
+    background: #fff7ed;
+    border: 1px solid #ffedd5;
+    border-radius: 8px;
+    color: #9a3412;
+    font-size: 0.875rem;
+}
+
+.packing-form {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.packing-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.packing-section-title {
+    font-size: 0.9rem;
+    color: #475569;
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.packing-row {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.packing-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+}
+
+.packing-field label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #334155;
+}
+
+.packing-field input {
+    padding: 0.625rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+}
+
+.packing-field input:focus {
+    outline: none;
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+}
+
+.packing-error {
+    background: #fef2f2;
+    color: #dc2626;
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    border: 1px solid #fecaca;
+}
+
+.packing-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #f1f5f9;
+}
+
+.btn-packing-cancel {
+    padding: 0.625rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 600;
+    background: white;
+    border: 1px solid #cbd5e1;
+    color: #64748b;
+    cursor: pointer;
+}
+
+.btn-packing-submit {
+    padding: 0.625rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 600;
+    background: #d97706;
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-packing-submit:hover {
+    background: #b45309;
+}
+
+.btn-packing-submit:disabled {
+    background: #fdba74;
+    cursor: not-allowed;
+}

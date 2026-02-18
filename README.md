@@ -276,10 +276,14 @@ con-proj/
   - Localized refresh buttons for all roles (REST-based re-fetching)
   - Loading states and fetch-prevention during updates
 
+- **Advanced Production Stages**
+  - **Labeling**: Strict quantity gating (Input = Output = Usable). Section-based approval.
+  - **Folding**: Locked quantity workflow. Section-based approval.
+  - **Rework**: Defect remediation with approval-gated quantity updates.
+
 ### ❌ Not Yet Implemented
 
-- Defect recording
-- Reporting and analytics
+- Defect recording (Detailed breakdown)
 - Box packing and shipping
 
 ## 🔧 API Endpoints
@@ -376,4 +380,4 @@ Proprietary - All rights reserved
 
 ---
 
-**Current Status**: ~95% Complete | **Last Updated**: February 13, 2026 (Task 20)
+**Current Status**: ~98% Complete | **Last Updated**: February 18, 2026 (Task 23)

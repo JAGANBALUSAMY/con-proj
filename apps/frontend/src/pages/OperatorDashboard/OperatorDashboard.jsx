@@ -3,8 +3,13 @@ import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
 import Layout from '../../components/Layout/Layout';
 import api from '../../utils/api';
-import { Play, Clock, Package, AlertTriangle, RefreshCcw } from 'lucide-react';
+import { Play, Clock, Package, AlertTriangle, RefreshCcw, ShieldAlert } from 'lucide-react';
+import LabelingModal from './LabelingModal';
+import FoldingModal from './FoldingModal';
+import PackingModal from './PackingModal';
 import WorkLogModal from './WorkLogModal';
+import QualityCheckModal from './QualityCheckModal';
+import ReworkLogModal from './ReworkLogModal';
 import './OperatorDashboard.css';
 
 const OperatorDashboard = () => {
@@ -13,6 +18,12 @@ const OperatorDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [selectedBatch, setSelectedBatch] = useState(null);
+    const [isQualityModalOpen, setIsQualityModalOpen] = useState(false);
+    const [isReworkModalOpen, setIsReworkModalOpen] = useState(false);
+    const [isLabelingModalOpen, setIsLabelingModalOpen] = useState(false);
+    const [isFoldingModalOpen, setIsFoldingModalOpen] = useState(false);
+    const [isPackingModalOpen, setIsPackingModalOpen] = useState(false);
+    const [activeBatchForModal, setActiveBatchForModal] = useState(null);
 
     const fetchDashboard = async () => {
         try {
@@ -41,7 +52,6 @@ const OperatorDashboard = () => {
         if (!socket) return;
 
         const handleBatchUpdate = () => {
-            // Re-fetch to ensure single source of truth from DB
             fetchDashboard();
         };
 
@@ -58,11 +68,32 @@ const OperatorDashboard = () => {
 
     const assignedSection = user?.sections?.[0] || 'UNASSIGNED';
 
+    const openWorkModal = (batch) => {
+        if (assignedSection === 'QUALITY_CHECK') {
+            setActiveBatchForModal(batch);
+            setIsQualityModalOpen(true);
+        } else if (assignedSection === 'REWORK') {
+            setActiveBatchForModal(batch);
+            setIsReworkModalOpen(true);
+        } else if (assignedSection === 'LABELING') {
+            setActiveBatchForModal(batch);
+            setIsLabelingModalOpen(true);
+        } else if (assignedSection === 'FOLDING') {
+            setActiveBatchForModal(batch);
+            setIsFoldingModalOpen(true);
+        } else if (assignedSection === 'PACKING') {
+            setActiveBatchForModal(batch);
+            setIsPackingModalOpen(true);
+        } else {
+            setSelectedBatch(batch); // Standard Work Log
+        }
+    };
+
     return (
         <Layout title={`Operator Station: ${assignedSection}`}>
             <div className="operator-dashboard">
                 <div className="station-alert">
-                    <AlertTriangle size={20} />
+                    <ShieldAlert size={20} />
                     <span>All work recorded here requires Manager approval before the batch can proceed.</span>
                 </div>
 
@@ -91,9 +122,14 @@ const OperatorDashboard = () => {
                                     </div>
                                     <button
                                         className="btn-start"
-                                        onClick={() => setSelectedBatch(batch)}
+                                        onClick={() => openWorkModal(batch)}
                                     >
-                                        <Play size={16} /> Log Work
+                                        <Play size={16} />
+                                        {assignedSection === 'QUALITY_CHECK' ? 'Quality Check' :
+                                            assignedSection === 'REWORK' ? 'Log Rework' :
+                                                assignedSection === 'LABELING' ? 'Start Labeling' :
+                                                    assignedSection === 'FOLDING' ? 'Start Folding' :
+                                                        assignedSection === 'PACKING' ? 'Start Packing' : 'Log Work'}
                                     </button>
                                 </div>
                             ))}
@@ -132,6 +168,41 @@ const OperatorDashboard = () => {
                     isOpen={!!selectedBatch}
                     onClose={() => setSelectedBatch(null)}
                     batch={selectedBatch}
+                    onSuccess={fetchDashboard}
+                />
+
+                <QualityCheckModal
+                    isOpen={isQualityModalOpen}
+                    onClose={() => setIsQualityModalOpen(false)}
+                    batch={activeBatchForModal}
+                    onSuccess={fetchDashboard}
+                />
+
+                <ReworkLogModal
+                    isOpen={isReworkModalOpen}
+                    onClose={() => setIsReworkModalOpen(false)}
+                    batch={activeBatchForModal}
+                    onSuccess={fetchDashboard}
+                />
+
+                <LabelingModal
+                    isOpen={isLabelingModalOpen}
+                    onClose={() => setIsLabelingModalOpen(false)}
+                    batch={activeBatchForModal}
+                    onSuccess={fetchDashboard}
+                />
+
+                <FoldingModal
+                    isOpen={isFoldingModalOpen}
+                    onClose={() => setIsFoldingModalOpen(false)}
+                    batch={activeBatchForModal}
+                    onSuccess={fetchDashboard}
+                />
+
+                <PackingModal
+                    isOpen={isPackingModalOpen}
+                    onClose={() => setIsPackingModalOpen(false)}
+                    batch={activeBatchForModal}
                     onSuccess={fetchDashboard}
                 />
             </div>

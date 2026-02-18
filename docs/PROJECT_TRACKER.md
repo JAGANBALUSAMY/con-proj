@@ -441,7 +441,7 @@ Complete development timeline from Day 1 to Day 19.
 
 ---
 
-## 📅 Task 20: Localized Refresh Buttons (February 13, 2026)
+## 📅 Task 20: Localized Refresh Buttons (February 15, 2026)
 
 **Objective:** Implement non-disruptive refresh mechanisms for key dashboard components.
 
@@ -461,12 +461,104 @@ Complete development timeline from Day 1 to Day 19.
 
 ---
 
+**Status:** ✅ Completed
+
+---
+
+## 📅 Task 21: Rework Implementation (February 18, 2026)
+
+**Objective:** Implement defect remediation workflow where operators log rework and managers approve it to update batch quantities.
+
+**Backend Files:**
+- `src/controllers/reworkController.js` - No-mutation log creation
+- `src/controllers/approvalController.js` - Logic for `approveRework` (mutation) and `rejectRework`
+- `src/routes/reworkRoutes.js` - New endpoints
+
+**Frontend Files:**
+- `src/pages/OperatorDashboard/ReworkLogModal.jsx`, `ReworkLogModal.css`
+- `src/pages/OperatorDashboard/OperatorDashboard.jsx` - Rework integration
+- `src/pages/ManagerDashboard/ManagerDashboard.jsx` - Rework Queue integration
+
+**Rules Enforced:**
+- Constraint 14: Rework Log Creation does NOT mutate batch; Approval DOES.
+- Constraint 23: Section-based authority for Rework approvals.
+
+**Status:** ✅ Completed
+
+---
+
+## 📅 Task 22: Labeling Stage Implementation (February 18, 2026)
+
+**Objective:** Implement strict quantity-gated Labeling stage logic.
+
+**Backend Files:**
+- `src/controllers/productionController.js` - Added Labeling stage validation (Quantity In = Usable)
+- `src/controllers/approvalController.js` - Updated for Section-Based Approval in Labeling
+
+**Frontend Files:**
+- `src/pages/OperatorDashboard/LabelingModal.jsx`, `LabelingModal.css`
+- `src/pages/OperatorDashboard/OperatorDashboard.jsx` - Labeling integration
+
+**Rules Enforced:**
+- Constraint 15: Labeling only processes Usable Quantity; Input must equal Output.
+- Constraint 23: Any manager assigned to LABELING can approve logs.
+
+**Status:** ✅ Completed
+
+---
+
+## 📅 Task 23: Folding Stage Implementation (February 18, 2026)
+
+**Objective:** Implement Folding stage logic (Labeling -> Folding -> Packing).
+
+**Backend Files:**
+- `src/controllers/productionController.js` - Added Folding validation (Quantity locked)
+- `src/controllers/approvalController.js` - Added Folding to Section-Based Approval
+
+**Frontend Files:**
+- `src/pages/OperatorDashboard/FoldingModal.jsx`, `FoldingModal.css`
+- `src/pages/OperatorDashboard/OperatorDashboard.jsx` - Folding integration
+
+**Rules Enforced:**
+- Constraint 23: Section-Base Approval for FOLDING.
+- Strict Quantity Lock (Input = Output = Usable).
+
+**Status:** ✅ Completed
+
+**Status:** ✅ Completed
+
+---
+
+## 📅 Task 24: Packing & Export Implementation (February 18, 2026)
+
+**Objective:** Implement strict Packing stage logic and Box/Shipment management.
+
+**Backend Files:**
+- `src/controllers/productionController.js` - Packing validation (Strict Quantity)
+- `src/controllers/approvalController.js` - Box Creation triggers
+- `src/controllers/boxController.js` - Shipment tracking
+- `src/routes/boxRoutes.js` - New routes
+
+**Frontend Files:**
+- `src/pages/OperatorDashboard/PackingModal.jsx` - Read-only quantity
+- `src/pages/ManagerDashboard/ShipmentTracker.jsx` - Shipment management
+- `src/pages/ManagerDashboard/ManagerDashboard.jsx` - Tab integration
+
+**Rules Enforced:**
+- **One Box Per Batch**: 1:1 relationship with `@unique` constraint.
+- **Strict Quantity**: `quantityIn` = `usable`, `quantityOut` = `quantityIn`.
+- **Completion**: Approval triggers `Box` creation and `Batch.status = COMPLETED`.
+
+**Status:** ✅ Completed
+
+---
+
 ## Summary
 
-**Total Tasks:** 20
-**Total Files Created/Modified:** 115+
-**Backend Controllers:** 7
-**Frontend Components:** 26+
+**Total Tasks:** 24
+**Total Files Created/Modified:** 135+
+**Backend Controllers:** 8
+**Frontend Components:** 28+
 **Dashboard Pages:** 3 (Admin, Manager, Operator)
 
 **All work is fully implemented, tested, and compliant with CONSTRAINTS.md.**

@@ -78,19 +78,73 @@ const createProductionLog = async (req, res) => {
             }
         }
 
-        // 6. Create ProductionLog with PENDING approval status
+        // 6. Stage-Specific Validation
+        if (batch.currentStage === 'LABELING') {
+            const requiredQuantity = batch.usableQuantity;
+
+            // Enforce quantityIn matches usableQuantity
+            if (parseInt(quantityIn) !== requiredQuantity) {
+                return res.status(400).json({
+                    error: `Labeling must process exact usable quantity: ${requiredQuantity}`,
+                    required: requiredQuantity,
+                    received: quantityIn
+                });
+            }
+
+            // Enforce quantityOut equals quantityIn (No change allowed)
+            // If quantityOut is provided, it must match. If not, auto-set it.
+            if (quantityOut && parseInt(quantityOut) !== parseInt(quantityIn)) {
+                return res.status(400).json({
+                    error: 'Quantity cannot change during Labeling stage.',
+                    quantityIn,
+                    quantityOut
+                });
+            }
+        }
+
+        if (batch.currentStage === 'FOLDING') {
+            // Constraint: Quantity MUST match usable quantity exactly
+            if (parseInt(quantityIn) !== batch.usableQuantity) {
+                return res.status(400).json({
+                    error: `Invalid Quantity: FOLDING stage requires processing the exact usable quantity (${batch.usableQuantity}).`
+                });
+            }
+            // Constraint: Quantity OUT must match Quantity IN (No changes allowed)
+            if (parseInt(quantityOut) !== parseInt(quantityIn)) {
+                return res.status(400).json({
+                    error: 'Invalid Quantity: Quantity Out must match Quantity In for FOLDING stage.'
+                });
+            }
+        }
+
+        if (batch.currentStage === 'PACKING') {
+            // Constraint: Quantity MUST match usable quantity exactly
+            if (parseInt(quantityIn) !== batch.usableQuantity) {
+                return res.status(400).json({
+                    error: `Invalid Quantity: PACKING stage requires packing the exact usable quantity (${batch.usableQuantity}).`
+                });
+            }
+            // Constraint: Quantity OUT must match Quantity IN (No reduction allowed)
+            if (parseInt(quantityOut) !== parseInt(quantityIn)) {
+                return res.status(400).json({
+                    error: 'Invalid Quantity: No quantity reduction allowed during PACKING. Box must contain full batch quantity.'
+                });
+            }
+        }
+
+        // 7. Create ProductionLog with PENDING approval status
         const productionLog = await prisma.productionLog.create({
             data: {
-                batchId: parseInt(batchId),
-                operatorUserId: operatorId,
-                machineId: machineId ? parseInt(machineId) : null,
+                batch: { connect: { id: parseInt(batchId) } },
+                operator: { connect: { id: operatorId } },
+                recordedBy: { connect: { id: operatorId } },
+                machine: machineId ? { connect: { id: parseInt(machineId) } } : undefined,
                 stage: batch.currentStage,
                 startTime: start,
                 endTime: end,
-                quantityIn: quantityIn || null,
-                quantityOut: quantityOut || null,
-                notes: notes || null,
-                approvalStatus: 'PENDING' // Operator work requires manager approval
+                quantityIn: quantityIn ? parseInt(quantityIn) : null,
+                quantityOut: quantityOut ? parseInt(quantityOut) : null,
+                approvalStatus: 'PENDING'
             },
             include: {
                 batch: { select: { batchNumber: true, briefTypeName: true } },
@@ -112,7 +166,7 @@ const createProductionLog = async (req, res) => {
 
     } catch (error) {
         console.error('Create production log error:', error);
-        return res.status(500).json({ error: 'Failed to create production log' });
+        return res.status(500).json({ error: 'Failed to create production log', details: error.message });
     }
 };
 

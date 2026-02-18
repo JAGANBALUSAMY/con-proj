@@ -89,6 +89,36 @@ const getManagerDashboard = async (req, res) => {
             throw new Error(`Approval Queue Fetch Failed: ${e.message}`);
         }
 
+        // 2b. If Manager has 'CUTTING', fetch PENDING Batches (Batch Start Approval)
+        if (assignedSections.includes('CUTTING')) {
+            try {
+                const pendingBatches = await prisma.batch.findMany({
+                    where: {
+                        currentStage: 'CUTTING',
+                        status: 'PENDING'
+                    },
+                    orderBy: { createdAt: 'desc' }
+                });
+
+                // Map to match Approval Queue structure (generic item)
+                const batchItems = pendingBatches.map(b => ({
+                    id: b.id, // ID
+                    type: 'BATCH', // Flag for frontend
+                    batch: { batchNumber: b.batchNumber, briefTypeName: b.briefTypeName },
+                    operator: { fullName: 'System / Planning' }, // No operator yet
+                    stage: 'CUTTING',
+                    quantityIn: b.totalQuantity,
+                    createdAt: b.createdAt
+                }));
+
+                // Combine queues
+                approvalQueue = [...batchItems, ...approvalQueue];
+
+            } catch (e) {
+                console.error('[DASHBOARD ERROR] Pending Batches Fetch Failed:', e.message);
+            }
+        }
+
         // 3. Fetch Rework Approval Queue
         let reworkQueue = [];
         try {
