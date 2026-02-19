@@ -465,7 +465,7 @@ Complete development timeline from Day 1 to Day 19.
 
 ---
 
-## 📅 Task 21: Rework Implementation (February 18, 2026)
+## 📅 Task 21: Rework Implementation (February 16, 2026)
 
 **Objective:** Implement defect remediation workflow where operators log rework and managers approve it to update batch quantities.
 
@@ -487,7 +487,7 @@ Complete development timeline from Day 1 to Day 19.
 
 ---
 
-## 📅 Task 22: Labeling Stage Implementation (February 18, 2026)
+## 📅 Task 22: Labeling Stage Implementation (February 17, 2026)
 
 **Objective:** Implement strict quantity-gated Labeling stage logic.
 
@@ -529,7 +529,7 @@ Complete development timeline from Day 1 to Day 19.
 
 ---
 
-## 📅 Task 24: Packing & Export Implementation (February 18, 2026)
+## 📅 Task 24: Packing & Export Implementation (February 19, 2026)
 
 **Objective:** Implement strict Packing stage logic and Box/Shipment management.
 
@@ -553,7 +553,7 @@ Complete development timeline from Day 1 to Day 19.
 
 ---
 
-## 📅 Task 25: Direct Section Rework Alignment (February 19, 2026)
+## 📅 Task 25: Direct Section Rework Alignment (February 20, 2026)
 
 **Objective:** Eliminate the redundant "REWORK" section and implement direct sectional rework routing (Cutting/Stitching handles its own fixes).
 
