@@ -114,18 +114,32 @@ const approveProductionLog = async (req, res) => {
                     data: { status: 'COMPLETED' }
                 });
             } else {
-                // Standard Stage Advancement
+                // Advance Batch Stage
                 const nextStage = stages[currentIndex + 1];
-                const updateData = { currentStage: nextStage };
+                const updateData = {
+                    currentStage: nextStage,
+                    usableQuantity: log.quantityOut // Sync usable quantity to what was actually produced
+                };
 
-                // CUTTING stage establishes the actual usable quantity
-                // Constraint 20: Any material loss at cutting must be accounted as scrap to preserve sum(usable, def, scrap) == total
-                if (currentBatch.currentStage === 'CUTTING') {
-                    updateData.usableQuantity = log.quantityOut;
-                    const loss = currentBatch.totalQuantity - log.quantityOut;
-                    if (loss > 0) {
+                // Account for loss (difference between what entered the section and what came out)
+                const loss = currentBatch.usableQuantity - log.quantityOut;
+
+                if (loss > 0) {
+                    if (currentBatch.currentStage === 'QUALITY_CHECK') {
+                        // Loss at QC is explicitly "Defective"
+                        updateData.defectiveQuantity = { increment: loss };
+                    } else {
+                        // Loss at any other stage is "Scrapped"
                         updateData.scrappedQuantity = { increment: loss };
                     }
+                }
+
+                // Initialisation logic for CUTTING (first section)
+                if (currentBatch.currentStage === 'CUTTING') {
+                    // Cutting uses totalQuantity as base
+                    const cuttingLoss = currentBatch.totalQuantity - log.quantityOut;
+                    updateData.usableQuantity = log.quantityOut;
+                    updateData.scrappedQuantity = { increment: cuttingLoss };
                     updateData.status = 'IN_PROGRESS';
                 }
 

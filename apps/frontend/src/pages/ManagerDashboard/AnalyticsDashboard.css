@@ -198,6 +198,20 @@
     color: #6b21a8;
 }
 
+.text-right {
+    text-align: right !important;
+}
+
+.text-center {
+    text-align: center !important;
+}
+
+.produced-col {
+    color: #10b981 !important;
+    background-color: #f0fdf4 !important;
+    font-weight: 700;
+}
+
 .analytics-loading {
     display: flex;
     justify-content: center;

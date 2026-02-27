@@ -24,6 +24,7 @@ const AdminDashboard = () => {
     const [isHealthVisible, setIsHealthVisible] = useState(false);
     const [isUserListVisible, setIsUserListVisible] = useState(false);
     const [users, setUsers] = useState([]);
+    const [activeTab, setActiveTab] = useState('ACTIVE'); // ACTIVE, HISTORY
     const navigate = useNavigate();
 
     const fetchStats = async () => {
@@ -138,21 +139,35 @@ const AdminDashboard = () => {
                     </section>
 
                     <section className="system-overview">
-                        <h3>
-                            <ShieldCheck size={20} /> System Overview (Read-Only)
+                        <div className="section-header-tabs">
+                            <button
+                                className={`tab-btn ${activeTab === 'ACTIVE' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('ACTIVE')}
+                            >
+                                <Activity size={18} /> Active Production
+                            </button>
+                            <button
+                                className={`tab-btn ${activeTab === 'HISTORY' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('HISTORY')}
+                            >
+                                <RefreshCcw size={18} /> Batch History
+                            </button>
                             <button
                                 className={`btn-refresh ${isRefreshing ? 'spinning' : ''}`}
                                 onClick={handleRefresh}
                                 disabled={isRefreshing}
                                 title="Refresh Stats"
+                                style={{ marginLeft: 'auto' }}
                             >
                                 <RefreshCcw size={16} />
                             </button>
-                        </h3>
+                        </div>
+
                         <RoleInfoBanner
                             role="ADMIN"
                             message="Governance-only role. No direct batch modification allowed."
                         />
+
                         {isHealthVisible ? (
                             <div className="health-logs">
                                 <p className="log-entry">🟢 API Server: Operational (v1.0.2)</p>
@@ -161,41 +176,81 @@ const AdminDashboard = () => {
                                 <button className="btn-close-health" onClick={() => setIsHealthVisible(false)}>Minimize Logs</button>
                             </div>
                         ) : (
-                            <div className="batch-table-container">
-                                {stats?.activeBatchList && stats.activeBatchList.length > 0 ? (
-                                    <table className="batch-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Batch #</th>
-                                                <th>Type</th>
-                                                <th>Stage</th>
-                                                <th>Qty</th>
-                                                <th>Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {stats.activeBatchList.map(batch => (
-                                                <tr key={batch.id}>
-                                                    <td><strong>{batch.batchNumber}</strong></td>
-                                                    <td>{batch.briefTypeName}</td>
-                                                    <td><span className="stage-badge">{batch.currentStage}</span></td>
-                                                    <td>{batch.totalQuantity}</td>
-                                                    <td>
-                                                        <span className={`status-tag ${batch.status.toLowerCase()}`}>
-                                                            {batch.status}
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                            <>
+                                {activeTab === 'ACTIVE' ? (
+                                    <div className="batch-table-container">
+                                        {stats?.activeBatchList && stats.activeBatchList.length > 0 ? (
+                                            <table className="batch-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Batch #</th>
+                                                        <th>Type</th>
+                                                        <th>Stage</th>
+                                                        <th>Qty</th>
+                                                        <th>Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {stats.activeBatchList.map(batch => (
+                                                        <tr key={batch.id}>
+                                                            <td><strong>{batch.batchNumber}</strong></td>
+                                                            <td>{batch.briefTypeName}</td>
+                                                            <td><span className="stage-badge">{batch.currentStage}</span></td>
+                                                            <td>{batch.totalQuantity}</td>
+                                                            <td>
+                                                                <span className={`status-tag ${batch.status.toLowerCase()}`}>
+                                                                    {batch.status}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        ) : (
+                                            <EmptyState
+                                                icon={Package}
+                                                message="No active batches to display"
+                                            />
+                                        )}
+                                    </div>
                                 ) : (
-                                    <EmptyState
-                                        icon={Package}
-                                        message="No active batches to display"
-                                    />
+                                    <div className="batch-table-container">
+                                        {stats?.batchHistory && stats.batchHistory.length > 0 ? (
+                                            <table className="batch-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Batch #</th>
+                                                        <th>Type</th>
+                                                        <th>Final Stage</th>
+                                                        <th>Qty</th>
+                                                        <th>Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {stats.batchHistory.map(batch => (
+                                                        <tr key={batch.id}>
+                                                            <td><strong>{batch.batchNumber}</strong></td>
+                                                            <td>{batch.briefTypeName}</td>
+                                                            <td><span className="stage-badge secondary">{batch.currentStage}</span></td>
+                                                            <td>{batch.totalQuantity}</td>
+                                                            <td>
+                                                                <span className={`status-tag ${batch.status.toLowerCase()}`}>
+                                                                    {batch.status}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        ) : (
+                                            <EmptyState
+                                                icon={RefreshCcw}
+                                                message="No historical batches found"
+                                            />
+                                        )}
+                                    </div>
                                 )}
-                            </div>
+                            </>
                         )}
                     </section>
                 </div>

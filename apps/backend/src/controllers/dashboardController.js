@@ -5,7 +5,7 @@ const prisma = require('../utils/prisma');
  */
 const getAdminStats = async (req, res) => {
     try {
-        const [userCount, managerCount, operatorCount, activeBatchCount, activeBatchList] = await Promise.all([
+        const [userCount, managerCount, operatorCount, activeBatchCount, activeBatchList, batchHistory] = await Promise.all([
             prisma.user.count(),
             prisma.user.count({ where: { role: 'MANAGER' } }),
             prisma.user.count({ where: { role: 'OPERATOR' } }),
@@ -13,6 +13,11 @@ const getAdminStats = async (req, res) => {
             prisma.batch.findMany({
                 where: { status: { in: ['PENDING', 'IN_PROGRESS'] } },
                 orderBy: { updatedAt: 'desc' }
+            }),
+            prisma.batch.findMany({
+                where: { status: { in: ['COMPLETED', 'CANCELLED'] } },
+                orderBy: { updatedAt: 'desc' },
+                take: 50 // Limit history to sensible number
             })
         ]);
 
@@ -22,7 +27,8 @@ const getAdminStats = async (req, res) => {
                 managers: managerCount,
                 operators: operatorCount,
                 activeBatches: activeBatchCount,
-                activeBatchList
+                activeBatchList,
+                batchHistory
             }
         });
     } catch (error) {

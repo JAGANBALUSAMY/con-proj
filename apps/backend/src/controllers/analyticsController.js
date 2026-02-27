@@ -124,6 +124,7 @@ const getOperatorPerformance = async (req, res) => {
             by: ['operatorUserId', 'stage'],
             where,
             _sum: {
+                quantityIn: true,
                 quantityOut: true
             },
             _count: {
@@ -141,6 +142,7 @@ const getOperatorPerformance = async (req, res) => {
                 operatorName: operator?.fullName || 'Unknown',
                 employeeCode: operator?.employeeCode || 'N/A',
                 stage: s.stage,
+                totalReceived: s._sum.quantityIn || 0,
                 totalProduced: s._sum.quantityOut || 0,
                 logCount: s._count._all
             };

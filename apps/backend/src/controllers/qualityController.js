@@ -76,21 +76,21 @@ const recordDefect = async (req, res) => {
                 });
             }
 
-            // B. Update Batch Quantities
-            // Usable reduces by defective amount. Defective increases.
-            // Note: quantityIn is "Good + Bad" inspected. 
-            // If I inspect 100, find 10 bad. 
-            // The batch.usableQuantity WAS 100 (assuming previous stage passed it all).
-            // Now it becomes 90. 
-            const updatedBatch = await prisma.batch.update({
-                where: { id: parseInt(batchId) },
-                data: {
-                    defectiveQuantity: { increment: parseInt(defectiveQuantity) },
-                    usableQuantity: { decrement: parseInt(defectiveQuantity) }
-                }
-            });
+            // A. Create Defect Records
+            if (defects.length > 0) {
+                await prisma.defectRecord.createMany({
+                    data: defects.map(d => ({
+                        batchId: parseInt(batchId),
+                        stage: d.stage || 'QUALITY_CHECK',
+                        defectCode: d.defectCode,
+                        quantity: d.quantity,
+                        severity: d.severity,
+                        detectedByUserId: operatorId
+                    }))
+                });
+            }
 
-            // C. Create Production Log (PENDING Approval)
+            // B. Create Production Log (PENDING Approval)
             // This logs the EFFORT of the QC operator.
             const productionLog = await prisma.productionLog.create({
                 data: {

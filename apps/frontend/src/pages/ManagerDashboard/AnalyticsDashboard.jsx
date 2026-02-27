@@ -101,7 +101,7 @@ const AnalyticsDashboard = () => {
                 <div className="analytics-card">
                     <div className="card-header">
                         <TrendingUp size={20} className="icon-green" />
-                        <h3>Top Operator Throughput</h3>
+                        <h3>Top Operator Throughput (In vs Out)</h3>
                     </div>
                     <div className="chart-container">
                         <ResponsiveContainer width="100%" height={300}>
@@ -111,7 +111,8 @@ const AnalyticsDashboard = () => {
                                 <YAxis dataKey="operatorName" type="category" width={100} />
                                 <Tooltip />
                                 <Legend />
-                                <Bar dataKey="totalProduced" name="Units Produced" fill="#10b981" radius={[0, 4, 4, 0]} />
+                                <Bar dataKey="totalReceived" name="Units Received (In)" fill="#94a3b8" radius={[0, 4, 4, 0]} />
+                                <Bar dataKey="totalProduced" name="Units Produced (Out)" fill="#10b981" radius={[0, 4, 4, 0]} />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
@@ -159,7 +160,8 @@ const AnalyticsDashboard = () => {
                                     <th>Operator</th>
                                     <th>Emp Code</th>
                                     <th>Stage</th>
-                                    <th>Total Produced</th>
+                                    <th>Units Received (@ In)</th>
+                                    <th>Units Produced (@ Out)</th>
                                     <th>Log Count</th>
                                 </tr>
                             </thead>
@@ -169,11 +171,12 @@ const AnalyticsDashboard = () => {
                                         <td>{p.operatorName}</td>
                                         <td>{p.employeeCode}</td>
                                         <td><span className={`badge badge-${p.stage}`}>{p.stage}</span></td>
-                                        <td>{p.totalProduced}</td>
+                                        <td className="text-right"><strong>{p.totalReceived}</strong></td>
+                                        <td className="text-right produced-col"><strong>{p.totalProduced}</strong></td>
                                         <td>{p.logCount}</td>
                                     </tr>
                                 ))}
-                                {performance.length === 0 && <tr><td colSpan="5" className="text-center">No performance records found.</td></tr>}
+                                {performance.length === 0 && <tr><td colSpan="6" className="text-center">No performance records found.</td></tr>}
                             </tbody>
                         </table>
                     </div>
