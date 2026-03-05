@@ -182,8 +182,17 @@ const createProductionLog = async (req, res) => {
             });
         }
 
-        // For non-cutting stages, Input cannot exceed Batch Usable Quantity
-        if (batch.currentStage !== 'CUTTING' && qIn > batch.usableQuantity) {
+        // For pre-QC stages, bound by pendingQCQuantity
+        if (['STITCHING', 'QUALITY_CHECK'].includes(batch.currentStage)) {
+            if (qIn > batch.pendingQCQuantity) {
+                return res.status(400).json({
+                    error: `Invalid Quantity: Input (${qIn}) cannot exceed Batch Pending QC Quantity (${batch.pendingQCQuantity}).`
+                });
+            }
+        }
+
+        // For post-QC stages, bound by Batch Usable Quantity
+        if (['LABELING', 'FOLDING', 'PACKING'].includes(batch.currentStage) && qIn > batch.usableQuantity) {
             return res.status(400).json({
                 error: `Invalid Quantity: Input (${qIn}) cannot exceed Batch Usable Quantity (${batch.usableQuantity}).`
             });

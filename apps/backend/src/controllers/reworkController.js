@@ -103,9 +103,11 @@ const createReworkLog = async (req, res) => {
         }
 
         const operatorSections = operator.sectionAssignments.map(sa => sa.stage);
-        if (!operatorSections.includes(reworkStage)) {
+        // Constraint: Operator must be assigned EITHER to the reworkStage section (e.g. CUTTING) OR to a dedicated REWORK section.
+        const canPerformRework = operatorSections.includes(reworkStage) || operatorSections.includes('REWORK');
+        if (!canPerformRework) {
             return res.status(403).json({
-                error: `Access denied: You are not assigned to the ${reworkStage} section. Rework must be performed by the origin section.`,
+                error: `Access denied: You are not assigned to the ${reworkStage} or REWORK section.`,
                 yourSections: operatorSections
             });
         }
@@ -115,7 +117,7 @@ const createReworkLog = async (req, res) => {
             where: { id: parseInt(batchId) },
             include: {
                 defectRecords: {
-                    where: { stage: reworkStage }
+                    where: { reworkStage: reworkStage }
                 },
                 reworkRecords: {
                     where: {

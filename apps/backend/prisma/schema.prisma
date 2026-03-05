@@ -157,9 +157,11 @@ model Batch {
   batchNumber       String          @unique
   briefTypeName     String
   totalQuantity     Int
-  usableQuantity    Int             @default(0)
-  defectiveQuantity Int             @default(0)
-  scrappedQuantity  Int             @default(0)
+  usableQuantity           Int             @default(0)
+  defectiveQuantity        Int             @default(0)
+  reworkedPendingQuantity  Int             @default(0)
+  pendingQCQuantity        Int             @default(0)
+  scrappedQuantity         Int             @default(0)
   currentStage      ProductionStage @default(CUTTING)
   status            BatchStatus     @default(PENDING)
   createdAt         DateTime        @default(now())
@@ -215,6 +217,7 @@ model DefectRecord {
   id               Int             @id @default(autoincrement())
   batchId          Int
   stage            ProductionStage @default(QUALITY_CHECK)
+  reworkStage      ReworkStage?
   defectCode       String
   quantity         Int
   severity         Severity

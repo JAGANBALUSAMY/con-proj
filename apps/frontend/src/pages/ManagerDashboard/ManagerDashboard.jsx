@@ -300,20 +300,31 @@ const ManagerDashboard = () => {
                                                 <td className="time-col">{log.startTime ? new Date(log.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}</td>
                                                 <td className="time-col">{new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
                                                 <td className="actions">
-                                                    {log.type === 'BATCH' ? (
-                                                        <button className="btn-approve" onClick={() => handleBatchStart(log.id)}>
-                                                            <CheckCircle2 size={16} /> Start Batch
-                                                        </button>
-                                                    ) : (
-                                                        <>
-                                                            <button className="btn-approve" onClick={() => handleApprove(log.id)}>
-                                                                <CheckCircle2 size={16} /> Approve
+                                                    <div className="action-stack">
+                                                        {log.type === 'BATCH' ? (
+                                                            <button className="btn-approve" onClick={() => handleBatchStart(log.id)}>
+                                                                <CheckCircle2 size={16} /> Start Batch
                                                             </button>
-                                                            <button className="btn-reject" onClick={() => handleReject(log.id)}>
-                                                                <XCircle size={16} /> Reject
-                                                            </button>
-                                                        </>
-                                                    )}
+                                                        ) : (
+                                                            <>
+                                                                <div className="approval-btns">
+                                                                    <button className="btn-approve" onClick={() => handleApprove(log.id)}>
+                                                                        <CheckCircle2 size={16} /> Approve
+                                                                    </button>
+                                                                    <button className="btn-reject" onClick={() => handleReject(log.id)}>
+                                                                        <XCircle size={16} /> Reject
+                                                                    </button>
+                                                                </div>
+                                                                {log.stage === 'QUALITY_CHECK' && (log.isWaitingForRework || log.isReQCRequired) && (
+                                                                    <div className="approval-warning-gate">
+                                                                        {log.isWaitingForRework && <span className="badge-hold rework"><AlertCircle size={12} /> Rework Pending</span>}
+                                                                        {log.isReQCRequired && <span className="badge-hold reqc"><RefreshCcw size={12} /> Re-QC Required</span>}
+                                                                        <span className="hold-hint">Batch will hold in QC after approval</span>
+                                                                    </div>
+                                                                )}
+                                                            </>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))}
@@ -334,16 +345,29 @@ const ManagerDashboard = () => {
                                 <h3><Factory size={18} /> Section Throughput</h3>
                                 <div className="batch-grid">
                                     {dashboardData?.activeBatches?.map(batch => (
-                                        <div key={batch.id} className="batch-mini-card">
+                                        <div key={batch.id} className={`batch-mini-card ${batch.currentStage === 'QUALITY_CHECK' && (batch.isWaitingForRework || batch.isReQCRequired) ? 'on-hold' : ''}`}>
                                             <div className="batch-header">
                                                 <span className="batch-no">{batch.batchNumber}</span>
                                                 <span className={`status-tag ${batch.status.toLowerCase()}`}>{batch.status}</span>
                                             </div>
                                             <p className="batch-brief">{batch.briefTypeName}</p>
                                             <div className="batch-footer">
-                                                <span className="current-stage">{batch.currentStage}</span>
+                                                <div className="stage-and-hold">
+                                                    <span className="current-stage">{batch.currentStage}</span>
+                                                    {batch.currentStage === 'QUALITY_CHECK' && (batch.isWaitingForRework || batch.isReQCRequired) && (
+                                                        <span className="hold-indicator" title={batch.isWaitingForRework ? 'Waiting for Rework' : 'Re-QC Required'}>
+                                                            HOLD
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 <span className="qty">{batch.totalQuantity} units</span>
                                             </div>
+                                            {batch.currentStage === 'QUALITY_CHECK' && (batch.isWaitingForRework || batch.isReQCRequired) && (
+                                                <div className="hold-details">
+                                                    {batch.isWaitingForRework && <span className="mini-badge warning">Rework</span>}
+                                                    {batch.isReQCRequired && <span className="mini-badge info">Re-QC</span>}
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                     {dashboardData?.activeBatches?.length === 0 && (

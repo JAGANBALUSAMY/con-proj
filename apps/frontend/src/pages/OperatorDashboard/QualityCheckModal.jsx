@@ -17,7 +17,15 @@ const DEFECT_CATALOG = [
     { code: 'SEAM_PUCKERING', label: 'Stitching: Seam Puckering', stage: 'STITCHING' },
 ];
 
-const emptyDefect = () => ({ defectCode: DEFECT_CATALOG[0].code, quantity: '', severity: 'MINOR' });
+const emptyDefect = () => {
+    const firstDefect = DEFECT_CATALOG[0];
+    return {
+        defectCode: firstDefect.code,
+        quantity: '',
+        severity: 'MINOR',
+        reworkStage: firstDefect.stage
+    };
+};
 
 const QualityCheckModal = ({ isOpen, onClose, batch, onSuccess }) => {
     const [quantityIn, setQuantityIn] = useState('');
@@ -26,6 +34,7 @@ const QualityCheckModal = ({ isOpen, onClose, batch, onSuccess }) => {
     const [startTime, setStartTime] = useState(null);
     const [loading, setLoading] = useState(false);
     const [summary, setSummary] = useState(null);
+    const [qcPool, setQcPool] = useState('initial'); // 'initial' or 're-qc'
     const [error, setError] = useState('');
 
     // Fetch quality summary when modal opens
@@ -36,6 +45,7 @@ const QualityCheckModal = ({ isOpen, onClose, batch, onSuccess }) => {
             setDefectiveQuantity('');
             setDefects([emptyDefect()]);
             setStartTime(null);
+            setQcPool('initial');
             fetchSummary();
         }
     }, [isOpen, batch]);
@@ -71,10 +81,17 @@ const QualityCheckModal = ({ isOpen, onClose, batch, onSuccess }) => {
 
     const validate = (endTime) => {
         const qIn = parseInt(quantityIn);
-        const remaining = summary?.batch?.remaining ?? Infinity;
+        const remainingToQC = summary?.batch?.remainingToQC ?? 0;
+        const reworkedPending = summary?.batch?.reworkedPending ?? 0;
 
         if (!quantityIn || isNaN(qIn) || qIn <= 0) return 'Quantity inspected must be greater than 0.';
-        if (qIn > remaining) return `Cannot inspect ${qIn} units. Only ${remaining} units remain uninspected.`;
+
+        if (qcPool === 'initial') {
+            if (qIn !== remainingToQC) return `Initial QC must process ALL remaining units (${remainingToQC}). Mixing pools is forbidden.`;
+        } else {
+            if (qIn !== reworkedPending) return `Re-QC must process ALL cured units (${reworkedPending}). Mixing pools is forbidden.`;
+        }
+
         if (defectSum < 0 || defectSum > qIn) return `Total defect quantity (${defectSum}) cannot exceed quantity inspected (${qIn}).`;
         if (!startTime) return 'Please click "Start Work" before submitting.';
         if (new Date(endTime) < new Date(startTime)) return 'System time error: End time is before start time.';
@@ -109,7 +126,8 @@ const QualityCheckModal = ({ isOpen, onClose, batch, onSuccess }) => {
                         defectCode: d.defectCode,
                         quantity: parseInt(d.quantity),
                         severity: d.severity,
-                        stage: defectInfo?.stage || 'QUALITY_CHECK'
+                        stage: 'QUALITY_CHECK',
+                        reworkStage: d.reworkStage
                     };
                 }),
                 startTime,
@@ -145,24 +163,28 @@ const QualityCheckModal = ({ isOpen, onClose, batch, onSuccess }) => {
                     <button className="qc-close" onClick={onClose}><X size={20} /></button>
                 </div>
 
-                {/* Batch Quantity Context */}
+                {/* Batch Quantity Context (Ledger Model) */}
                 {summary && (
                     <div className="qc-context-bar">
                         <div className="qc-context-item">
-                            <span className="ctx-label">Total</span>
-                            <span className="ctx-value">{summary.batch.totalQuantity}</span>
+                            <span className="ctx-label">Batch Total</span>
+                            <span className="ctx-value" title={`Original Batch Total: ${summary.batch.originalTotal}`}>{summary.batch.survivingTotal}</span>
                         </div>
-                        <div className="qc-context-item">
-                            <span className="ctx-label">Inspected</span>
-                            <span className="ctx-value">{alreadyInspected}</span>
+                        <div className="qc-context-item highlight-success">
+                            <span className="ctx-label">Cleared</span>
+                            <span className="ctx-value" title="Units that passed QC">{summary.batch.qcCleared}</span>
                         </div>
-                        <div className="qc-context-item highlight">
-                            <span className="ctx-label">Remaining</span>
-                            <span className="ctx-value">{remaining}</span>
+                        <div className="qc-context-item highlight-info">
+                            <span className="ctx-label">Cured</span>
+                            <span className="ctx-value" title="Units waiting for Re-QC">{summary.batch.reworkedPending}</span>
+                        </div>
+                        <div className="qc-context-item highlight-warning">
+                            <span className="ctx-label">New Units</span>
+                            <span className="ctx-value" title="Units never inspected">{summary.batch.remainingToQC}</span>
                         </div>
                         <div className="qc-context-item defective">
                             <span className="ctx-label">Defective</span>
-                            <span className="ctx-value">{summary.batch.defectiveQuantity}</span>
+                            <span className="ctx-value" title="Units currently in rework state">{summary.batch.defective}</span>
                         </div>
                     </div>
                 )}
@@ -171,19 +193,44 @@ const QualityCheckModal = ({ isOpen, onClose, batch, onSuccess }) => {
                     <div className="qc-body">
                         {/* Inspection Quantities */}
                         <div className="qc-section">
-                            <h3 className="qc-section-title">Inspection Details</h3>
+                            <h3 className="qc-section-title">Inspection Selection</h3>
 
-                            {remaining === 0 ? (
+                            {summary?.batch?.remainingToQC === 0 && summary?.batch?.reworkedPending === 0 ? (
                                 <div className="qc-complete-msg">
                                     <CheckCircle2 size={24} color="#10b981" />
                                     <div>
-                                        <strong>Inspection Complete</strong>
-                                        <p>All units in this batch have already been inspected.</p>
+                                        <strong>Batch Fully Cleared</strong>
+                                        <p>All units in this batch have successfully passed quality check.</p>
                                     </div>
                                 </div>
                             ) : (
                                 <>
-                                    <div className="work-timer-section" style={{ borderStyle: 'solid', borderColor: '#e2e8f0', background: '#f8fafc' }}>
+                                    <div className="pool-selector">
+                                        <button
+                                            type="button"
+                                            className={`pool-btn ${qcPool === 'initial' ? 'active' : ''}`}
+                                            onClick={() => {
+                                                setQcPool('initial');
+                                                setQuantityIn(summary?.batch?.remainingToQC || '');
+                                            }}
+                                            disabled={summary?.batch?.remainingToQC === 0}
+                                        >
+                                            Inspect New Units ({summary?.batch?.remainingToQC})
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className={`pool-btn ${qcPool === 're-qc' ? 'active' : ''}`}
+                                            onClick={() => {
+                                                setQcPool('re-qc');
+                                                setQuantityIn(summary?.batch?.reworkedPending || '');
+                                            }}
+                                            disabled={summary?.batch?.reworkedPending === 0}
+                                        >
+                                            Re-QC Cured Units ({summary?.batch?.reworkedPending})
+                                        </button>
+                                    </div>
+
+                                    <div className="work-timer-section" style={{ borderStyle: 'solid', borderColor: '#e2e8f0', background: '#f8fafc', marginTop: '1rem' }}>
                                         {!startTime ? (
                                             <button
                                                 type="button"
@@ -201,16 +248,18 @@ const QualityCheckModal = ({ isOpen, onClose, batch, onSuccess }) => {
 
                                     <div className="qc-row">
                                         <div className="qc-field">
-                                            <label>Units Inspected *</label>
+                                            <label>Units Being Inspected *</label>
                                             <input
                                                 type="number"
-                                                min="1"
-                                                max={remaining}
                                                 value={quantityIn}
-                                                onChange={e => setQuantityIn(e.target.value)}
-                                                placeholder={`Max: ${remaining ?? '...'}`}
+                                                readOnly
+                                                className="readonly-input"
+                                                placeholder="Select a pool above"
                                                 required
                                             />
+                                            <p className="field-hint" style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '0.25rem' }}>
+                                                Rule: You must inspect the entire selected pool at once.
+                                            </p>
                                         </div>
                                         <div className="qc-field">
                                             <label>Total Defective (auto-sum)</label>
@@ -265,6 +314,17 @@ const QualityCheckModal = ({ isOpen, onClose, batch, onSuccess }) => {
                                             />
                                         </div>
                                         <div className="defect-field">
+                                            <label>Rework Section</label>
+                                            <select
+                                                value={defect.reworkStage}
+                                                onChange={e => handleDefectChange(index, 'reworkStage', e.target.value)}
+                                                required
+                                            >
+                                                <option value="STITCHING">Stitching</option>
+                                                <option value="CUTTING">Cutting</option>
+                                            </select>
+                                        </div>
+                                        <div className="defect-field">
                                             <label>Severity</label>
                                             <select
                                                 value={defect.severity}
@@ -309,9 +369,9 @@ const QualityCheckModal = ({ isOpen, onClose, batch, onSuccess }) => {
                             {loading ? 'Submitting...' : 'Submit for Approval'}
                         </button>
                     </div>
-                </form>
-            </div>
-        </div>
+                </form >
+            </div >
+        </div >
     );
 };
 

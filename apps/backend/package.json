@@ -6,7 +6,8 @@
         "dev": "nodemon src/app.js",
         "prisma:generate": "prisma generate",
         "prisma:migrate": "prisma migrate dev",
-        "prisma:seed": "prisma db seed"
+        "prisma:seed": "prisma db seed",
+        "test:e2e": "jest tests/e2e-batch-flow.test.js --runInBand --forceExit"
     },
     "dependencies": {
         "@prisma/client": "^5.10.0",
@@ -20,8 +21,10 @@
         "socket.io": "^4.8.3"
     },
     "devDependencies": {
+        "jest": "^30.2.0",
         "nodemon": "^3.1.11",
-        "prisma": "^5.10.0"
+        "prisma": "^5.10.0",
+        "supertest": "^7.2.2"
     },
     "prisma": {
         "seed": "node prisma/seed.js"

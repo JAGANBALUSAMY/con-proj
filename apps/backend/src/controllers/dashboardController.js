@@ -81,16 +81,16 @@ const getManagerDashboard = async (req, res) => {
         const operatorIds = team.map(op => op.id);
 
         // 2. Fetch Approval Queue (Pending Production Logs from OWNED operators)
-        let approvalQueue = [];
+        let rawQueue = [];
         try {
-            approvalQueue = await prisma.productionLog.findMany({
+            rawQueue = await prisma.productionLog.findMany({
                 where: {
                     operatorUserId: { in: operatorIds },
                     approvalStatus: 'PENDING',
                     stage: { in: assignedSections }
                 },
                 include: {
-                    batch: { select: { batchNumber: true, briefTypeName: true, updatedAt: true } },
+                    batch: { select: { id: true, batchNumber: true, briefTypeName: true, updatedAt: true, totalQuantity: true, scrappedQuantity: true, defectiveQuantity: true } },
                     operator: { select: { fullName: true } }
                 },
                 orderBy: { createdAt: 'desc' }
@@ -99,6 +99,27 @@ const getManagerDashboard = async (req, res) => {
             console.error('[DASHBOARD ERROR] Approval Queue Fetch Failed:', e.message);
             throw new Error(`Approval Queue Fetch Failed: ${e.message}`);
         }
+
+        // Enrich Queue with computed statuses
+        let approvalQueue = await Promise.all(rawQueue.map(async (log) => {
+            const [pendingRework, approvedQCLogs, pendingQCLogs] = await Promise.all([
+                prisma.reworkRecord.findFirst({ where: { batchId: log.batchId, approvalStatus: 'PENDING' } }),
+                prisma.productionLog.findMany({ where: { batchId: log.batchId, stage: 'QUALITY_CHECK', approvalStatus: 'APPROVED' } }),
+                prisma.productionLog.findFirst({ where: { batchId: log.batchId, stage: 'QUALITY_CHECK', approvalStatus: 'PENDING', NOT: { id: log.id } } })
+            ]);
+
+            const qcClearedTotal = approvedQCLogs.reduce((sum, ql) => sum + ql.quantityOut, 0);
+            const survivingTotal = log.batch.totalQuantity - log.batch.scrappedQuantity;
+
+            return {
+                ...log,
+                isWaitingForRework: log.batch.defectiveQuantity > 0 || !!pendingRework,
+                isReQCRequired: qcClearedTotal < survivingTotal,
+                hasOtherPendingQC: !!pendingQCLogs,
+                qcClearedTotal,
+                survivingTotal
+            };
+        }));
 
         // 2b. If Manager has 'CUTTING', fetch PENDING Batches (Batch Start Approval)
         if (assignedSections.includes('CUTTING')) {
@@ -162,12 +183,33 @@ const getManagerDashboard = async (req, res) => {
         // 4. Active batches in their sections
         let activeBatches = [];
         try {
-            activeBatches = await prisma.batch.findMany({
+            const rawBatches = await prisma.batch.findMany({
                 where: {
                     currentStage: { in: assignedSections },
                     status: 'IN_PROGRESS'
                 }
             });
+
+            // Enrich batches with computed statuses
+            activeBatches = await Promise.all(rawBatches.map(async (b) => {
+                const [pendingRework, approvedQCLogs, pendingQCLogs] = await Promise.all([
+                    prisma.reworkRecord.findFirst({ where: { batchId: b.id, approvalStatus: 'PENDING' } }),
+                    prisma.productionLog.findMany({ where: { batchId: b.id, stage: 'QUALITY_CHECK', approvalStatus: 'APPROVED' } }),
+                    prisma.productionLog.findFirst({ where: { batchId: b.id, stage: 'QUALITY_CHECK', approvalStatus: 'PENDING' } })
+                ]);
+
+                const qcClearedTotal = approvedQCLogs.reduce((sum, log) => sum + (log.quantityOut || 0), 0);
+                const survivingTotal = b.totalQuantity - b.scrappedQuantity;
+
+                return {
+                    ...b,
+                    isWaitingForRework: b.defectiveQuantity > 0 || !!pendingRework,
+                    isReQCRequired: qcClearedTotal < survivingTotal,
+                    hasPendingQC: !!pendingQCLogs,
+                    qcClearedTotal,
+                    survivingTotal
+                };
+            }));
         } catch (e) {
             console.error('[DASHBOARD ERROR] Active Batches Fetch Failed:', e.message);
             throw new Error(`Active Batches Fetch Failed: ${e.message}`);
@@ -199,7 +241,7 @@ const getOperatorDashboard = async (req, res) => {
 
         // 1. Fetch batches for this operator
         // Logic: Show batches currently in their section OR batches with defects from their section (Sectional Rework)
-        const batches = await prisma.batch.findMany({
+        const rawBatches = await prisma.batch.findMany({
             where: {
                 OR: [
                     { currentStage: { in: assignedSections } },
@@ -214,9 +256,29 @@ const getOperatorDashboard = async (req, res) => {
                 status: { in: ['PENDING', 'IN_PROGRESS'] }
             },
             include: {
-                defectRecords: true // Need this to show rework counts on frontend
+                defectRecords: true
             }
         });
+
+        const batches = await Promise.all(rawBatches.map(async (b) => {
+            const [pendingRework, approvedQCLogs, pendingQCLogs] = await Promise.all([
+                prisma.reworkRecord.findFirst({ where: { batchId: b.id, approvalStatus: 'PENDING' } }),
+                prisma.productionLog.findMany({ where: { batchId: b.id, stage: 'QUALITY_CHECK', approvalStatus: 'APPROVED' } }),
+                prisma.productionLog.findFirst({ where: { batchId: b.id, stage: 'QUALITY_CHECK', approvalStatus: 'PENDING' } })
+            ]);
+
+            const qcClearedTotal = approvedQCLogs.reduce((sum, log) => sum + log.quantityOut, 0);
+            const survivingTotal = b.totalQuantity - b.scrappedQuantity;
+
+            return {
+                ...b,
+                isWaitingForRework: b.defectiveQuantity > 0 || !!pendingRework,
+                isReQCRequired: qcClearedTotal < survivingTotal,
+                hasPendingQC: !!pendingQCLogs,
+                qcClearedTotal,
+                survivingTotal
+            };
+        }));
 
         // 2. Personal recent activity
         const recentLogs = await prisma.productionLog.findMany({
@@ -301,6 +363,8 @@ const createBatch = async (req, res) => {
                 status: 'PENDING',
                 usableQuantity: 0,
                 defectiveQuantity: 0,
+                reworkedPendingQuantity: 0,
+                pendingQCQuantity: parseInt(totalQuantity),
                 scrappedQuantity: 0
             }
         });

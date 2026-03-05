@@ -497,3 +497,95 @@ td {
     transform: translateY(0);
   }
 }
+
+/* QC Hold Gate Styles */
+.action-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-end;
+}
+
+.approval-btns {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.approval-warning-gate {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: flex-end;
+}
+
+.badge-hold {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badge-hold.rework {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+
+.badge-hold.reqc {
+  background: #e0e7ff;
+  color: #3730a3;
+  border: 1px solid #c7d2fe;
+}
+
+.hold-hint {
+  font-size: 0.65rem;
+  color: #64748b;
+  font-style: italic;
+}
+
+.batch-mini-card.on-hold {
+  border-left: 4px solid #f59e0b;
+  background: #fffdfa;
+}
+
+.stage-and-hold {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.hold-indicator {
+  background: #f59e0b;
+  color: white;
+  font-size: 0.6rem;
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  font-weight: 800;
+}
+
+.hold-details {
+  margin-top: 0.5rem;
+  display: flex;
+  gap: 0.25rem;
+}
+
+.mini-badge {
+  font-size: 0.6rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.mini-badge.warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.mini-badge.info {
+  background: #e0e7ff;
+  color: #3730a3;
+}

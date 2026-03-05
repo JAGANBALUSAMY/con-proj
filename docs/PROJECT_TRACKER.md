@@ -575,13 +575,56 @@ Complete development timeline from Day 1 to Day 19.
 
 ---
 
+## 📅 Task 26: QC Ledger Implementation (February 21, 2026)
+
+**Objective:** Refactor Quality Check and Rework into a strict quantity ledger to prevent drift and process deadlocks.
+
+**Backend Files:**
+- `prisma/schema.prisma` - Added `reworkedPendingQuantity`
+- `src/controllers/qualityController.js` - Implemented pool-based QC (Initial vs Re-QC)
+- `src/controllers/approvalController.js` - Implemented accumulation logic for `usableQuantity` and strict advancement gate
+
+**Frontend Files:**
+- `src/pages/OperatorDashboard/QualityCheckModal.jsx` - Added pool selection and ledger header
+- `src/pages/OperatorDashboard/QualityCheckModal.css` - Visual indicators for ledger states
+
+**Rules Enforced:**
+- **Usable Quantity Lockdown**: Strictly Cleared units only.
+- **Pool Isolation**: QC must target either New Units or Cured Units, never both.
+- **Advancement Guard**: Batch remains in QC until all units are accounted for (Cleared or Scrapped).
+
+**Status:** ✅ Completed
+
+---
+
+## 📅 Task 27: API-Based E2E Verification (February 26, 2026)
+
+**Objective:** Implement a high-fidelity, API-based end-to-end test suite to verify the entire production lifecycle and fix underlying controller logic errors.
+
+**Backend Files:**
+- `tests/e2e-batch-flow.test.js` - Comprehensive lifecycle test suite
+- `src/controllers/productionController.js` - Fixed quantity validation for Stitched/QC stages
+- `src/controllers/reworkController.js` - Fixed defect filtering and specialized operator access
+- `src/controllers/approvalController.js` - Exempted QC from single-approval guard
+
+**Rules Enforced:**
+- Full 9-stage production traversal (Cutting â FOLDING â PACKING)
+- QC Ledger integrity (Initial QC vs Re-QC isolation)
+- Direct Sectional Rework with specialized "REWORK" section authority
+- Multi-approval support for Quality Check stage
+- Strict quantity balancing across the complete batch lifecycle
+
+**Status:** â Completed
+
+---
+
 ## Summary
 
-**Total Tasks:** 25
-**Total Files Created/Modified:** 145+
+**Total Tasks:** 27
+**Total Files Created/Modified:** 152+
 **Backend Controllers:** 9
-**Frontend Components:** 31+
+**Frontend Components:** 33+
 **Dashboard Pages:** 3 (Admin, Manager, Operator)
 
-**All work is fully implemented, tested, and compliant with CONSTRAINTS.md.**
+**All work is fully implemented, verified via ledger balancing scripts, and compliant with the updated CONSTRAINTS.md.**
 

@@ -57,10 +57,14 @@ const ReworkLogModal = ({ isOpen, onClose, batch, onSuccess }) => {
         const q = parseInt(quantity);
         const c = parseInt(curedQuantity);
         const s = parseInt(scrappedQuantity);
+        const availableForSection = summary?.batch?.defectCountByStage?.[reworkStage] || 0;
 
         if (!batch) return 'No batch selected.';
         if (!quantity || q <= 0) return 'Rework quantity must be greater than 0.';
-        if (q > batch.defectiveQuantity) return `Cannot rework ${q} units. Only ${batch.defectiveQuantity} defective units available.`;
+
+        if (q > availableForSection) {
+            return `Cannot rework ${q} units. Only ${availableForSection} defects are recorded for the ${reworkStage} section.`;
+        }
 
         if (isNaN(c) || c < 0) return 'Cured quantity invalid.';
         if (isNaN(s) || s < 0) return 'Scrapped quantity invalid.';
@@ -154,7 +158,7 @@ const ReworkLogModal = ({ isOpen, onClose, batch, onSuccess }) => {
                             <label>Rework Section</label>
                             <div className="static-field-value">
                                 <Wrench size={14} />
-                                <span>{assignedSection} ({summary?.batch?.defectCountByStage?.[assignedSection] || 0} defects available)</span>
+                                <span>{assignedSection} ({summary?.batch?.availableReworkByStage?.[assignedSection] || 0} units available)</span>
                             </div>
                             <small>Rework is routed directly back to the origin section.</small>
                         </div>
@@ -166,7 +170,7 @@ const ReworkLogModal = ({ isOpen, onClose, batch, onSuccess }) => {
                                     type="number"
                                     value={quantity}
                                     onChange={e => setQuantity(e.target.value)}
-                                    max={batch.defectiveQuantity}
+                                    max={summary?.batch?.availableReworkByStage?.[reworkStage] || 0}
                                     min="1"
                                     required
                                 />

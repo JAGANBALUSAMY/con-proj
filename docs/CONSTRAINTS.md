@@ -57,7 +57,7 @@ CUTTING → STITCHING → QUALITY_CHECK → LABELING → FOLDING → PACKING
 - Batch is **COMPLETED only after PACKING**
 - Quantity integrity must always hold:
 
-usableQuantity + defectiveQuantity + scrappedQuantity = totalQuantity
+usableQuantity + defectiveQuantity + reworkedPendingQuantity + pendingQCQuantity + scrappedQuantity = totalQuantity
 
 
 ---
@@ -163,6 +163,7 @@ data from unassigned sections
 - Every operator-completed action creates a record with:
   - `approvalStatus = PENDING`
 - A batch stage MUST NOT advance while approvalStatus = PENDING
+- **Single Approval Enforcement**: For all stages EXCEPT `QUALITY_CHECK`, only ONE approved production log is permitted per stage. `QUALITY_CHECK` allows multiple approved logs to accommodate both Initial QC and Re-QC passes.
 - Only MANAGER can approve or reject operator work
 - Manager must be the **owning manager** of the operator
 - Operators **CANNOT approve** any work
@@ -176,10 +177,14 @@ data from unassigned sections
 
 ## 13. Quality & Defects (Quantity-Based)
 
-- Quality check ONLY at QUALITY_CHECK stage
-- Defects are recorded as quantities
-- Defective quantity ≤ batch quantity
-- Quality completion requires **manager approval**
+- **Quality Check is a Quantity Ledger**, not a stage loop.
+- Quality check happens ONLY at the QUALITY_CHECK stage.
+- **usableQuantity** is strictly **QC-Cleared quantity ONLY**.
+- Logs are classified into two pools:
+  - **Initial QC**: Consumes never-inspected units (`remainingToQC`).
+  - **Re-QC**: Consumes cured units from rework (`reworkedPendingQuantity`).
+- Mixing pools in a single log is strictly forbidden.
+- Quality completion (Advancement Gate) requires all units to be either Cleared or Scrapped (Zero Defective/Pending).
 
 ---
 
@@ -189,15 +194,16 @@ data from unassigned sections
 - Rework is a **sub-flow**, NOT backward batch movement
 
 ### Rework Rules
-- **Direct Routing**: Target stage must be the origin section: CUTTING or STITCHING only.
-- **Sectional Accountability**: Rework is performed by operators and approved by managers of the origin section. There is no separate "REWORK" department.
-- Rework quantity ≤ defective quantity
-- Batch stage does NOT change during rework
-- Rework outcome:
-  - CURED
-  - SCRAPPED
-- CURED + SCRAPPED = rework quantity
-- Only CURED quantity rejoins the batch
+- **Direct Routing**: Target stage must be the origin section (CUTTING or STITCHING).
+- **Sectional Accountability**: Rework is performed by operators of the origin section OR by specialized operators assigned to the **REWORK** section.
+- **Approval Authority**: Rework is always approved by managers of the target origin section.
+- Rework quantity ≤ defective quantity.
+- Batch stage does NOT change during rework.
+- **Rework Approval Movement**:
+  - `defectiveQuantity` decreases.
+  - `reworkedPendingQuantity` (Cured) increases.
+  - `scrappedQuantity` increases.
+- Only **Re-QC** can move units from `reworkedPendingQuantity` to `usableQuantity`.
 - Rework execution and completion require **manager approval** from the origin section.
 
 ---

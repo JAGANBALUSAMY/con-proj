@@ -67,7 +67,7 @@ const approveProductionLog = async (req, res) => {
                 throw new Error(`Batch #${log.batchId} is ${currentBatch?.status || 'not found'} and cannot be modified.`);
             }
 
-            // B. Single-Approval Enforcement: Max 1 APPROVED log per batch per stage
+            // B. Single-Approval Enforcement: Max 1 APPROVED log per batch per stage (EXCEPT for QUALITY_CHECK)
             const existingApproved = await tx.productionLog.findFirst({
                 where: {
                     batchId: log.batchId,
@@ -75,7 +75,7 @@ const approveProductionLog = async (req, res) => {
                     approvalStatus: 'APPROVED'
                 }
             });
-            if (existingApproved) {
+            if (existingApproved && log.stage !== 'QUALITY_CHECK') {
                 throw new Error(`Stage ${log.stage} for batch #${log.batchId} is already approved.`);
             }
 
@@ -114,34 +114,86 @@ const approveProductionLog = async (req, res) => {
                     data: { status: 'COMPLETED' }
                 });
             } else {
-                // Advance Batch Stage
-                const nextStage = stages[currentIndex + 1];
-                const updateData = {
-                    currentStage: nextStage,
-                    usableQuantity: log.quantityOut // Sync usable quantity to what was actually produced
-                };
+                const stages = ['CUTTING', 'STITCHING', 'QUALITY_CHECK', 'LABELING', 'FOLDING', 'PACKING'];
+                const currentIndex = stages.indexOf(currentBatch.currentStage);
+                let nextStage = stages[currentIndex + 1];
 
-                // Account for loss (difference between what entered the section and what came out)
-                const loss = currentBatch.usableQuantity - log.quantityOut;
+                const updateData = {};
 
-                if (loss > 0) {
-                    if (currentBatch.currentStage === 'QUALITY_CHECK') {
-                        // Loss at QC is explicitly "Defective"
-                        updateData.defectiveQuantity = { increment: loss };
+                // --- 📊 CALCULATE LOSS/DEFECTS (Log Level) ---
+                const logLoss = log.quantityIn - (log.quantityOut || 0);
+
+                // Stage-Specific Logic
+                if (currentBatch.currentStage === 'CUTTING') {
+                    // Initialisation logic: All surviving units start in 'pendingQCQuantity'.
+                    const cuttingLoss = currentBatch.totalQuantity - log.quantityOut;
+                    updateData.scrappedQuantity = { increment: cuttingLoss };
+                    updateData.pendingQCQuantity = log.quantityOut;
+                    updateData.status = 'IN_PROGRESS';
+                } else if (currentBatch.currentStage === 'STITCHING') {
+                    // If loss occurs, it reduces the pending QC pool.
+                    if (logLoss > 0) {
+                        updateData.scrappedQuantity = { increment: logLoss };
+                        updateData.pendingQCQuantity = { decrement: logLoss };
+                    }
+                } else if (currentBatch.currentStage === 'QUALITY_CHECK') {
+                    // --- 🚀 QC LEDGER ACCUMULATION ---
+                    const logType = log.rejectionReason?.startsWith('TYPE:') ? log.rejectionReason.split(':')[1] : 'INITIAL_QC';
+
+                    // Rule 1: This is the ONLY place units enter 'usableQuantity'.
+                    updateData.usableQuantity = { increment: log.quantityOut };
+
+                    if (logType === 'RE_QC') {
+                        // Re-QC consumes units from the Reworked-Pending-QC ledger.
+                        updateData.reworkedPendingQuantity = { decrement: log.quantityIn };
                     } else {
-                        // Loss at any other stage is "Scrapped"
-                        updateData.scrappedQuantity = { increment: loss };
+                        // Initial QC consumes units from the Pending-QC pool.
+                        updateData.pendingQCQuantity = { decrement: log.quantityIn };
+                    }
+
+                    // Any loss in QC that doesn't go to rework is considered defective (awaiting rework)
+                    if (logLoss > 0) {
+                        updateData.defectiveQuantity = { increment: logLoss };
+                    }
+
+                    // --- 🚀 ADVANCEMENT CHECK ---
+                    // Recalculate states for guard logic
+                    const finalCleared = currentBatch.usableQuantity + log.quantityOut;
+                    const finalScrapped = currentBatch.scrappedQuantity + (updateData.scrappedQuantity?.increment || 0);
+                    const finalDefective = currentBatch.defectiveQuantity + (updateData.defectiveQuantity?.increment || 0);
+                    const finalReworkedPending = currentBatch.reworkedPendingQuantity + (updateData.reworkedPendingQuantity?.decrement ? -log.quantityIn : 0);
+                    const finalPendingQC = currentBatch.pendingQCQuantity + (updateData.pendingQCQuantity?.decrement ? -log.quantityIn : 0);
+
+                    const survivingTotal = currentBatch.totalQuantity - finalScrapped;
+
+                    const hasPendingRework = await tx.reworkRecord.findFirst({
+                        where: { batchId: log.batchId, approvalStatus: 'PENDING' }
+                    });
+                    const hasPendingQC = await tx.productionLog.findFirst({
+                        where: { batchId: log.batchId, stage: 'QUALITY_CHECK', approvalStatus: 'PENDING', NOT: { id: log.id } }
+                    });
+
+                    // Ledger Rule: Batch moves forward ONLY IF all pools except 'cleared' are empty.
+                    const isFullyCleared = (finalCleared === survivingTotal) &&
+                        (finalDefective === 0) &&
+                        (finalReworkedPending === 0) &&
+                        (finalPendingQC === 0) &&
+                        !hasPendingRework &&
+                        !hasPendingQC;
+
+                    if (!isFullyCleared) {
+                        nextStage = 'QUALITY_CHECK'; // HOLD
+                    }
+                } else {
+                    // Post-QC stages (Labeling, Folding, Packing)
+                    // If loss occurs, we must decrement usableQuantity to keep the ledger balanced.
+                    if (logLoss > 0) {
+                        updateData.usableQuantity = { decrement: logLoss };
+                        updateData.scrappedQuantity = { increment: logLoss };
                     }
                 }
 
-                // Initialisation logic for CUTTING (first section)
-                if (currentBatch.currentStage === 'CUTTING') {
-                    // Cutting uses totalQuantity as base
-                    const cuttingLoss = currentBatch.totalQuantity - log.quantityOut;
-                    updateData.usableQuantity = log.quantityOut;
-                    updateData.scrappedQuantity = { increment: cuttingLoss };
-                    updateData.status = 'IN_PROGRESS';
-                }
+                updateData.currentStage = nextStage;
 
                 await tx.batch.update({
                     where: { id: log.batchId },
@@ -149,10 +201,14 @@ const approveProductionLog = async (req, res) => {
                 });
             }
 
-            // C. Quantity Equation Assertion: usable + defective + scrapped === total
+            // C. Quantity Equation Assertion: clear + defective + pendingReQC + pendingQC + scrapped === total
             const finalBatch = await tx.batch.findUnique({ where: { id: log.batchId } });
-            if (finalBatch.usableQuantity + finalBatch.defectiveQuantity + finalBatch.scrappedQuantity !== finalBatch.totalQuantity) {
-                throw new Error(`Quantity Inconsistency: total(${finalBatch.totalQuantity}) != usable(${finalBatch.usableQuantity}) + def(${finalBatch.defectiveQuantity}) + scrap(${finalBatch.scrappedQuantity})`);
+            const ledgerSum = finalBatch.usableQuantity + finalBatch.defectiveQuantity +
+                finalBatch.reworkedPendingQuantity + finalBatch.pendingQCQuantity +
+                finalBatch.scrappedQuantity;
+
+            if (ledgerSum !== finalBatch.totalQuantity) {
+                throw new Error(`Ledger Inconsistency: total(${finalBatch.totalQuantity}) != sum(${ledgerSum}) [clear:${finalBatch.usableQuantity}, def:${finalBatch.defectiveQuantity}, cured:${finalBatch.reworkedPendingQuantity}, pendQC:${finalBatch.pendingQCQuantity}, scrap:${finalBatch.scrappedQuantity}]`);
             }
 
             return updatedLog;
@@ -227,19 +283,19 @@ const approveRework = async (req, res) => {
                 }
             });
 
-            // 2. Update Batch Quantities
+            // 2. Update Batch Quantities (Ledger Rule 1 & 3)
             const updatedBatch = await tx.batch.update({
                 where: { id: rework.batchId },
                 data: {
                     defectiveQuantity: { decrement: rework.quantity },
-                    usableQuantity: { increment: rework.curedQuantity },
+                    reworkedPendingQuantity: { increment: rework.curedQuantity }, // Moves to Pending-ReQC pool
                     scrappedQuantity: { increment: rework.scrappedQuantity },
                 }
             });
 
             // 3. Final Invariant Assertion
-            if (updatedBatch.usableQuantity + updatedBatch.defectiveQuantity + updatedBatch.scrappedQuantity !== updatedBatch.totalQuantity) {
-                throw new Error(`Quantity Inconsistency: total(${updatedBatch.totalQuantity}) != usable(${updatedBatch.usableQuantity}) + def(${updatedBatch.defectiveQuantity}) + scrap(${updatedBatch.scrappedQuantity})`);
+            if (updatedBatch.usableQuantity + updatedBatch.defectiveQuantity + updatedBatch.reworkedPendingQuantity + updatedBatch.scrappedQuantity !== updatedBatch.totalQuantity) {
+                throw new Error(`Ledger Inconsistency (Rework): total(${updatedBatch.totalQuantity}) != clear(${updatedBatch.usableQuantity}) + def(${updatedBatch.defectiveQuantity}) + pendingReQC(${updatedBatch.reworkedPendingQuantity}) + scrap(${updatedBatch.scrappedQuantity})`);
             }
 
             return { rework: updatedRework, batch: updatedBatch };

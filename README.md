@@ -277,7 +277,7 @@ con-proj/
   - **Labeling**: Strict quantity gating (Input = Output = Usable). Section-based approval.
   - **Folding**: Locked quantity workflow. Section-based approval.
   - **Packing & Export**: Box creation, strict quantity validation, and batch completion on approval.
-  - **Quality Check**: Defect recording with sectional origin mapping.
+  - **Quality Check (Ledger Model)**: Strict tracking of Cleared, Defective, Cured, and Scrapped quantities. Pool-based inspection (Initial vs Re-QC).
 
 ### ❌ Not Yet Implemented
 
@@ -306,7 +306,23 @@ con-proj/
 
 ## 🧪 Testing the System
 
-### End-to-End Workflow
+### API-Based End-to-End Verification (NEW)
+The system includes a robust E2E test suite that simulates a complete 100-unit batch lifecycle.
+
+**Run the E2E Test Suite:**
+```bash
+cd apps/backend
+npm run test:e2e
+```
+
+**What the E2E test verifies:**
+1. High-fidelity batch creation and user setup.
+2. Full 9-stage production traversal (Cutting → Packing).
+3. Complex Quality Check ledger balancing (Initial QC vs Re-QC).
+4. Sectional Rework routing and cross-section approval authority.
+5. Final Batch Completion with 100% quantity integrity.
+
+### Manual End-to-End Workflow
 
 1. **Login as Admin** (`ADMIN001` / `admin123`)
    - Create a Manager with sections (e.g., CUTTING, STITCHING)
@@ -356,6 +372,8 @@ All critical issues have been resolved:
 - [x] Automated Time Capture & Hardening
 - [x] Shipment Tracking & Box Management
 - [x] Production Analytics Dashboard
+- [x] QC Ledger Model (Quantity Integrity & Re-QC)
+- [x] API-Based E2E Production Lifecycle Test
 
 ## 📝 Documentation
 
@@ -373,4 +391,4 @@ Proprietary - All rights reserved
 
 ---
 
-**Current Status**: 100% Complete | **Last Updated**: February 19, 2026
+**Current Status**: 100% Complete | **Last Updated**: March 05, 2026
