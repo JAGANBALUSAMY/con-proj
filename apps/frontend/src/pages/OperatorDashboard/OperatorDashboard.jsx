@@ -141,14 +141,20 @@ const OperatorDashboard = () => {
                                         )}
 
                                         {/* Rework Button (Side-Flow) */}
-                                        {batch.defectRecords?.some(d => d.stage === assignedSection) && (
-                                            <button
-                                                className="btn-rework"
-                                                onClick={() => handleReworkClick(batch)}
-                                            >
-                                                <RotateCcw size={16} /> Log Rework ({assignedSection})
-                                            </button>
-                                        )}
+                                        {/* If operator is in REWORK section, show all pending rework items for the batch */}
+                                        {/* If operator is in CUTTING/STITCHING, only show rework for their own section */}
+                                        {batch.defectRecords?.some(d =>
+                                            assignedSection === 'REWORK'
+                                                ? ['CUTTING', 'STITCHING'].includes(d.reworkStage)
+                                                : d.reworkStage === assignedSection
+                                        ) && (
+                                                <button
+                                                    className="btn-rework"
+                                                    onClick={() => handleReworkClick(batch)}
+                                                >
+                                                    <RotateCcw size={16} /> Log Rework ({assignedSection === 'REWORK' ? 'All' : assignedSection})
+                                                </button>
+                                            )}
                                     </div>
                                 </div>
                             ))}

@@ -293,9 +293,9 @@ const approveRework = async (req, res) => {
                 }
             });
 
-            // 3. Final Invariant Assertion
-            if (updatedBatch.usableQuantity + updatedBatch.defectiveQuantity + updatedBatch.reworkedPendingQuantity + updatedBatch.scrappedQuantity !== updatedBatch.totalQuantity) {
-                throw new Error(`Ledger Inconsistency (Rework): total(${updatedBatch.totalQuantity}) != clear(${updatedBatch.usableQuantity}) + def(${updatedBatch.defectiveQuantity}) + pendingReQC(${updatedBatch.reworkedPendingQuantity}) + scrap(${updatedBatch.scrappedQuantity})`);
+            // 3. Final Invariant Assertion (Include pendingQCQuantity)
+            if (updatedBatch.usableQuantity + updatedBatch.defectiveQuantity + updatedBatch.reworkedPendingQuantity + updatedBatch.scrappedQuantity + updatedBatch.pendingQCQuantity !== updatedBatch.totalQuantity) {
+                throw new Error(`Ledger Inconsistency (Rework): total(${updatedBatch.totalQuantity}) != clear(${updatedBatch.usableQuantity}) + def(${updatedBatch.defectiveQuantity}) + pendingReQC(${updatedBatch.reworkedPendingQuantity}) + scrap(${updatedBatch.scrappedQuantity}) + pendingQC(${updatedBatch.pendingQCQuantity})`);
             }
 
             return { rework: updatedRework, batch: updatedBatch };

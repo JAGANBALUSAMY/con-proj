@@ -121,8 +121,7 @@ const createReworkLog = async (req, res) => {
                 },
                 reworkRecords: {
                     where: {
-                        reworkStage: reworkStage,
-                        approvalStatus: 'PENDING'
+                        reworkStage: reworkStage
                     }
                 }
             }
@@ -134,7 +133,6 @@ const createReworkLog = async (req, res) => {
             return res.status(400).json({ error: `Cannot log rework for a ${batch.status} batch.` });
         }
 
-        // Logic Hole #1 Fix: Defect Origin Consistency
         // Sum total defects recorded for this reworkStage
         const totalDefectsForStage = batch.defectRecords.reduce((sum, d) => sum + d.quantity, 0);
 
@@ -145,15 +143,26 @@ const createReworkLog = async (req, res) => {
             });
         }
 
-        // Logic Hole #2 Fix: Double Rework Guard (Pending Overlap)
-        const pendingReworkForStage = batch.reworkRecords.reduce((sum, r) => sum + r.quantity, 0);
-        const availableDefectiveForStage = totalDefectsForStage - pendingReworkForStage;
+        // Logic Hole #2 Fix: Double Rework Guard (Subtract PENDING AND APPROVED)
+        // We include all statuses here because even REJECTED ones (if they existed) wouldn't "undo" the defect count.
+        // But specifically, PENDING and APPROVED are the active ones.
+        const totalReworkForStage = batch.reworkRecords.reduce((sum, r) => sum + r.quantity, 0);
+        const availableForStage = totalDefectsForStage - totalReworkForStage;
 
-        if (qty > availableDefectiveForStage) {
+        if (qty > availableForStage) {
             return res.status(400).json({
-                error: `Double Rework Guard: ${qty} units requested, but only ${availableDefectiveForStage} units are available for rework after accounting for pending logs.`,
-                availableForRework: availableDefectiveForStage,
-                pendingAlready: pendingReworkForStage
+                error: `Double Rework Guard: ${qty} units requested, but only ${availableForStage} units are available for rework after accounting for existing logs (Pending + Approved).`,
+                availableForRework: availableForStage,
+                existingRework: totalReworkForStage
+            });
+        }
+
+        // Logic Hole #3 Fix: QC Approval Requirement
+        // Rework must be logged from the 'defectiveQuantity' pool in the Batch, which only increments after QC Approval.
+        if (batch.defectiveQuantity < qty) {
+            return res.status(400).json({
+                error: `Incomplete QC: Only ${batch.defectiveQuantity} defects are currently available for rework. Some defects might still be in a PENDING Quality Check.`,
+                defectivePool: batch.defectiveQuantity
             });
         }
 
@@ -187,6 +196,7 @@ const createReworkLog = async (req, res) => {
 
         // ── 6. Emit Event ────────────────────────────────────────────────────
         socketUtil.emitEvent('approval:updated', reworkRecord);
+        socketUtil.emitEvent('batch:status_updated', { batchId: reworkRecord.batchId });
 
         return res.status(201).json({
             message: 'Rework log created successfully. Awaiting manager approval.',

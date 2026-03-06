@@ -21,9 +21,9 @@ const ReworkLogModal = ({ isOpen, onClose, batch, onSuccess }) => {
     useEffect(() => {
         if (isOpen && batch) {
             setError('');
-            setQuantity('');
-            setCuredQuantity('');
-            setScrappedQuantity('');
+            setQuantity('1'); // Default to 1 instead of empty to prevent "greater than 1" error on first touch
+            setCuredQuantity('1');
+            setScrappedQuantity('0');
             setStartTime(null);
             setReworkStage(assignedSection);
             fetchSummary();
@@ -185,6 +185,7 @@ const ReworkLogModal = ({ isOpen, onClose, batch, onSuccess }) => {
                                     value={curedQuantity}
                                     onChange={e => setCuredQuantity(e.target.value)}
                                     min="0"
+                                    max={quantity || 0}
                                     required
                                 />
                             </div>
@@ -195,9 +196,10 @@ const ReworkLogModal = ({ isOpen, onClose, batch, onSuccess }) => {
                                     value={scrappedQuantity}
                                     onChange={e => setScrappedQuantity(e.target.value)}
                                     min="0"
+                                    max={quantity || 0}
                                     required
-                                    readOnly // Auto-calc makes it safer, but let's allow manual if needed? No, auto-calc is better UX.
-                                    style={{ backgroundColor: '#f3f4f6' }}
+                                    readOnly
+                                    style={{ backgroundColor: '#f3f4f6', cursor: 'not-allowed' }}
                                 />
                             </div>
                         </div>

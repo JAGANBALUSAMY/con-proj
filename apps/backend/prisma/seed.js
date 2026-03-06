@@ -5,122 +5,101 @@ const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 async function main() {
-    console.log('🌱 Starting database seeding...');
+    console.log('🌱 Starting refined database reset and seeding...');
 
-    // 0. Clean Database (Reverse order of dependencies)
-    console.log('🧹 Cleaning existing data...');
+    // 0. Clean Database
+    console.log('🧹 Cleaning all existing data...');
     await prisma.defectRecord.deleteMany();
-    await prisma.productionLog.deleteMany();
     await prisma.reworkRecord.deleteMany();
+    await prisma.productionLog.deleteMany();
     await prisma.box.deleteMany();
+    await prisma.sectionTransferRequest.deleteMany();
     await prisma.sectionAssignment.deleteMany();
     await prisma.batch.deleteMany();
-    // Keep users but update them if needed via upsert, or delete if we want total reset
-    // For now, let's just delete the transactional data.
-    // If we want total reset, we'd delete the users too (except admin maybe).
-    // Let's delete ALL to be safe as requested "deleted values in the DB".
-    await prisma.user.deleteMany({ where: { role: { not: 'ADMIN' } } });
+    await prisma.machine.deleteMany();
+    await prisma.user.deleteMany();
 
-    // 1. Initial Admin User
-    const adminCode = 'ADMIN001';
-    const adminPassword = 'AdminPassword123!'; // IMPORTANT: CHANGE THIS AFTER LOGIN
-    // RESTORE HASHING: Passwords must be hashed for bcrypt.compare to work
     const hashedPassword = await bcrypt.hash('123456', 10);
 
-    const admin = await prisma.user.upsert({
-        where: { employeeCode: adminCode },
-        update: { password: hashedPassword },
-        create: {
-            employeeCode: adminCode,
+    // 1. Create Admin
+    console.log('👤 Creating Admin...');
+    await prisma.user.create({
+        data: {
+            employeeCode: 'ADMIN',
             fullName: 'System Administrator',
             password: hashedPassword,
             role: 'ADMIN',
             status: 'ACTIVE',
             verificationStatus: 'VERIFIED',
-        },
+        }
     });
 
-    // 2. Production Stages
-    const stages = ['CUTTING', 'STITCHING', 'QUALITY_CHECK', 'LABELING', 'FOLDING', 'PACKING'];
+    // 2. Production Stages and Mappings
+    const stageInfo = [
+        { stage: 'CUTTING', code: 'CUT' },
+        { stage: 'STITCHING', code: 'STI' },
+        { stage: 'QUALITY_CHECK', code: 'QC' },
+        { stage: 'LABELING', code: 'LAB' },
+        { stage: 'FOLDING', code: 'FOL' },
+        { stage: 'PACKING', code: 'PAC' }
+    ];
 
-    console.log('🏭 Seeding Production Staff...');
+    console.log('🏭 Seeding Staff (Strict Sections)...');
 
-    // We need to keep track of created users to assign logs later
-    const createdUsers = {};
+    for (const info of stageInfo) {
+        const { stage, code } = info;
+        console.log(`   Stage: ${stage} (${code})`);
 
-    for (const stage of stages) {
-        console.log(`   Processing Stage: ${stage}`);
-        const stageCode = stage.substring(0, 3).toUpperCase(); // CUT, STI...
-
-        // Create 2 Managers per stage
-        for (let i = 1; i <= 2; i++) {
-            const mgrCode = `MGR_${stageCode}_0${i}`;
-            const mgrEmail = `mgr_${stage}_0${i}@factory.com`.toLowerCase();
-
-            const manager = await prisma.user.upsert({
-                where: { employeeCode: mgrCode },
-                update: { password: hashedPassword },
-                create: {
-                    employeeCode: mgrCode,
-                    email: mgrEmail,
-                    fullName: `Manager ${stage} ${i}`,
-                    password: hashedPassword,
-                    role: 'MANAGER',
-                    status: 'ACTIVE',
-                    verificationStatus: 'VERIFIED',
-                },
-            });
-
-            // Store for reference
-            if (!createdUsers[stage]) createdUsers[stage] = { managers: [], operators: [] };
-            createdUsers[stage].managers.push(manager);
-
-            // Assign Section (Idempotent)
-            const existingAssignment = await prisma.sectionAssignment.findFirst({
-                where: { userId: manager.id, stage: stage }
-            });
-
-            if (!existingAssignment) {
-                await prisma.sectionAssignment.create({
-                    data: { userId: manager.id, stage: stage }
-                });
+        // Create 1 Manager
+        const mgrCode = `MGR_${code}_01`;
+        const manager = await prisma.user.create({
+            data: {
+                employeeCode: mgrCode,
+                fullName: `${stage.charAt(0) + stage.slice(1).toLowerCase()} Manager`,
+                password: hashedPassword,
+                role: 'MANAGER',
+                status: 'ACTIVE',
+                verificationStatus: 'VERIFIED',
+                sectionAssignments: {
+                    create: { stage: stage }
+                }
             }
+        });
 
-            // Create 1 Operator per Manager (Total 2 per stage)
-            const opCode = `OP_${stageCode}_0${i}`;
-            const opEmail = `op_${stage}_0${i}@factory.com`.toLowerCase();
-
-            const operator = await prisma.user.upsert({
-                where: { employeeCode: opCode },
-                update: { password: hashedPassword },
-                create: {
-                    employeeCode: opCode,
-                    email: opEmail,
-                    fullName: `Operator ${stage} ${i}`,
-                    password: hashedPassword,
-                    role: 'OPERATOR',
-                    status: 'ACTIVE',
-                    verificationStatus: 'VERIFIED',
-                    createdByUserId: manager.id // Link to creating manager
-                },
-            });
-            createdUsers[stage].operators.push(operator);
-
-            // Assign Operator to Stage
-            const existingOpAssignment = await prisma.sectionAssignment.findFirst({
-                where: { userId: operator.id, stage: stage }
-            });
-
-            if (!existingOpAssignment) {
-                await prisma.sectionAssignment.create({
-                    data: { userId: operator.id, stage: stage }
-                });
+        // Create 1 Operator
+        const opCode = `OP_${code}_01`;
+        await prisma.user.create({
+            data: {
+                employeeCode: opCode,
+                fullName: `${stage.charAt(0) + stage.slice(1).toLowerCase()} Operator`,
+                password: hashedPassword,
+                role: 'OPERATOR',
+                status: 'ACTIVE',
+                verificationStatus: 'VERIFIED',
+                createdByUserId: manager.id,
+                sectionAssignments: {
+                    create: { stage: stage }
+                }
             }
-        }
+        });
     }
 
-    console.log('✅ Staff seeding completed.');
-    console.log('🚀 Database ready (Users only).');
+    // 3. Create Machines
+    console.log('⚙️ Creating Machines...');
+    await prisma.machine.create({ data: { machineCode: 'CUT-M-01', name: 'Cutting Machine 1', type: 'LASER_CUTTER' } });
+    await prisma.machine.create({ data: { machineCode: 'STITCH-M-01', name: 'Stitching Machine 1', type: 'SEWING' } });
+    await prisma.machine.create({ data: { machineCode: 'QC-STATION-01', name: 'Quality Hub 1', type: 'INSPECTION' } });
+
+    console.log('✅ Seeding completed successfully.');
+    console.log('-----------------------------------');
+    console.log('Login Details (All Passwords: 123456):');
+    console.log('Format: employeeCode');
+    console.log('- Admin: ADMIN');
+    for (const info of stageInfo) {
+        console.log(`- ${info.stage}: MGR_${info.code}_01 / OP_${info.code}_01`);
+    }
+    console.log('-----------------------------------');
+    console.log('Note: CUTting and STItching users can perform rework for their sections.');
 }
 
 main()

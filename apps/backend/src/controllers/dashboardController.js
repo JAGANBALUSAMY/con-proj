@@ -241,46 +241,59 @@ const getOperatorDashboard = async (req, res) => {
 
         // 1. Fetch batches for this operator
         // Logic: Show batches currently in their section OR batches with defects from their section (Sectional Rework)
-        const rawBatches = await prisma.batch.findMany({
+        const batches = await prisma.batch.findMany({
             where: {
                 OR: [
                     { currentStage: { in: assignedSections } },
                     {
                         defectRecords: {
                             some: {
-                                stage: { in: assignedSections }
+                                reworkStage: assignedSections.includes('REWORK')
+                                    ? { in: ['CUTTING', 'STITCHING'] }
+                                    : { in: assignedSections.filter(s => ['CUTTING', 'STITCHING'].includes(s)) }
                             }
                         }
                     }
                 ],
-                status: { in: ['PENDING', 'IN_PROGRESS'] }
+                status: 'IN_PROGRESS'
             },
             include: {
                 defectRecords: true
             }
         });
 
-        const batches = await Promise.all(rawBatches.map(async (b) => {
-            const [pendingRework, approvedQCLogs, pendingQCLogs] = await Promise.all([
-                prisma.reworkRecord.findFirst({ where: { batchId: b.id, approvalStatus: 'PENDING' } }),
-                prisma.productionLog.findMany({ where: { batchId: b.id, stage: 'QUALITY_CHECK', approvalStatus: 'APPROVED' } }),
-                prisma.productionLog.findFirst({ where: { batchId: b.id, stage: 'QUALITY_CHECK', approvalStatus: 'PENDING' } })
-            ]);
+        // 2. Filter batches that have a PENDING production or rework log for this station
+        const filteredBatches = await Promise.all(batches.map(async (batch) => {
+            // Check for pending production log in current stage
+            const pendingProdLog = await prisma.productionLog.findFirst({
+                where: {
+                    batchId: batch.id,
+                    stage: batch.currentStage,
+                    approvalStatus: 'PENDING'
+                }
+            });
 
-            const qcClearedTotal = approvedQCLogs.reduce((sum, log) => sum + log.quantityOut, 0);
-            const survivingTotal = b.totalQuantity - b.scrappedQuantity;
+            if (pendingProdLog) return null;
 
-            return {
-                ...b,
-                isWaitingForRework: b.defectiveQuantity > 0 || !!pendingRework,
-                isReQCRequired: qcClearedTotal < survivingTotal,
-                hasPendingQC: !!pendingQCLogs,
-                qcClearedTotal,
-                survivingTotal
-            };
+            // 2b. Check for pending rework log (Special logic for REWORK station)
+            const pendingReworkLog = await prisma.reworkRecord.findFirst({
+                where: {
+                    batchId: batch.id,
+                    reworkStage: assignedSections.includes('REWORK')
+                        ? { in: ['CUTTING', 'STITCHING'] }
+                        : { in: assignedSections.filter(s => ['CUTTING', 'STITCHING'].includes(s)) },
+                    approvalStatus: 'PENDING'
+                }
+            });
+
+            if (pendingReworkLog) return null;
+
+            return batch;
         }));
 
-        // 2. Personal recent activity
+        const finalBatches = filteredBatches.filter(b => b !== null);
+
+        // 3. Personal recent activity
         const recentLogs = await prisma.productionLog.findMany({
             where: { operatorUserId: operatorId },
             include: {
@@ -292,7 +305,7 @@ const getOperatorDashboard = async (req, res) => {
 
         return res.status(200).json({
             section: assignedSections[0], // Operators usually have one primary station
-            batches,
+            batches: finalBatches,
             recentLogs
         });
     } catch (error) {

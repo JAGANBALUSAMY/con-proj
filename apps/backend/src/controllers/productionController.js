@@ -78,6 +78,10 @@ const createProductionLog = async (req, res) => {
         }
 
         // 4b. Completed Batch Lock
+        if (batch.status === 'PENDING') {
+            return res.status(400).json({ error: 'Cannot log work for a PENDING batch. It must be started by a Manager first.' });
+        }
+
         if (batch.status === 'COMPLETED') {
             return res.status(400).json({ error: 'Cannot log work for a COMPLETED batch.' });
         }
@@ -255,8 +259,9 @@ const createProductionLog = async (req, res) => {
             log: productionLog
         };
 
-        // Real-time update for Manager
+        // Real-time update for Manager & Operator (Trigger refresh)
         socketUtil.emitEvent('approval:updated', responseData.log);
+        socketUtil.emitEvent('batch:status_updated', { batchId: batch.id });
 
         return res.status(201).json(responseData);
 
