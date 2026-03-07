@@ -1,17 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import Layout from '../../components/Layout/Layout';
-import StatCard from '../../components/StatCard/StatCard';
+import DashboardLayout from '../../layouts/DashboardLayout';
 import ActionCard from '../../components/ActionCard/ActionCard';
-import RoleInfoBanner from '../../components/RoleInfoBanner/RoleInfoBanner';
-import EmptyState from '../../components/EmptyState/EmptyState';
 import UserListView from '../../components/UserListView/UserListView';
 import api from '../../utils/api';
 import { useSocket } from '../../context/SocketContext';
-import { ShieldCheck, Users, Settings, Activity, UserPlus, Package, Eye, RefreshCcw, BarChart3 } from 'lucide-react';
-import './AdminDashboard.css';
+import {
+    ShieldCheck,
+    Users,
+    Activity,
+    UserPlus,
+    Package,
+    Eye,
+    RefreshCcw,
+    BarChart3,
+    Server,
+    Database,
+    Lock
+} from 'lucide-react';
 
+import MetricCard from '../../components/UI/MetricCard';
+import StatusBadge from '../../components/UI/StatusBadge';
+import TableView from '../../components/UI/TableView';
+import { useTable } from '../../hooks/useTable';
 import CreateManagerModal from './CreateManagerModal';
 import CreateBatchModal from './CreateBatchModal';
 
@@ -21,27 +33,17 @@ const AdminDashboard = () => {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isCreateBatchModalOpen, setIsCreateBatchModalOpen] = useState(false);
-    const [isHealthVisible, setIsHealthVisible] = useState(false);
     const [isUserListVisible, setIsUserListVisible] = useState(false);
     const [users, setUsers] = useState([]);
-    const [activeTab, setActiveTab] = useState('ACTIVE'); // ACTIVE, HISTORY
+    const [activeTab, setActiveTab] = useState('ACTIVE');
     const navigate = useNavigate();
 
     const fetchStats = async () => {
         try {
             const response = await api.get('/dashboard/admin');
             setStats(response.data.stats);
-        } catch (error) {
-            console.error('Failed to fetch admin stats');
-        } finally {
-            setLoading(false);
-            setIsRefreshing(false);
-        }
-    };
-
-    const handleRefresh = () => {
-        setIsRefreshing(true);
-        fetchStats();
+        } catch (error) { console.error('Stats failed'); }
+        finally { setLoading(false); setIsRefreshing(false); }
     };
 
     const fetchUsers = async () => {
@@ -49,238 +51,118 @@ const AdminDashboard = () => {
             const response = await api.get('/users');
             setUsers(response.data);
             setIsUserListVisible(true);
-        } catch (error) {
-            console.error('Failed to fetch users');
-            alert('Failed to load users');
-        }
+        } catch (error) { console.error('Users failed'); }
     };
 
-    useEffect(() => {
-        fetchStats();
-    }, []);
+    const tableData = useMemo(() => activeTab === 'ACTIVE' ? stats?.activeBatchList : stats?.batchHistory, [stats, activeTab]);
 
-    // Socket.IO listeners
+    const {
+        data: paginatedData,
+        sortConfig,
+        requestSort,
+        searchTerm,
+        setSearchTerm
+    } = useTable(tableData || [], {
+        searchKeys: ['batchNumber', 'briefTypeName', 'currentStage']
+    });
+
+    const columns = [
+        { key: 'batchNumber', label: 'Batch ID', render: (val) => <span className="font-bold text-text-primary">{val}</span> },
+        { key: 'briefTypeName', label: 'Configuration' },
+        { key: 'currentStage', label: 'Phase', render: (val) => <StatusBadge status={val} /> },
+        { key: 'totalQuantity', label: 'Quantity', render: (val) => <span className="font-semibold">{val} <span className="text-[10px] text-slate-400">pcs</span></span> },
+        {
+            key: 'status',
+            label: 'Status',
+            className: activeTab === 'ACTIVE' ? '' : 'hidden',
+            render: (val) => (
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${val === 'ACTIVE' ? 'bg-success/5 text-success border-success/20' : 'bg-neutral/5 text-neutral border-neutral/20'}`}>
+                    {val}
+                </span>
+            )
+        }
+    ];
+
+    useEffect(() => { fetchStats(); }, []);
+
     const socket = useSocket();
     useEffect(() => {
         if (!socket) return;
-
-        const handleSync = () => {
-            fetchStats();
-            if (isUserListVisible) fetchUsers();
-        };
-
+        const handleSync = () => { fetchStats(); if (isUserListVisible) fetchUsers(); };
         socket.on('workforce:updated', handleSync);
-        socket.on('manager:status_updated', handleSync);
         socket.on('batch:status_updated', handleSync);
-
-        return () => {
-            socket.off('workforce:updated', handleSync);
-            socket.off('manager:status_updated', handleSync);
-            socket.off('batch:status_updated', handleSync);
-        };
+        return () => { socket.off('workforce:updated', handleSync); socket.off('batch:status_updated', handleSync); };
     }, [socket, isUserListVisible]);
 
-    if (loading) return <div className="loading-screen">Initializing Governance Module...</div>;
+    const healthMetrics = [
+        { label: 'Cloud Gateway', status: 'Operational', icon: Server, color: 'text-success' },
+        { label: 'Relational DB', status: 'Healthy', icon: Database, color: 'text-success' },
+        { label: 'Lock Layer', status: 'Encrypted', icon: Lock, color: 'text-primary' },
+    ];
 
     return (
-        <Layout title="Admin Governance Console">
-            <div className="admin-dashboard">
-                <div className="stats-grid">
-                    <StatCard
-                        icon={Users}
-                        iconColor="#3b82f6"
-                        label="Total Workforce"
-                        value={stats?.totalUsers || 0}
-                    />
-                    <StatCard
-                        icon={ShieldCheck}
-                        iconColor="#10b981"
-                        label="Active Managers"
-                        value={stats?.managers || 0}
-                    />
-                    <StatCard
-                        icon={Activity}
-                        iconColor="#f59e0b"
-                        label="Running Batches"
-                        value={stats?.activeBatches || 0}
-                    />
+        <DashboardLayout title="Governance Center" systemStatus="healthy">
+            <div className="space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <MetricCard title="Workforce" value={stats?.totalUsers || 0} icon={Users} trend="up" trendValue="+3" />
+                    <MetricCard title="Managers" value={stats?.managers || 0} icon={ShieldCheck} color="success" />
+                    <MetricCard title="In Production" value={stats?.activeBatches || 0} icon={Activity} color="warning" />
                 </div>
 
-                <div className="admin-grid">
-                    <section className="admin-tools">
-                        <h3><Settings size={20} /> Governance Tools</h3>
-                        <div className="tools-list">
-                            <ActionCard
-                                icon={UserPlus}
-                                label="Create Manager Account"
-                                onClick={() => setIsCreateModalOpen(true)}
-                            />
-                            <ActionCard
-                                icon={Package}
-                                label="Create New Batch"
-                                onClick={() => setIsCreateBatchModalOpen(true)}
-                            />
-                            <ActionCard
-                                icon={Eye}
-                                label="View Users"
-                                onClick={fetchUsers}
-                            />
-                            <ActionCard
-                                icon={Activity}
-                                label="System Health Logs"
-                                onClick={() => setIsHealthVisible(!isHealthVisible)}
-                            />
-                            <ActionCard
-                                icon={BarChart3}
-                                label="Analytics"
-                                onClick={() => navigate('/analytics')}
-                            />
-                        </div>
-                    </section>
-
-                    <section className="system-overview">
-                        <div className="section-header-tabs">
-                            <button
-                                className={`tab-btn ${activeTab === 'ACTIVE' ? 'active' : ''}`}
-                                onClick={() => setActiveTab('ACTIVE')}
-                            >
-                                <Activity size={18} /> Active Production
-                            </button>
-                            <button
-                                className={`tab-btn ${activeTab === 'HISTORY' ? 'active' : ''}`}
-                                onClick={() => setActiveTab('HISTORY')}
-                            >
-                                <RefreshCcw size={18} /> Batch History
-                            </button>
-                            <button
-                                className={`btn-refresh ${isRefreshing ? 'spinning' : ''}`}
-                                onClick={handleRefresh}
-                                disabled={isRefreshing}
-                                title="Refresh Stats"
-                                style={{ marginLeft: 'auto' }}
-                            >
-                                <RefreshCcw size={16} />
-                            </button>
-                        </div>
-
-                        <RoleInfoBanner
-                            role="ADMIN"
-                            message="Governance-only role. No direct batch modification allowed."
-                        />
-
-                        {isHealthVisible ? (
-                            <div className="health-logs">
-                                <p className="log-entry">🟢 API Server: Operational (v1.0.2)</p>
-                                <p className="log-entry">🟢 Database: Connected (Prisma Client)</p>
-                                <p className="log-entry">🟢 JWT Auth Layer: Secure</p>
-                                <button className="btn-close-health" onClick={() => setIsHealthVisible(false)}>Minimize Logs</button>
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    <div className="lg:col-span-4 space-y-8">
+                        <section className="card-saas p-6">
+                            <h3 className="font-bold text-text-primary mb-6">System Health</h3>
+                            <div className="space-y-4">
+                                {healthMetrics.map((m) => (
+                                    <div key={m.label} className="flex items-center justify-between p-3 rounded-xl bg-background border border-border">
+                                        <div className="flex items-center gap-3">
+                                            <m.icon size={16} className={m.color} />
+                                            <span className="text-xs font-semibold">{m.label}</span>
+                                        </div>
+                                        <span className={`text-[10px] font-bold uppercase ${m.color}`}>{m.status}</span>
+                                    </div>
+                                ))}
                             </div>
-                        ) : (
-                            <>
-                                {activeTab === 'ACTIVE' ? (
-                                    <div className="batch-table-container">
-                                        {stats?.activeBatchList && stats.activeBatchList.length > 0 ? (
-                                            <table className="batch-table">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Batch #</th>
-                                                        <th>Type</th>
-                                                        <th>Stage</th>
-                                                        <th>Qty</th>
-                                                        <th>Status</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {stats.activeBatchList.map(batch => (
-                                                        <tr key={batch.id}>
-                                                            <td><strong>{batch.batchNumber}</strong></td>
-                                                            <td>{batch.briefTypeName}</td>
-                                                            <td><span className="stage-badge">{batch.currentStage}</span></td>
-                                                            <td>{batch.totalQuantity}</td>
-                                                            <td>
-                                                                <span className={`status-tag ${batch.status.toLowerCase()}`}>
-                                                                    {batch.status}
-                                                                </span>
-                                                            </td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        ) : (
-                                            <EmptyState
-                                                icon={Package}
-                                                message="No active batches to display"
-                                            />
-                                        )}
-                                    </div>
-                                ) : (
-                                    <div className="batch-table-container">
-                                        {stats?.batchHistory && stats.batchHistory.length > 0 ? (
-                                            <table className="batch-table">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Batch #</th>
-                                                        <th>Type</th>
-                                                        <th>Final Stage</th>
-                                                        <th>Qty</th>
-                                                        <th>Status</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {stats.batchHistory.map(batch => (
-                                                        <tr key={batch.id}>
-                                                            <td><strong>{batch.batchNumber}</strong></td>
-                                                            <td>{batch.briefTypeName}</td>
-                                                            <td><span className="stage-badge secondary">{batch.currentStage}</span></td>
-                                                            <td>{batch.totalQuantity}</td>
-                                                            <td>
-                                                                <span className={`status-tag ${batch.status.toLowerCase()}`}>
-                                                                    {batch.status}
-                                                                </span>
-                                                            </td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        ) : (
-                                            <EmptyState
-                                                icon={RefreshCcw}
-                                                message="No historical batches found"
-                                            />
-                                        )}
-                                    </div>
-                                )}
-                            </>
-                        )}
-                    </section>
+                        </section>
+                        <section className="card-saas p-6">
+                            <h3 className="font-bold text-text-primary mb-6">Tools</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                <ActionCard icon={UserPlus} label="New Manager" onClick={() => setIsCreateModalOpen(true)} />
+                                <ActionCard icon={Package} label="New Batch" onClick={() => setIsCreateBatchModalOpen(true)} />
+                                <ActionCard icon={Eye} label="Users" onClick={fetchUsers} />
+                                <ActionCard icon={BarChart3} label="Analytics" onClick={() => navigate('/analytics')} />
+                            </div>
+                        </section>
+                    </div>
+
+                    <div className="lg:col-span-8">
+                        <section className="card-saas p-6">
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex bg-background p-1 rounded-xl border border-border">
+                                    <button className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${activeTab === 'ACTIVE' ? 'bg-card shadow-sm text-primary' : 'text-text-secondary'}`} onClick={() => setActiveTab('ACTIVE')}>Active</button>
+                                    <button className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${activeTab === 'HISTORY' ? 'bg-card shadow-sm text-primary' : 'text-text-secondary'}`} onClick={() => setActiveTab('HISTORY')}>Archived</button>
+                                </div>
+                                <button className={`p-2 rounded-full hover:bg-slate-50 transition-colors ${isRefreshing ? 'animate-spin' : ''}`} onClick={() => { setIsRefreshing(true); fetchStats(); }}><RefreshCcw size={16} /></button>
+                            </div>
+                            <TableView
+                                data={paginatedData}
+                                columns={columns}
+                                sortConfig={sortConfig}
+                                requestSort={requestSort}
+                                searchTerm={searchTerm}
+                                setSearchTerm={setSearchTerm}
+                                loading={loading}
+                                emptyMessage="No batch records found."
+                            />
+                        </section>
+                    </div>
                 </div>
             </div>
-
-            <CreateManagerModal
-                isOpen={isCreateModalOpen}
-                onClose={() => setIsCreateModalOpen(false)}
-                onSuccess={() => {
-                    fetchStats();
-                    alert('Manager account created successfully!');
-                }}
-            />
-
-            <CreateBatchModal
-                isOpen={isCreateBatchModalOpen}
-                onClose={() => setIsCreateBatchModalOpen(false)}
-                onSuccess={() => {
-                    fetchStats();
-                }}
-            />
-
-            {isUserListVisible && (
-                <UserListView
-                    users={users}
-                    onClose={() => setIsUserListVisible(false)}
-                    onRefresh={fetchUsers}
-                />
-            )}
-        </Layout>
+            <CreateManagerModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} onSuccess={fetchStats} />
+            <CreateBatchModal isOpen={isCreateBatchModalOpen} onClose={() => setIsCreateBatchModalOpen(false)} onSuccess={fetchStats} />
+            {isUserListVisible && <UserListView users={users} onClose={() => setIsUserListVisible(false)} onRefresh={fetchUsers} />}
+        </DashboardLayout>
     );
 };
 

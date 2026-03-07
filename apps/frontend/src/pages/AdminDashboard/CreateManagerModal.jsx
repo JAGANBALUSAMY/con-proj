@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, ShieldPlus, Loader2 } from 'lucide-react';
+import { Loader2, Activity } from 'lucide-react';
 import api from '../../utils/api';
+import Modal from '../../components/UI/Modal';
 
 const CreateManagerModal = ({ isOpen, onClose, onSuccess }) => {
     const [formData, setFormData] = useState({
@@ -44,80 +45,99 @@ const CreateManagerModal = ({ isOpen, onClose, onSuccess }) => {
         }
     };
 
-    if (!isOpen) return null;
-
     return (
-        <div className="modal-overlay">
-            <div className="modal-card">
-                <div className="modal-header">
-                    <div className="title-area">
-                        <ShieldPlus size={20} className="icon-blue" />
-                        <h3>Provision Manager Account</h3>
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Provision Manager Account"
+            footer={
+                <>
+                    <button type="button" className="btn-secondary" onClick={onClose} disabled={loading}>
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        form="create-manager-form"
+                        className="btn-primary"
+                        disabled={loading}
+                    >
+                        {loading ? <Loader2 size={18} className="animate-spin" /> : 'Create Account'}
+                    </button>
+                </>
+            }
+        >
+            <form id="create-manager-form" onSubmit={handleSubmit} className="space-y-5">
+                {error && (
+                    <div className="p-3 bg-error/10 border border-error/20 rounded-lg text-error text-xs font-bold flex items-center gap-2">
+                        <Activity size={14} />
+                        {error}
                     </div>
-                    <button className="close-btn" onClick={onClose}><X size={20} /></button>
+                )}
+
+                <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-text-secondary ml-1">
+                        Employee Code
+                    </label>
+                    <input
+                        type="text"
+                        className="input-saas"
+                        placeholder="e.g. MGR005"
+                        value={formData.employeeCode}
+                        onChange={(e) => setFormData({ ...formData, employeeCode: e.target.value })}
+                        required
+                    />
                 </div>
 
-                <form onSubmit={handleSubmit} className="modal-form">
-                    {error && <div className="error-alert">{error}</div>}
+                <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-text-secondary ml-1">
+                        Full Name
+                    </label>
+                    <input
+                        type="text"
+                        className="input-saas"
+                        placeholder="e.g. Robert Smith"
+                        value={formData.fullName}
+                        onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                        required
+                    />
+                </div>
 
-                    <div className="form-group">
-                        <label>Employee Code</label>
-                        <input
-                            type="text"
-                            placeholder="e.g. MGR005"
-                            value={formData.employeeCode}
-                            onChange={(e) => setFormData({ ...formData, employeeCode: e.target.value })}
-                            required
-                        />
-                    </div>
+                <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-text-secondary ml-1">
+                        Initial Password
+                    </label>
+                    <input
+                        type="password"
+                        className="input-saas"
+                        placeholder="••••••••"
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        required
+                    />
+                </div>
 
-                    <div className="form-group">
-                        <label>Full Name</label>
-                        <input
-                            type="text"
-                            placeholder="e.g. Robert Smith"
-                            value={formData.fullName}
-                            onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                            required
-                        />
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-text-secondary ml-1">
+                        Assigned Sections (Supervisor Scope)
+                    </label>
+                    <div className="flex flex-wrap gap-2 p-3 bg-background border border-border rounded-xl">
+                        {availableSections.map(section => (
+                            <button
+                                key={section}
+                                type="button"
+                                onClick={() => handleSectionToggle(section)}
+                                className={`px-3 py-1.5 rounded-lg text-[10px] font-black tracking-tighter transition-all duration-200 border ${formData.sections.includes(section)
+                                    ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20'
+                                    : 'bg-card border-border text-text-secondary hover:border-primary/30 hover:text-primary'
+                                    }`}
+                            >
+                                {section}
+                            </button>
+                        ))}
                     </div>
-
-                    <div className="form-group">
-                        <label>Initial Password</label>
-                        <input
-                            type="password"
-                            placeholder="••••••••"
-                            value={formData.password}
-                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                            required
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Assigned Sections (Supervisor Scope)</label>
-                        <div className="section-selector">
-                            {availableSections.map(section => (
-                                <button
-                                    key={section}
-                                    type="button"
-                                    className={`section-chip ${formData.sections.includes(section) ? 'active' : ''}`}
-                                    onClick={() => handleSectionToggle(section)}
-                                >
-                                    {section}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="modal-footer">
-                        <button type="button" className="btn-secondary" onClick={onClose} disabled={loading}>Cancel</button>
-                        <button type="submit" className="btn-primary" disabled={loading}>
-                            {loading ? <Loader2 size={18} className="spin" /> : 'Create Account'}
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+                </div>
+            </form>
+        </Modal>
     );
 };
 

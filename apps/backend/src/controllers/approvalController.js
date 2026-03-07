@@ -126,9 +126,11 @@ const approveProductionLog = async (req, res) => {
                 // Stage-Specific Logic
                 if (currentBatch.currentStage === 'CUTTING') {
                     // Initialisation logic: All surviving units start in 'pendingQCQuantity'.
+                    // Since startBatch() put units into usableQuantity, we MUST decrement it here.
                     const cuttingLoss = currentBatch.totalQuantity - log.quantityOut;
                     updateData.scrappedQuantity = { increment: cuttingLoss };
                     updateData.pendingQCQuantity = log.quantityOut;
+                    updateData.usableQuantity = { decrement: currentBatch.totalQuantity };
                     updateData.status = 'IN_PROGRESS';
                 } else if (currentBatch.currentStage === 'STITCHING') {
                     // If loss occurs, it reduces the pending QC pool.

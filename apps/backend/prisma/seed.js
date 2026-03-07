@@ -12,7 +12,6 @@ async function main() {
     await prisma.defectRecord.deleteMany();
     await prisma.reworkRecord.deleteMany();
     await prisma.productionLog.deleteMany();
-    await prisma.box.deleteMany();
     await prisma.sectionTransferRequest.deleteMany();
     await prisma.sectionAssignment.deleteMany();
     await prisma.batch.deleteMany();

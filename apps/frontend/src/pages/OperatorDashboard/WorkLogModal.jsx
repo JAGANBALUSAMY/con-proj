@@ -17,8 +17,12 @@ const WorkLogModal = ({ isOpen, onClose, batch, onSuccess }) => {
 
     useEffect(() => {
         if (isOpen && batch) {
+            const initialQty = (batch.currentStage === 'STITCHING' || batch.currentStage === 'QUALITY_CHECK')
+                ? batch.pendingQCQuantity
+                : batch.usableQuantity;
+
             setFormData({
-                quantityIn: batch.usableQuantity || batch.totalQuantity || '',
+                quantityIn: initialQty || '',
                 quantityOut: '',
                 machineId: '',
                 notes: ''

@@ -10,64 +10,63 @@ import ManagerDashboard from './pages/ManagerDashboard/ManagerDashboard';
 import AnalyticsDashboard from './pages/ManagerDashboard/AnalyticsDashboard';
 import OperatorDashboard from './pages/OperatorDashboard/OperatorDashboard';
 
+import { ThemeProvider, useTheme } from './context/ThemeContext';
+
 function App() {
   return (
-    <SocketProvider>
-      <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/login" element={<Login />} />
+    <ThemeProvider>
+      <SocketProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/login" element={<Login />} />
 
-            {/* Protected Routes */}
-            <Route path="/" element={<DashboardRedirect />} />
+              {/* Protected Routes */}
+              <Route path="/" element={<DashboardRedirect />} />
 
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute allowedRoles={['ADMIN']}>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              }
-            />
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN']}>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
 
-            <Route
-              path="/analytics"
-              element={
-                <ProtectedRoute allowedRoles={['MANAGER', 'ADMIN']}>
-                  <AnalyticsDashboard />
-                </ProtectedRoute>
-              }
-            />
+              <Route
+                path="/analytics"
+                element={
+                  <ProtectedRoute allowedRoles={['MANAGER', 'ADMIN']}>
+                    <AnalyticsDashboard />
+                  </ProtectedRoute>
+                }
+              />
 
-            <Route
-              path="/manager"
-              element={
-                <ProtectedRoute allowedRoles={['MANAGER']}>
-                  <ManagerDashboard />
-                </ProtectedRoute>
-              }
-            />
+              <Route
+                path="/manager"
+                element={
+                  <ProtectedRoute allowedRoles={['MANAGER']}>
+                    <ManagerDashboard />
+                  </ProtectedRoute>
+                }
+              />
 
-            <Route
-              path="/operator"
-              element={
-                <ProtectedRoute allowedRoles={['OPERATOR']}>
-                  <OperatorDashboard />
-                </ProtectedRoute>
-              }
-            />
+              <Route
+                path="/operator"
+                element={
+                  <ProtectedRoute allowedRoles={['OPERATOR']}>
+                    <OperatorDashboard />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Fallback */}
-            <Route path="*" element={<DashboardRedirect />} />
-          </Routes>
-        </BrowserRouter>
-
-        <style>{`
-          body { margin: 0; background-color: #f1f5f9; }
-          * { box-sizing: border-box; }
-        `}</style>
-      </AuthProvider>
-    </SocketProvider>
+              {/* Fallback */}
+              <Route path="*" element={<DashboardRedirect />} />
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
+      </SocketProvider>
+    </ThemeProvider>
   );
 }
 

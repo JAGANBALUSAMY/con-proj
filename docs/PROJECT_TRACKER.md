@@ -618,13 +618,39 @@ Complete development timeline from Day 1 to Day 19.
 
 ---
 
+## 📅 Task 28: Production Hardening & Shipment Removal (February 28, 2026)
+
+**Objective:** Consolidate the production flow by removing redundant shipment tracking and implementing strict process gates.
+
+**Backend Files:**
+- `src/controllers/approvalController.js` - Implemented Batch Start approval & Ledger fixes
+- `src/controllers/dashboardController.js` - Filtered out PENDING batches for operators
+- `src/controllers/productionController.js` - Added Socket triggers for real-time dashboarding
+- `src/app.js` - Unmounted `boxRoutes`
+- `prisma/schema.prisma` - Removed `SHIPPED`/`DELIVERED` status
+
+**Frontend Files:**
+- `src/pages/ManagerDashboard/ManagerDashboard.jsx` - Removed Shipment tracker and consolidated UI
+- `src/pages/OperatorDashboard/WorkLogModal.jsx` - Fixed mid-flow quantity pool selection
+- `src/pages/OperatorDashboard/OperatorDashboard.jsx` - Real-time batch list refreshes
+
+**Rules Enforced:**
+- **Previous Out = Current In**: Quantity Pool selection now Stage-Aware (e.g., Stitching receives Cutting's output).
+- **Batch Start Gate**: Prevented work logging on PENDING batches.
+- **Privacy Mode**: Hidden batches from operators once logs are submitted.
+- **Shipment Removal**: Retired the specialized shipping department in favor of a lean production-to-box model.
+
+**Status:** ✅ Completed
+
+---
+
 ## Summary
 
-**Total Tasks:** 27
-**Total Files Created/Modified:** 152+
+**Total Tasks:** 28
+**Total Files Created/Modified:** 165+
 **Backend Controllers:** 9
-**Frontend Components:** 33+
+**Frontend Components:** 35+
 **Dashboard Pages:** 3 (Admin, Manager, Operator)
 
-**All work is fully implemented, verified via ledger balancing scripts, and compliant with the updated CONSTRAINTS.md.**
+**All work is fully implemented, verified via ledger balancing scripts, and compliant with the updated CONSTRAINTS.md and product vision.**
 

@@ -1,40 +1,77 @@
-body {
-  margin: 0;
-  padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@import "tailwindcss";
+
+@theme {
+  /* Core Colors */
+  --color-primary: #2563EB;
+  --color-primary-foreground: #FFFFFF;
+  --color-success: #22C55E;
+  --color-success-foreground: #FFFFFF;
+  --color-warning: #F59E0B;
+  --color-warning-foreground: #FFFFFF;
+  --color-error: #EF4444;
+  --color-error-foreground: #FFFFFF;
+  --color-neutral: #64748B;
+  --color-neutral-foreground: #FFFFFF;
+
+  /* Semantic UI Tokens */
+  --color-background: var(--background);
+  --color-card: var(--card);
+  --color-sidebar: var(--sidebar);
+  --color-border: var(--border);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+
+  /* Elevation */
+  --shadow-saas: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-saas-hover: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  /* Typography */
+  --font-inter: "Inter", sans-serif;
+  --font-ibm: "IBM Plex Sans", sans-serif;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+:root {
+  --background: #F8FAFC;
+  --card: #FFFFFF;
+  --sidebar: #FFFFFF;
+  --border: #E2E8F0;
+  --text-primary: #0F172A;
+  --text-secondary: #64748B;
 }
 
-.btn-refresh {
-  background: transparent;
-  border: none;
-  border-radius: 50%;
-  padding: 0.4rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  color: #64748b;
-  margin-left: 0.75rem;
+.dark {
+  --background: #020617;
+  --card: #0F172A;
+  --sidebar: #0F172A;
+  --border: #1E293B;
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
 }
 
-.btn-refresh:hover {
-  background: rgba(0, 0, 0, 0.05);
-  color: #0f172a;
+@layer base {
+  body {
+    @apply font-inter bg-background text-text-primary antialiased transition-colors duration-200;
+  }
 }
 
-.btn-refresh:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
+@utility btn-saas {
+  @apply flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+@utility btn-primary {
+  @apply btn-saas bg-primary text-white shadow-lg shadow-primary/20 hover:bg-primary/90 hover:shadow-primary/30;
+}
+
+@utility btn-secondary {
+  @apply btn-saas bg-background text-text-primary border border-border hover:bg-card hover:border-primary/20;
+}
+
+@utility card-saas {
+  @apply bg-card rounded-xl border border-border shadow-saas hover:shadow-saas-hover transition-all duration-200;
+}
+
+@utility input-saas {
+  @apply w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm transition-all focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-text-primary placeholder:text-text-secondary/50 disabled:opacity-50 disabled:bg-slate-50 dark:disabled:bg-slate-900;
 }
 
 .btn-refresh.spinning svg {
@@ -42,6 +79,11 @@ code {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }

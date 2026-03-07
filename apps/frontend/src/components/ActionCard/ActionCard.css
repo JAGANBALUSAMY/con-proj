@@ -1,25 +1,25 @@
+@reference "../../index.css";
+
 .action-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 1.5rem;
-    background: #f8fafc;
-    border: 1px solid #f1f5f9;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
+    @apply flex flex-col items-center gap-3 p-6 bg-card border border-border rounded-xl cursor-pointer transition-all duration-200 shadow-sm;
 }
 
 .action-card:hover {
-    border-color: #3b82f6;
-    background: #eff6ff;
-    transform: translateY(-2px);
+    @apply border-primary ring-4 ring-primary/10 -translate-y-1 shadow-md;
+}
+
+.action-card svg {
+    @apply text-text-primary opacity-80;
+}
+
+.action-card:hover svg {
+    @apply text-primary opacity-100;
 }
 
 .action-card span {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #334155;
-    text-align: center;
+    @apply text-[11px] font-black uppercase tracking-widest text-text-secondary;
+}
+
+.action-card:hover span {
+    @apply text-text-primary;
 }

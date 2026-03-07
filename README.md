@@ -9,8 +9,10 @@ This system manages the complete lifecycle of garment production batches through
 ### Key Features
 
 - **Role-Based Access Control**: ADMIN → MANAGER → OPERATOR hierarchy
-- **Section Isolation**: Managers and Operators are restricted to assigned production sections
+- **Batch Start Gate**: Batches must be started by a Manager before work can begin
 - **Approval Workflows**: Production logs require Manager approval before batch progression
+- **Quantity Ledger**: Strict tracking of output-to-input consistency across the entire lifecycle
+- **Section Isolation**: Managers and Operators are restricted to assigned production sections
 - **Verification System**: Operators must be verified by their creating Manager before login
 - **Audit Trails**: Complete tracking of who created, verified, and approved each action
 
@@ -22,12 +24,14 @@ This system manages the complete lifecycle of garment production batches through
 - Node.js + Express.js
 - PostgreSQL with Prisma ORM
 - JWT Authentication with bcrypt
+- Socket.IO for real-time dashboard refreshes
 - RESTful API
 
 **Frontend**:
 - React 18 + Vite
 - React Router for routing
 - Axios for API calls
+- Lucide React for iconography
 - Context API for state management
 
 ### Database Schema
@@ -35,12 +39,12 @@ This system manages the complete lifecycle of garment production batches through
 **Core Models**:
 - `User` - ADMIN, MANAGER, OPERATOR with verification status
 - `SectionAssignment` - Maps users to production stages
-- `Batch` - Production batches with stage tracking
+- `Batch` - Production batches with stage tracking and ledger pools
 - `ProductionLog` - Work records with approval status
 - `ReworkRecord` - Defect correction tracking with approval
 - `DefectRecord` - Quality issues tracking
 - `Machine` - Production equipment
-- `Box` - Packaging and shipping
+- `Box` - Final product packaging (Internal)
 
 ## 🚀 Getting Started
 
@@ -249,19 +253,12 @@ con-proj/
 
 - **Production Workflow**
   - Batch creation (ADMIN/MANAGER with section isolation)
-  - Operator work logging (PENDING status)
-  - Manager approval workflow
-  - Batch stage advancement on approval
-  - Section-based batch filtering
+  - **Batch Start Gate**: Manager must explicitly start a batch before operators see it
+  - **Work Isolation**: Operators only see batches active in their station that aren't pending approval
+  - Manager approval workflow with automated stage advancement
+  - Section-based batch filtering and real-time dashboard refreshes (Socket.IO)
 
-- **Account Governance**
-  - Admin governance over Manager accounts (section updates, credentials, status, logout)
-  - Manager governance over owned Operator accounts (verification, credentials, status, logout)
-  - Ownership enforcement (createdByUserId validation)
-  - Soft delete (status toggle, no hard deletes)
-  - Audit trail preservation
-
-- **Operator Section Transfer (NEW)**
+- **Operator Section Transfer**
   - Select operator → Target section → Target Manager workflow
   - Approval-gated mobility (Constraint 12)
   - Auto-cleanup of stale assignments (Constraint 9)
@@ -274,10 +271,10 @@ con-proj/
   - Static rework stage assignment (No mediator dropdown)
 
 - **Advanced Production Stages**
-  - **Labeling**: Strict quantity gating (Input = Output = Usable). Section-based approval.
-  - **Folding**: Locked quantity workflow. Section-based approval.
-  - **Packing & Export**: Box creation, strict quantity validation, and batch completion on approval.
+  - **Labeling, Folding, Packing**: Strict quantity gating (Input = Output = Usable).
+  - **Packing & Export**: Box creation and batch completion on approval.
   - **Quality Check (Ledger Model)**: Strict tracking of Cleared, Defective, Cured, and Scrapped quantities. Pool-based inspection (Initial vs Re-QC).
+  - **Quantity Integrity**: Mid-flow quantity fixes ensure "Previous Out = Current In" consistency (e.g., Stitching receives exactly what Cutting produced).
 
 ### ❌ Not Yet Implemented
 
@@ -370,10 +367,11 @@ All critical issues have been resolved:
 - [x] Direct Sectional Rework Model
 - [x] Quality Control & Defect Tracking
 - [x] Automated Time Capture & Hardening
-- [x] Shipment Tracking & Box Management
 - [x] Production Analytics Dashboard
 - [x] QC Ledger Model (Quantity Integrity & Re-QC)
 - [x] API-Based E2E Production Lifecycle Test
+- [x] Batch Start Approval Gate
+- [x] Shipment Removal & Dashboard Consolidation
 
 ## 📝 Documentation
 
@@ -391,4 +389,4 @@ Proprietary - All rights reserved
 
 ---
 
-**Current Status**: 100% Complete | **Last Updated**: March 05, 2026
+**Current Status**: 100% Complete | **Last Updated**: March 06, 2026

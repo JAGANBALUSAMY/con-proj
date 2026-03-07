@@ -80,8 +80,6 @@ enum ReworkStatus {
 
 enum BoxStatus {
   PACKED
-  SHIPPED
-  DELIVERED
 }
 
 enum TransferStatus {

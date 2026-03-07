@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Navigate, useLocation } from 'react-router-dom';
-import { Lock, User } from 'lucide-react';
+import { Lock, User, ShieldCheck } from 'lucide-react';
+import { motion } from 'framer-motion';
 import api from '../../utils/api';
 import './Login.css';
 
@@ -11,12 +12,10 @@ const Login = () => {
     const { login, user, loading } = useAuth();
     const location = useLocation();
 
-    // 1. Wait for auth to load before deciding to redirect
     if (loading) {
         return <div className="loading-screen">Loading Auth...</div>;
     }
 
-    // 2. If already logged in with a valid role, head to dashboard
     if (user && user.role) {
         return <Navigate to="/" replace />;
     }
@@ -39,39 +38,51 @@ const Login = () => {
 
     return (
         <div className="login-page">
-            <div className="login-card">
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="login-card"
+            >
                 <div className="login-header">
-                    <h2>Factory Production System</h2>
-                    <p>Please enter your credentials to continue</p>
+                    <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+                        <ShieldCheck className="text-primary" size={28} />
+                    </div>
+                    <h2>Factory Console</h2>
+                    <p>Enter your credentials to access the production floor</p>
                 </div>
                 <form onSubmit={handleSubmit}>
-                    <div className="input-field">
-                        <User size={18} />
-                        <input
-                            type="text"
-                            placeholder="Employee Code"
-                            value={employeeCode}
-                            onChange={(e) => setEmployeeCode(e.target.value)}
-                            required
-                        />
+                    <div className="input-group">
+                        <div className="input-field">
+                            <User size={18} />
+                            <input
+                                type="text"
+                                placeholder="Employee Code"
+                                value={employeeCode}
+                                onChange={(e) => setEmployeeCode(e.target.value)}
+                                required
+                            />
+                        </div>
+                        <div className="input-field">
+                            <Lock size={18} />
+                            <input
+                                type="password"
+                                placeholder="Password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                            />
+                        </div>
                     </div>
-                    <div className="input-field">
-                        <Lock size={18} />
-                        <input
-                            type="password"
-                            placeholder="Password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <button type="submit" className="login-btn">Login to Dashboard</button>
+                    <button type="submit" className="login-btn">
+                        Initialize Session
+                    </button>
                 </form>
                 <div className="login-footer">
-                    <p>Demo Credentials:</p>
-                    <code>ADMIN001 | EMP001 | OP001</code>
+                    <p>System Access Protocol</p>
+                    <code>SECURE-CHANNEL-v2.0</code>
                 </div>
-            </div>
+            </motion.div>
         </div>
     );
 };

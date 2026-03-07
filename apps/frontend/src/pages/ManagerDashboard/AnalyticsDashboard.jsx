@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useNavigate } from 'react-router-dom';
+import Layout from '../../components/Layout/Layout';
+import MetricCard from '../../components/UI/MetricCard';
+import StatusBadge from '../../components/UI/StatusBadge';
 import api from '../../utils/api';
-import { Clock, TrendingUp, AlertTriangle, RefreshCw, Calendar, ArrowLeft } from 'lucide-react';
-import './AnalyticsDashboard.css';
+import { Clock, TrendingUp, AlertTriangle, RefreshCw, Calendar, ArrowLeft, BarChart3, Users, ChevronDown } from 'lucide-react';
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#6366f1'];
 
 const AnalyticsDashboard = () => {
     const navigate = useNavigate();
@@ -48,141 +50,181 @@ const AnalyticsDashboard = () => {
     };
 
     if (loading && efficiency.length === 0) {
-        return <div className="analytics-loading">Loading high-integrity analytics...</div>;
+        return <div className="flex items-center justify-center min-h-screen bg-background-light dark:bg-background-dark text-primary font-bold">Computing Intelligence...</div>;
     }
 
+    const totalProduced = performance.reduce((acc, p) => acc + (p.totalProduced || 0), 0);
+    const avgEfficiency = efficiency.length > 0 ? (efficiency.reduce((acc, e) => acc + (e.avgDurationMinutes || 0), 0) / efficiency.length).toFixed(1) : 0;
+    const totalDefects = defects.reduce((acc, d) => acc + (d.totalQuantity || 0), 0);
+
     return (
-        <div className="analytics-dashboard">
-            <header className="analytics-header">
-                <div className="header-left">
-                    <button className="back-btn" onClick={() => navigate(-1)}>
-                        <ArrowLeft size={20} />
-                    </button>
-                    <div>
-                        <h1>Production Analytics</h1>
-                        <p className="subtitle">Real-time insights from APPROVED logs only</p>
+        <Layout title="Production Intelligence" systemStatus="healthy">
+            <div className="space-y-8 pb-12">
+                {/* 1. Analytics Header Control */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 bg-white dark:bg-card-dark rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm shadow-slate-200/50">
+                    <div className="flex items-center gap-4">
+                        <button className="p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border border-slate-200 dark:border-slate-700" onClick={() => navigate(-1)}>
+                            <ArrowLeft size={20} className="text-slate-600 dark:text-slate-300" />
+                        </button>
+                        <div>
+                            <h2 className="text-xl font-bold text-slate-900 dark:text-white leading-tight">Insight Engine</h2>
+                            <p className="text-xs text-slate-500 font-medium">Verified throughput across factory sections</p>
+                        </div>
                     </div>
-                </div>
-                <div className="analytics-controls">
-                    <div className="date-inputs">
-                        <Calendar size={18} />
-                        <input type="date" name="start" value={dateRange.start} onChange={handleDateChange} />
-                        <span>to</span>
-                        <input type="date" name="end" value={dateRange.end} onChange={handleDateChange} />
-                    </div>
-                    <button className="refresh-btn" onClick={fetchAnalytics}>
-                        <RefreshCw size={18} /> Refresh
-                    </button>
-                </div>
-            </header>
 
-            <div className="analytics-grid">
-                {/* Efficiency Chart */}
-                <div className="analytics-card">
-                    <div className="card-header">
-                        <Clock size={20} className="icon-blue" />
-                        <h3>Efficiency by Stage (Avg Min)</h3>
-                    </div>
-                    <div className="chart-container">
-                        <ResponsiveContainer width="100%" height={300}>
-                            <BarChart data={efficiency}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                <XAxis dataKey="stage" />
-                                <YAxis />
-                                <Tooltip />
-                                <Legend />
-                                <Bar dataKey="avgDurationMinutes" name="Avg Minutes" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 px-3 py-2 rounded-xl border border-slate-100 dark:border-slate-800">
+                            <Calendar size={16} className="text-slate-400" />
+                            <input type="date" name="start" value={dateRange.start} onChange={handleDateChange} className="bg-transparent text-xs font-bold outline-none text-slate-700 dark:text-slate-300" />
+                            <span className="text-slate-300 text-xs">to</span>
+                            <input type="date" name="end" value={dateRange.end} onChange={handleDateChange} className="bg-transparent text-xs font-bold outline-none text-slate-700 dark:text-slate-300" />
+                        </div>
+                        <button className="btn-saas bg-primary text-white flex items-center gap-2 py-2.5 px-6" onClick={fetchAnalytics}>
+                            <RefreshCw size={16} /> Update
+                        </button>
                     </div>
                 </div>
 
-                {/* Performance Chart */}
-                <div className="analytics-card">
-                    <div className="card-header">
-                        <TrendingUp size={20} className="icon-green" />
-                        <h3>Top Operator Throughput (In vs Out)</h3>
-                    </div>
-                    <div className="chart-container">
-                        <ResponsiveContainer width="100%" height={300}>
-                            <BarChart data={performance.slice(0, 10)} layout="vertical">
-                                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                                <XAxis type="number" />
-                                <YAxis dataKey="operatorName" type="category" width={100} />
-                                <Tooltip />
-                                <Legend />
-                                <Bar dataKey="totalReceived" name="Units Received (In)" fill="#94a3b8" radius={[0, 4, 4, 0]} />
-                                <Bar dataKey="totalProduced" name="Units Produced (Out)" fill="#10b981" radius={[0, 4, 4, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
+                {/* 2. Top-level Performance Metrics */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <MetricCard
+                        title="Unified Throughput"
+                        value={totalProduced}
+                        icon={TrendingUp}
+                        trend="up"
+                        trendValue="+12%"
+                        description="Units cleared QC today"
+                    />
+                    <MetricCard
+                        title="Avg Cycle Time"
+                        value={avgEfficiency + "m"}
+                        icon={Clock}
+                        color="success"
+                        description="Minutes per stage per batch"
+                    />
+                    <MetricCard
+                        title="Defect Variance"
+                        value={totalDefects}
+                        icon={AlertTriangle}
+                        color={totalDefects > 10 ? 'error' : 'secondary'}
+                        description="Isolated for rework"
+                    />
                 </div>
 
-                {/* Defect Chart */}
-                <div className="analytics-card">
-                    <div className="card-header">
-                        <AlertTriangle size={20} className="icon-amber" />
-                        <h3>Defect Distribution</h3>
+                {/* 3. Visualization Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    {/* Efficiency Chart */}
+                    <div className="lg:col-span-12 xl:col-span-8 card-saas p-6">
+                        <div className="flex items-center justify-between mb-8">
+                            <div>
+                                <h3 className="font-bold text-slate-900 dark:text-white">Operational Efficiency Mapping</h3>
+                                <p className="text-xs text-slate-400">Mapping stage efficiency to identify systemic anomalies</p>
+                            </div>
+                            <div className="p-2 bg-primary/5 rounded-lg">
+                                <BarChart3 size={20} className="text-primary" />
+                            </div>
+                        </div>
+                        <div className="h-[350px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={efficiency} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                                    <XAxis dataKey="stage" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#94A3B8' }} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94A3B8' }} />
+                                    <Tooltip
+                                        cursor={{ fill: 'rgba(59, 130, 246, 0.05)' }}
+                                        contentStyle={{ backgroundColor: '#1E293B', border: 'none', borderRadius: '12px', color: '#fff' }}
+                                    />
+                                    <Bar dataKey="avgDurationMinutes" name="Cycle Time" fill="#3b82f6" radius={[6, 6, 0, 0]} barSize={40} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
                     </div>
-                    <div className="chart-container">
-                        <ResponsiveContainer width="100%" height={300}>
-                            <PieChart>
-                                <Pie
-                                    data={defects}
-                                    cx="50%"
-                                    cy="50%"
-                                    outerRadius={80}
-                                    fill="#8884d8"
-                                    dataKey="totalQuantity"
-                                    nameKey="defectCode"
-                                    label={(entry) => `${entry.defectCode}: ${entry.totalQuantity}`}
-                                >
-                                    {defects.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip />
-                                <Legend />
-                            </PieChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
 
-                {/* Summary Table */}
-                <div className="analytics-card full-width">
-                    <div className="card-header">
-                        <h3>Operator Performance Detail</h3>
+                    {/* Defect Distribution */}
+                    <div className="lg:col-span-12 xl:col-span-4 card-saas p-6">
+                        <div className="flex items-center justify-between mb-8">
+                            <h3 className="font-bold text-slate-900 dark:text-white">Yield Loss Analysis</h3>
+                            <AlertTriangle size={20} className="text-amber-500" />
+                        </div>
+                        <div className="h-[300px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={defects}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={60}
+                                        outerRadius={80}
+                                        paddingAngle={5}
+                                        dataKey="totalQuantity"
+                                        nameKey="defectCode"
+                                    >
+                                        {defects.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="transparent" />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip
+                                        contentStyle={{ backgroundColor: '#1E293B', border: 'none', borderRadius: '12px', color: '#fff', fontSize: '10px' }}
+                                    />
+                                    <Legend iconType="circle" wrapperStyle={{ fontSize: '10px', fontWeight: 600 }} />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </div>
                     </div>
-                    <div className="table-responsive">
-                        <table className="analytics-table">
-                            <thead>
-                                <tr>
-                                    <th>Operator</th>
-                                    <th>Emp Code</th>
-                                    <th>Stage</th>
-                                    <th>Units Received (@ In)</th>
-                                    <th>Units Produced (@ Out)</th>
-                                    <th>Log Count</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {performance.map((p, i) => (
-                                    <tr key={i}>
-                                        <td>{p.operatorName}</td>
-                                        <td>{p.employeeCode}</td>
-                                        <td><span className={`badge badge-${p.stage}`}>{p.stage}</span></td>
-                                        <td className="text-right"><strong>{p.totalReceived}</strong></td>
-                                        <td className="text-right produced-col"><strong>{p.totalProduced}</strong></td>
-                                        <td>{p.logCount}</td>
+
+                    {/* Operator Leaderboard */}
+                    <div className="lg:col-span-12 card-saas overflow-hidden">
+                        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                            <h3 className="font-bold text-slate-900 dark:text-white">Human Factor Performance</h3>
+                            <button className="text-[10px] font-bold text-primary flex items-center gap-1">EXPORT DATA <ChevronDown size={12} /></button>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead>
+                                    <tr className="bg-slate-50/50 dark:bg-slate-900/30 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                        <th className="px-6 py-4">Sovereign Operator</th>
+                                        <th className="px-6 py-4">Sectional Assignment</th>
+                                        <th className="px-6 py-4">Load (In)</th>
+                                        <th className="px-6 py-4">Yield (Out)</th>
+                                        <th className="px-6 py-4">Efficiency Score</th>
+                                        <th className="px-6 py-4 text-right">Transactions</th>
                                     </tr>
-                                ))}
-                                {performance.length === 0 && <tr><td colSpan="6" className="text-center">No performance records found.</td></tr>}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                    {performance.map((p, i) => (
+                                        <tr key={i} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/10 transition-colors">
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xs font-bold text-primary">
+                                                        {p.operatorName.charAt(0)}
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-bold text-sm text-slate-900 dark:text-white">{p.operatorName}</div>
+                                                        <div className="text-[10px] text-slate-400 font-mono uppercase">{p.employeeCode}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4"><StatusBadge status={p.stage} /></td>
+                                            <td className="px-6 py-4 font-semibold text-slate-500">{p.totalReceived}</td>
+                                            <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">{p.totalProduced}</td>
+                                            <td className="px-6 py-4">
+                                                <div className="w-full max-w-[100px] h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                                    <div
+                                                        className="h-full bg-success rounded-full"
+                                                        style={{ width: `${Math.min((p.totalProduced / p.totalReceived) * 100, 100)}%` }}
+                                                    />
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 text-right font-mono text-xs">{p.logCount}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </Layout>
     );
 };
 
