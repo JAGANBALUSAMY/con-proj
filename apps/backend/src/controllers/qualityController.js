@@ -1,5 +1,6 @@
 const prisma = require('../utils/prisma');
 const socketUtil = require('../utils/socket');
+const { SOCKET_EVENTS } = require('../utils/constants');
 
 /**
  * Record Defect (Operator Quality Check)
@@ -104,7 +105,7 @@ const recordDefect = async (req, res) => {
             });
         });
 
-        socketUtil.emitEvent('approval:updated', result);
+        socketUtil.emitEvent(SOCKET_EVENTS.APPROVAL.UPDATED, result);
 
         return res.status(201).json({
             message: `QC log (${logType}) submitted for approval`,

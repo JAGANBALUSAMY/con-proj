@@ -14,6 +14,7 @@ const sectionTransferRoutes = require('./routes/sectionTransferRoutes');
 const qualityRoutes = require('./routes/qualityRoutes');
 const reworkRoutes = require('./routes/reworkRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
+const machineRoutes = require('./routes/machineRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -36,6 +37,7 @@ app.use('/api/section-transfers', sectionTransferRoutes);
 app.use('/api/quality', qualityRoutes);
 app.use('/api/rework', reworkRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/machines', machineRoutes);
 
 // Root test route
 app.get('/', (req, res) => {

@@ -1,6 +1,6 @@
-const bcrypt = require('bcryptjs');
 const prisma = require('../utils/prisma');
 const socketUtil = require('../utils/socket');
+const { SOCKET_EVENTS, PAGINATION } = require('../utils/constants');
 
 /**
  * Admin creates a Manager
@@ -76,7 +76,10 @@ const createManager = async (req, res) => {
         };
 
         // Real-time update for Admin
-        socketUtil.emitEvent('workforce:updated', responseData.user);
+        socketUtil.emitEvent(SOCKET_EVENTS.PRODUCTION.ALERT, {
+            type: 'INFO',
+            message: `New Manager created: ${responseData.user.fullName}`
+        });
 
         return res.status(201).json(responseData);
 
@@ -193,7 +196,10 @@ const createOperator = async (req, res) => {
         };
 
         // Real-time update for Admin (Workforce count)
-        socketUtil.emitEvent('workforce:updated', responseData.user);
+        socketUtil.emitEvent(SOCKET_EVENTS.PRODUCTION.ALERT, {
+            type: 'INFO',
+            message: `New Operator created: ${responseData.user.fullName}`
+        });
 
         return res.status(201).json(responseData);
 
@@ -224,8 +230,8 @@ const verifyOperator = async (req, res) => {
             return res.status(404).json({ error: 'Operator not found' });
         }
 
-        // 2. Hierarchy Check: Only the creating manager can verify
-        if (operator.createdByUserId !== managerId) {
+        // 2. Hierarchy Check: Only the creating manager can verify (Bypass for ADMIN)
+        if (req.user.role !== 'ADMIN' && operator.createdByUserId !== managerId) {
             return res.status(403).json({
                 error: 'Unauthorized: Only the Manager who created this Operator can verify them'
             });
@@ -270,12 +276,21 @@ const verifyOperator = async (req, res) => {
  */
 const getUsers = async (req, res) => {
     try {
-        const users = await prisma.user.findMany({
-            include: {
-                sectionAssignments: { select: { stage: true } }
-            },
-            orderBy: { createdAt: 'desc' }
-        });
+        const page = parseInt(req.query.page) || PAGINATION.DEFAULT_PAGE;
+        const limit = parseInt(req.query.limit) || PAGINATION.DEFAULT_LIMIT;
+        const skip = (page - 1) * limit;
+
+        const [users, total] = await Promise.all([
+            prisma.user.findMany({
+                skip,
+                take: limit,
+                include: {
+                    sectionAssignments: { select: { stage: true } }
+                },
+                orderBy: { createdAt: 'desc' }
+            }),
+            prisma.user.count()
+        ]);
 
         // Remove passwords
         const sanitizedUsers = users.map(u => {
@@ -286,7 +301,15 @@ const getUsers = async (req, res) => {
             };
         });
 
-        return res.status(200).json(sanitizedUsers);
+        return res.status(200).json({
+            users: sanitizedUsers,
+            pagination: {
+                total,
+                page,
+                limit,
+                pages: Math.ceil(total / limit)
+            }
+        });
     } catch (error) {
         return res.status(500).json({ error: 'Failed to fetch users' });
     }
@@ -319,9 +342,9 @@ const updateManagerSections = async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        // 3. Verify target is MANAGER
-        if (manager.role !== 'MANAGER') {
-            return res.status(400).json({ error: 'Target user must be a MANAGER' });
+        // 3. Verify target is MANAGER or OPERATOR
+        if (manager.role !== 'MANAGER' && manager.role !== 'OPERATOR') {
+            return res.status(400).json({ error: 'Target user must be a MANAGER or OPERATOR' });
         }
 
         // 4. Update sections in transaction
@@ -517,29 +540,38 @@ const getMyOperators = async (req, res) => {
     try {
         const managerId = req.user.userId;
         const assignedSections = req.user.sections || [];
+        const page = parseInt(req.query.page) || PAGINATION.DEFAULT_PAGE;
+        const limit = parseInt(req.query.limit) || PAGINATION.DEFAULT_LIMIT;
+        const skip = (page - 1) * limit;
 
-        // Fetch operators: Either created by this manager OR assigned to this manager's sections
-        const operators = await prisma.user.findMany({
-            where: {
-                role: 'OPERATOR',
-                OR: [
-                    { createdByUserId: managerId },
-                    {
-                        sectionAssignments: {
-                            some: {
-                                stage: { in: assignedSections }
-                            }
+        const where = {
+            role: 'OPERATOR',
+            OR: [
+                { createdByUserId: managerId },
+                {
+                    sectionAssignments: {
+                        some: {
+                            stage: { in: assignedSections }
                         }
                     }
-                ]
-            },
-            include: {
-                sectionAssignments: {
-                    select: { stage: true }
                 }
-            },
-            orderBy: { createdAt: 'desc' }
-        });
+            ]
+        };
+
+        const [operators, total] = await Promise.all([
+            prisma.user.findMany({
+                where,
+                skip,
+                take: limit,
+                include: {
+                    sectionAssignments: {
+                        select: { stage: true }
+                    }
+                },
+                orderBy: { createdAt: 'desc' }
+            }),
+            prisma.user.count({ where })
+        ]);
 
         // Sanitize response (remove passwords)
         const sanitizedOperators = operators.map(op => {
@@ -550,7 +582,15 @@ const getMyOperators = async (req, res) => {
             };
         });
 
-        return res.status(200).json(sanitizedOperators);
+        return res.status(200).json({
+            operators: sanitizedOperators,
+            pagination: {
+                total,
+                page,
+                limit,
+                pages: Math.ceil(total / limit)
+            }
+        });
 
     } catch (error) {
         console.error('Get my operators error:', error);
@@ -591,8 +631,8 @@ const updateOperatorStatus = async (req, res) => {
             return res.status(400).json({ error: 'Target user must be an OPERATOR' });
         }
 
-        // 4. Verify ownership
-        if (operator.createdByUserId !== managerId) {
+        // 4. Verify ownership (Bypass for ADMIN)
+        if (req.user.role !== 'ADMIN' && operator.createdByUserId !== managerId) {
             return res.status(403).json({
                 error: 'You can only manage operators you created'
             });
@@ -653,8 +693,8 @@ const resetOperatorPassword = async (req, res) => {
             return res.status(400).json({ error: 'Target user must be an OPERATOR' });
         }
 
-        // 4. Verify ownership
-        if (operator.createdByUserId !== managerId) {
+        // 4. Verify ownership (Bypass for ADMIN)
+        if (req.user.role !== 'ADMIN' && operator.createdByUserId !== managerId) {
             return res.status(403).json({
                 error: 'You can only manage operators you created'
             });
@@ -708,8 +748,8 @@ const forceOperatorLogout = async (req, res) => {
             return res.status(400).json({ error: 'Target user must be an OPERATOR' });
         }
 
-        // 3. Verify ownership
-        if (operator.createdByUserId !== managerId) {
+        // 3. Verify ownership (Bypass for ADMIN)
+        if (req.user.role !== 'ADMIN' && operator.createdByUserId !== managerId) {
             return res.status(403).json({
                 error: 'You can only manage operators you created'
             });

@@ -7,26 +7,36 @@ export const useSocket = () => useContext(SocketContext);
 
 export const SocketProvider = ({ children }) => {
     const [socket, setSocket] = useState(null);
+    const [connected, setConnected] = useState(false);
 
     useEffect(() => {
-        // Connect to backend server
-        // In a real app, this URL should come from an environment variable
-        const newSocket = io('http://localhost:5000', {
-            autoConnect: true
+        // Corrected port to 5005 based on backend configuration
+        const newSocket = io('http://localhost:5005', {
+            autoConnect: true,
+            reconnection: true,
+            reconnectionAttempts: 10,
+            reconnectionDelay: 1000,
+            timeout: 5000
         });
 
         newSocket.on('connect', () => {
-            console.log('🔌 Connected to WebSocket server');
+            console.log('🔌 WebSocket Connected (Port 5005)');
+            setConnected(true);
+        });
+
+        newSocket.on('disconnect', (reason) => {
+            console.log('🔌 WebSocket Disconnected:', reason);
+            setConnected(false);
         });
 
         newSocket.on('connect_error', (error) => {
-            console.error('🔌 Socket connection error:', error);
+            console.error('🔌 WebSocket Error:', error.message);
+            setConnected(false);
         });
 
         setSocket(newSocket);
 
         return () => {
-            console.log('🔌 Disconnecting from WebSocket server');
             newSocket.disconnect();
         };
     }, []);

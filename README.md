@@ -15,6 +15,7 @@ This system manages the complete lifecycle of garment production batches through
 - **Section Isolation**: Managers and Operators are restricted to assigned production sections
 - **Verification System**: Operators must be verified by their creating Manager before login
 - **Audit Trails**: Complete tracking of who created, verified, and approved each action
+- **Infrastructure Safeguards**: Server-side pagination, WebSocket standardization, and 60s auto-refresh fallbacks
 
 ## 🏗️ Architecture
 
@@ -257,6 +258,11 @@ con-proj/
   - **Work Isolation**: Operators only see batches active in their station that aren't pending approval
   - Manager approval workflow with automated stage advancement
   - Section-based batch filtering and real-time dashboard refreshes (Socket.IO)
+- **Infrastructure & Reliability**
+  - **Server-Side Pagination**: Efficient data loading for large user and batch lists
+  - **WebSocket Standardization**: Centralized event definitions for predictable real-time updates
+  - **Auto-Refresh Fallback**: 60-second background polling ensuring dashboard accuracy
+  - **Backend Role Enforcement**: Strict API-level validation of roles and section permissions
 
 - **Operator Section Transfer**
   - Select operator → Target section → Target Manager workflow
@@ -372,6 +378,7 @@ All critical issues have been resolved:
 - [x] API-Based E2E Production Lifecycle Test
 - [x] Batch Start Approval Gate
 - [x] Shipment Removal & Dashboard Consolidation
+- [x] Infrastructure Safeguards (Pagination, WS Constants, Auto-Refresh)
 
 ## 📝 Documentation
 
@@ -389,4 +396,4 @@ Proprietary - All rights reserved
 
 ---
 
-**Current Status**: 100% Complete | **Last Updated**: March 06, 2026
+**Current Status**: 100% Core Complete | **Last Updated**: March 07, 2026

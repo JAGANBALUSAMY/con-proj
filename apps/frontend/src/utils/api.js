@@ -18,4 +18,21 @@ api.interceptors.request.use(
     }
 );
 
+// Response interceptor to handle errors
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401) {
+            console.warn('🔌 Session expired or unauthorized. Redirecting to login...');
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            // Redirect to login (native redirect to avoid complex router logic here)
+            if (window.location.pathname !== '/login') {
+                window.location.href = '/login';
+            }
+        }
+        return Promise.reject(error);
+    }
+);
+
 export default api;

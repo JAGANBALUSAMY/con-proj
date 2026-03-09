@@ -22,6 +22,7 @@ const router = express.Router();
 router.post('/manager', protect, restrictTo('ADMIN'), createManager);
 router.get('/', protect, restrictTo('ADMIN'), getUsers);
 router.get('/managers', protect, restrictTo('MANAGER'), getManagers);
+router.get('/my-operators', protect, restrictTo('MANAGER'), getMyOperators);
 
 // Only MANAGER can create Operators
 router.post('/operator', protect, restrictTo('MANAGER'), createOperator);
@@ -35,10 +36,12 @@ router.patch('/:id/reset-password', protect, restrictTo('ADMIN'), resetManagerPa
 router.patch('/:id/status', protect, restrictTo('ADMIN'), toggleManagerStatus);
 router.post('/:id/force-logout', protect, restrictTo('ADMIN'), forceLogout);
 
-// MANAGER-only governance actions on OWNED OPERATORS
-router.get('/my-operators', protect, restrictTo('MANAGER'), getMyOperators);
-router.patch('/:id/operator-status', protect, restrictTo('MANAGER'), updateOperatorStatus);
-router.patch('/:id/reset-operator-password', protect, restrictTo('MANAGER'), resetOperatorPassword);
-router.post('/:id/force-operator-logout', protect, restrictTo('MANAGER'), forceOperatorLogout);
+// ADMIN or MANAGER governance actions on OPERATORS
+router.patch('/:id/operator-status', protect, restrictTo('ADMIN', 'MANAGER'), updateOperatorStatus);
+router.patch('/:id/reset-operator-password', protect, restrictTo('ADMIN', 'MANAGER'), resetOperatorPassword);
+router.post('/:id/force-operator-logout', protect, restrictTo('ADMIN', 'MANAGER'), forceOperatorLogout);
+
+// NEW: Update sections for any user (Managers or Operators) - Only for ADMIN
+router.patch('/:id/update-sections', protect, restrictTo('ADMIN'), updateManagerSections);
 
 module.exports = router;

@@ -17,7 +17,12 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
     if (allowedRoles && !allowedRoles.includes(user.role)) {
         // Role not authorized, redirect to their home dashboard
-        return <Navigate to="/" replace />;
+        const roleHome = {
+            'ADMIN': '/admin',
+            'MANAGER': '/manager',
+            'OPERATOR': '/operator'
+        };
+        return <Navigate to={roleHome[user.role] || '/login'} replace />;
     }
 
     return children;

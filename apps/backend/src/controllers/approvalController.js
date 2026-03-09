@@ -1,5 +1,6 @@
 const prisma = require('../utils/prisma');
 const socketUtil = require('../utils/socket');
+const { SOCKET_EVENTS } = require('../utils/constants');
 
 /**
  * Approve a Production Log
@@ -219,8 +220,8 @@ const approveProductionLog = async (req, res) => {
         const responseData = { message: 'Log approved and batch advanced', log: result };
 
         // Real-time update for Manager (Sync queue) and Operator (Sync batch stage)
-        socketUtil.emitEvent('approval:updated', responseData.log);
-        socketUtil.emitEvent('batch:status_updated', { batchId: result.batchId });
+        socketUtil.emitEvent(SOCKET_EVENTS.APPROVAL.UPDATED, responseData.log);
+        socketUtil.emitEvent(SOCKET_EVENTS.BATCH.STATUS_UPDATED, { batchId: result.batchId });
 
         return res.status(200).json(responseData);
 
@@ -306,7 +307,7 @@ const approveRework = async (req, res) => {
         const responseData = { message: 'Rework approved', rework: result.rework, batchStats: result.batch };
 
         // Real-time update for Manager
-        socketUtil.emitEvent('approval:updated', responseData.rework);
+        socketUtil.emitEvent(SOCKET_EVENTS.APPROVAL.UPDATED, responseData.rework);
 
         return res.status(200).json(responseData);
     } catch (error) {
@@ -362,7 +363,7 @@ const rejectRework = async (req, res) => {
         const responseData = { message: 'Rework rejected', rework: updatedRework };
 
         // Real-time update
-        socketUtil.emitEvent('approval:updated', responseData.rework);
+        socketUtil.emitEvent(SOCKET_EVENTS.APPROVAL.UPDATED, responseData.rework);
 
         return res.status(200).json(responseData);
     } catch (error) {
@@ -411,7 +412,7 @@ const rejectProductionLog = async (req, res) => {
         const responseData = { message: 'Log rejected', log: updatedLog };
 
         // Real-time update for Manager
-        socketUtil.emitEvent('approval:updated', responseData.log);
+        socketUtil.emitEvent(SOCKET_EVENTS.APPROVAL.UPDATED, responseData.log);
 
         return res.status(200).json(responseData);
     } catch (error) {
@@ -465,7 +466,7 @@ const startBatch = async (req, res) => {
         const responseData = { message: 'Batch Started', batch: updatedBatch };
 
         // Real-time update
-        socketUtil.emitEvent('batch:status_updated', { batchId: batch.id });
+        socketUtil.emitEvent(SOCKET_EVENTS.BATCH.STATUS_UPDATED, { batchId: batch.id });
 
         return res.status(200).json(responseData);
 

@@ -1,5 +1,6 @@
 const prisma = require('../utils/prisma');
 const socketUtil = require('../utils/socket');
+const { SOCKET_EVENTS } = require('../utils/constants');
 
 /**
  * Create Rework Log (Operator only, REWORK section)
@@ -195,8 +196,8 @@ const createReworkLog = async (req, res) => {
         });
 
         // ── 6. Emit Event ────────────────────────────────────────────────────
-        socketUtil.emitEvent('approval:updated', reworkRecord);
-        socketUtil.emitEvent('batch:status_updated', { batchId: reworkRecord.batchId });
+        socketUtil.emitEvent(SOCKET_EVENTS.APPROVAL.UPDATED, reworkRecord);
+        socketUtil.emitEvent(SOCKET_EVENTS.BATCH.STATUS_UPDATED, { batchId: reworkRecord.batchId });
 
         return res.status(201).json({
             message: 'Rework log created successfully. Awaiting manager approval.',

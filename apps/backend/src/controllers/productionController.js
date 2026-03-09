@@ -1,5 +1,6 @@
 const prisma = require('../utils/prisma');
 const socketUtil = require('../utils/socket');
+const { SOCKET_EVENTS } = require('../utils/constants');
 
 /**
  * Create Production Log (Operator only)
@@ -260,8 +261,8 @@ const createProductionLog = async (req, res) => {
         };
 
         // Real-time update for Manager & Operator (Trigger refresh)
-        socketUtil.emitEvent('approval:updated', responseData.log);
-        socketUtil.emitEvent('batch:status_updated', { batchId: batch.id });
+        socketUtil.emitEvent(SOCKET_EVENTS.APPROVAL.UPDATED, responseData.log);
+        socketUtil.emitEvent(SOCKET_EVENTS.BATCH.STATUS_UPDATED, { batchId: batch.id });
 
         return res.status(201).json(responseData);
 

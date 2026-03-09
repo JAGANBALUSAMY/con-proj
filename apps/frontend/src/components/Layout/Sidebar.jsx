@@ -13,7 +13,8 @@ import {
     FileText,
     ChevronLeft,
     ChevronRight,
-    Workflow
+    Workflow,
+    Activity
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
@@ -21,17 +22,33 @@ import { useAuth } from '../../context/AuthContext';
 const Sidebar = ({ collapsed, onToggle }) => {
     const { user } = useAuth();
 
-    const menuItems = [
-        { icon: LayoutDashboard, label: 'Dashboard', path: `/${user?.role?.toLowerCase()}` },
-        { icon: Package, label: 'Batches', path: '/batches' },
-        { icon: ShieldCheck, label: 'Quality Control', path: '/quality' },
-        { icon: RefreshCcw, label: 'Rework Queue', path: '/rework' },
-        { icon: Cpu, label: 'Machines', path: '/machines' },
-        { icon: Users, label: 'Operators', path: '/operators' },
-        { icon: BarChart3, label: 'Analytics', path: '/analytics' },
-        { icon: FileText, label: 'Reports', path: '/reports' },
-        { icon: Settings, label: 'Settings', path: '/settings' },
-    ];
+    const roleMenus = {
+        ADMIN: [
+            { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
+            { icon: ShieldCheck, label: 'Managers', path: '/admin/managers' },
+            { icon: Users, label: 'Operators', path: '/admin/operators' },
+            { icon: Factory, label: 'Production Overview', path: '/admin/production' },
+            { icon: BarChart3, label: 'Analytics', path: '/analytics' },
+            { icon: FileText, label: 'Reports', path: '/admin/reports' },
+            { icon: Settings, label: 'Settings', path: '/admin/settings' },
+        ],
+        MANAGER: [
+            { icon: LayoutDashboard, label: 'Dashboard', path: '/manager' },
+            { icon: Workflow, label: 'Production Flow', path: '/manager/flow' },
+            { icon: Package, label: 'Batches', path: '/manager/batches' },
+            { icon: ShieldCheck, label: 'Quality Control', path: '/manager/quality' },
+            { icon: RefreshCcw, label: 'Rework Queue', path: '/manager/rework' },
+            { icon: Users, label: 'Team Fleet', path: '/manager/team' },
+            { icon: BarChart3, label: 'Analytics', path: '/analytics' },
+        ],
+        OPERATOR: [
+            { icon: LayoutDashboard, label: 'Performance', path: '/operator' },
+            { icon: Activity, label: 'Work Station', path: '/operator/station' },
+            { icon: History, label: 'Submission History', path: '/operator/history' },
+        ]
+    };
+
+    const menuItems = roleMenus[user?.role] || [];
 
     return (
         <motion.div

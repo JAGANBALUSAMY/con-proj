@@ -4,33 +4,41 @@ import UserCard from '../UserCard/UserCard';
 import ManagerDetailModal from '../ManagerDetailModal/ManagerDetailModal';
 import './UserListView.css';
 
-const UserListView = ({ users, onClose, onRefresh }) => {
-    const [activeTab, setActiveTab] = useState('all');
+const UserListView = ({ users, onClose, onRefresh, initialRole = 'all' }) => {
+    const [activeTab, setActiveTab] = useState(initialRole);
+
+    React.useEffect(() => {
+        if (initialRole) {
+            setActiveTab(initialRole.toLowerCase() === 'manager' ? 'managers' :
+                initialRole.toLowerCase() === 'operator' ? 'operators' : 'all');
+        }
+    }, [initialRole]);
     const [selectedManager, setSelectedManager] = useState(null);
 
     const filterUsers = () => {
+        const userList = Array.isArray(users) ? users : [];
         switch (activeTab) {
             case 'managers':
-                return users.filter(u => u.role === 'MANAGER');
+                return userList.filter(u => u.role === 'MANAGER');
             case 'operators':
-                return users.filter(u => u.role === 'OPERATOR');
+                return userList.filter(u => u.role === 'OPERATOR');
             default:
-                return users.filter(u => u.role !== 'ADMIN'); // Exclude ADMIN from list
+                return userList.filter(u => u.role !== 'ADMIN');
         }
     };
 
     const filteredUsers = filterUsers();
 
     const getTabCount = (role) => {
+        const userList = Array.isArray(users) ? users : [];
         if (role === 'all') {
-            return users.filter(u => u.role !== 'ADMIN').length;
+            return userList.filter(u => u.role !== 'ADMIN').length;
         }
-        // role parameter is lowercase ('managers', 'operators'), need to map to uppercase
         const roleMap = {
             'managers': 'MANAGER',
             'operators': 'OPERATOR'
         };
-        return users.filter(u => u.role === roleMap[role]).length;
+        return userList.filter(u => u.role === roleMap[role]).length;
     };
 
     const handleManageClick = (manager) => {

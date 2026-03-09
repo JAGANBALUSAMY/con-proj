@@ -1,11 +1,17 @@
 const prisma = require('../utils/prisma');
+const socketUtil = require('../utils/socket');
+const { SOCKET_EVENTS, PAGINATION } = require('../utils/constants');
 
 /**
  * ADMIN: Global factory overview
  */
 const getAdminStats = async (req, res) => {
     try {
-        const [userCount, managerCount, operatorCount, activeBatchCount, activeBatchList, batchHistory] = await Promise.all([
+        const page = parseInt(req.query.page) || PAGINATION.DEFAULT_PAGE;
+        const limit = parseInt(req.query.limit) || PAGINATION.DEFAULT_LIMIT;
+        const skip = (page - 1) * limit;
+
+        const [userCount, managerCount, operatorCount, activeBatchCount, activeBatchList, batchHistory, totalHistory] = await Promise.all([
             prisma.user.count(),
             prisma.user.count({ where: { role: 'MANAGER' } }),
             prisma.user.count({ where: { role: 'OPERATOR' } }),
@@ -17,8 +23,10 @@ const getAdminStats = async (req, res) => {
             prisma.batch.findMany({
                 where: { status: { in: ['COMPLETED', 'CANCELLED'] } },
                 orderBy: { updatedAt: 'desc' },
-                take: 50 // Limit history to sensible number
-            })
+                skip,
+                take: limit
+            }),
+            prisma.batch.count({ where: { status: { in: ['COMPLETED', 'CANCELLED'] } } })
         ]);
 
         return res.status(200).json({
@@ -28,7 +36,13 @@ const getAdminStats = async (req, res) => {
                 operators: operatorCount,
                 activeBatches: activeBatchCount,
                 activeBatchList,
-                batchHistory
+                batchHistory,
+                pagination: {
+                    total: totalHistory,
+                    page,
+                    limit,
+                    pages: Math.ceil(totalHistory / limit)
+                }
             }
         });
     } catch (error) {
@@ -381,6 +395,8 @@ const createBatch = async (req, res) => {
                 scrappedQuantity: 0
             }
         });
+
+        socketUtil.emitEvent(SOCKET_EVENTS.BATCH.CREATED, batch);
 
         return res.status(201).json({
             message: 'Batch created successfully',

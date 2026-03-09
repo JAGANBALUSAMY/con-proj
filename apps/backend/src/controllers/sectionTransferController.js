@@ -1,5 +1,6 @@
 const prisma = require('../utils/prisma');
 const socketUtil = require('../utils/socket');
+const { SOCKET_EVENTS } = require('../utils/constants');
 
 // POST /api/section-transfers - Request section transfer
 const requestSectionTransfer = async (req, res) => {
@@ -196,8 +197,8 @@ const reviewSectionTransfer = async (req, res) => {
             });
 
             // Real-time updates
-            socketUtil.emitEvent('batch:assignment_changed', { operatorId: updatedTransfer.operatorId });
-            socketUtil.emitEvent('transfer:sync_approval', updatedTransfer);
+            socketUtil.emitEvent(SOCKET_EVENTS.WORKFORCE.ASSIGNMENT_CHANGED, { operatorId: updatedTransfer.operatorId });
+            socketUtil.emitEvent(SOCKET_EVENTS.TRANSFER.SYNC_APPROVAL, updatedTransfer);
 
             res.json(updatedTransfer);
         } else {
@@ -230,7 +231,7 @@ const reviewSectionTransfer = async (req, res) => {
             });
 
             // Real-time update for Manager
-            socketUtil.emitEvent('transfer:sync_approval', updatedTransfer);
+            socketUtil.emitEvent(SOCKET_EVENTS.TRANSFER.SYNC_APPROVAL, updatedTransfer);
 
             res.json(updatedTransfer);
         }
@@ -279,10 +280,7 @@ const cancelSectionTransfer = async (req, res) => {
         });
 
         // Real-time update for Manager
-        socketUtil.emitEvent('transfer:sync_approval', { id: parseInt(id), status: 'CANCELLED' });
-
-        // Real-time update for Manager
-        socketUtil.emitEvent('transfer:sync_approval', { id: parseInt(id), status: 'CANCELLED' });
+        socketUtil.emitEvent(SOCKET_EVENTS.TRANSFER.SYNC_APPROVAL, { id: parseInt(id), status: 'CANCELLED' });
 
         res.json({ message: 'Transfer request cancelled successfully' });
     } catch (error) {
