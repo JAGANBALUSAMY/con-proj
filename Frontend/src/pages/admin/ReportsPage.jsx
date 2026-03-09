@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import DashboardLayout from '../../components/layout/DashboardLayout';
-import TableView from '../../components/tables/TableView';
-import { useTable } from '../../components/tables/useTable';
-import api from '../../utils/api';
+import DashboardLayout from '@frontend/layouts/DashboardLayout';
+import TableView from '@frontend/components/tables/TableView';
+import { useTable } from '@frontend/components/tables/useTable';
+import api from '@frontend/services/api';
 import { FileText, Download, Sparkles, RefreshCw, AlertCircle, Brain, Clock, Users, Database, ChevronDown } from 'lucide-react';
-import { exportToCSV } from '../../utils/exportUtils';
-import Badge from '../../components/ui/Badge';
-import { SkeletonLoader } from '../../components/UI/StateFeedback';
+import { exportToCSV } from '@frontend/services/exportUtils';
+import Badge from '@frontend/components/ui/Badge';
+import { SkeletonLoader } from '@frontend/components/UI/StateFeedback';
 
 const ReportsPage = () => {
     const [data, setData] = useState([]);

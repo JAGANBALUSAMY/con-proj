@@ -1,0 +1,24 @@
+.empty-state {
+    background: #f8fafc;
+    border: 2px dashed #cbd5e1;
+    border-radius: 8px;
+    padding: 3rem 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.empty-state-icon {
+    color: #cbd5e1;
+}
+
+.empty-state p {
+    color: #94a3b8;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin: 0;
+    text-align: center;
+}

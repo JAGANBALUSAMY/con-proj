@@ -1,0 +1,25 @@
+@reference "../../index.css";
+
+.action-card {
+    @apply flex flex-col items-center gap-3 p-6 bg-card border border-border rounded-xl cursor-pointer transition-all duration-200 shadow-sm;
+}
+
+.action-card:hover {
+    @apply border-primary ring-4 ring-primary/10 -translate-y-1 shadow-md;
+}
+
+.action-card svg {
+    @apply text-text-primary opacity-80;
+}
+
+.action-card:hover svg {
+    @apply text-primary opacity-100;
+}
+
+.action-card span {
+    @apply text-[11px] font-black uppercase tracking-widest text-text-secondary;
+}
+
+.action-card:hover span {
+    @apply text-text-primary;
+}

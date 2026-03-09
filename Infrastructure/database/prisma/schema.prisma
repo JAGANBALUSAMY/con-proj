@@ -135,6 +135,20 @@ model User {
   requestedTransfers SectionTransferRequest[] @relation("RequestedTransfers")
   targetTransfers    SectionTransferRequest[] @relation("TargetTransfers")
   resolvedTransfers  SectionTransferRequest[] @relation("ResolvedTransfers")
+
+  // AI Reports
+  aiReports AIReport[]
+}
+
+model AIReport {
+  id          Int      @id @default(autoincrement())
+  filterHash  String   @unique
+  filters     Json
+  reportText  String
+  generatedAt DateTime @default(now())
+  generatedBy Int
+
+  user User @relation(fields: [generatedBy], references: [id])
 }
 
 model SectionAssignment {

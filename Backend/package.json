@@ -1,15 +1,22 @@
 {
     "name": "factory-backend",
     "version": "1.0.0",
+    "imports": {
+        "#backend/*": "./src/*.js",
+        "#infra/*": "con-proj-infra/*.js",
+        "#ai/*": "con-proj-ai/*.js"
+    },
     "scripts": {
         "start": "node src/app.js",
         "dev": "nodemon src/app.js",
-        "prisma:generate": "prisma generate",
+        "prisma:generate": "prisma generate --schema=../Infrastructure/database/prisma/schema.prisma",
         "prisma:migrate": "prisma migrate dev",
         "prisma:seed": "prisma db seed",
         "test:e2e": "jest tests/e2e-batch-flow.test.js --runInBand --forceExit"
     },
     "dependencies": {
+        "con-proj-ai": "file:../AI",
+        "con-proj-infra": "file:../Infrastructure",
         "@prisma/client": "^5.10.0",
         "axios": "^1.13.6",
         "bcryptjs": "^2.4.3",
