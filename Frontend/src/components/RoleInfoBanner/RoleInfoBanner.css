@@ -1,6 +1,6 @@
 .role-info-banner {
-    background: #eff6ff;
-    border: 1px solid #bfdbfe;
+    background: rgba(14, 165, 233, 0.06);
+    border: 1px solid rgba(14, 165, 233, 0.2);
     border-radius: 8px;
     padding: 0.75rem 1rem;
     display: flex;
@@ -10,12 +10,12 @@
 }
 
 .role-info-banner svg {
-    color: #3b82f6;
+    color: var(--bs-brand);
     flex-shrink: 0;
 }
 
 .role-info-banner span {
     font-size: 0.875rem;
-    color: #1e40af;
+    color: var(--bs-brand);
     line-height: 1.5;
 }

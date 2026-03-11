@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@frontend/layouts/DashboardLayout';
 import TableView from '@frontend/components/tables/TableView';
 import { useTable } from '@frontend/components/tables/useTable';
-import Badge from '@frontend/components/ui/Badge';
+import StatusBadge from '@frontend/components/ui/StatusBadge';
+import PageHeader from '@frontend/components/ui/PageHeader';
+import Button from '@frontend/components/ui/Button';
 import api from '@frontend/services/api';
-import { History as HistoryIcon, RefreshCcw } from 'lucide-react';
+import { RefreshCcw } from 'lucide-react';
 
 const HistoryPage = () => {
     const [logs, setLogs] = useState([]);
@@ -54,27 +56,20 @@ const HistoryPage = () => {
         {
             key: 'approvalStatus',
             label: 'Manager Status',
-            render: (val) => <Badge status={val} />
+            render: (val) => <StatusBadge status={val} />
         }
     ];
 
     return (
         <DashboardLayout>
             <div className="space-y-6">
-                <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-3">
-                        <HistoryIcon className="text-primary" size={24} />
-                        <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Your Submission History</h2>
-                    </div>
-                    <button
-                        onClick={() => { setIsRefreshing(true); fetchHistory(); }}
-                        className={`p-2 rounded-full hover:bg-slate-100 transition-colors ${isRefreshing ? 'animate-spin' : ''}`}
-                    >
-                        <RefreshCcw size={20} className="text-slate-500" />
-                    </button>
-                </div>
+                <PageHeader
+                    title="Your Submission History"
+                    subtitle="Personal work log and approval status tracker"
+                    actions={<Button variant="ghost" size="sm" leftIcon={RefreshCcw} loading={isRefreshing} onClick={() => { setIsRefreshing(true); fetchHistory(); }} />}
+                />
 
-                <section className="card-saas p-6">
+                <section style={{ backgroundColor: 'var(--bs-surface)', border: '1px solid var(--bs-border)', borderRadius: '10px', padding: '24px' }}>
                     <TableView
                         data={paginatedData}
                         columns={columns}

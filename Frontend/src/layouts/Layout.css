@@ -3,8 +3,8 @@
   flex-direction: column;
   min-height: 100vh;
   font-family: 'Inter', system-ui, sans-serif;
-  background: #f8fafc;
-  color: #1e293b;
+  background: var(--bs-background);
+  color: var(--bs-text-primary);
 }
 
 .header {
@@ -12,15 +12,15 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem 2rem;
-  background: #ffffff;
-  border-bottom: 1px solid #e2e8f0;
+  background: var(--bs-surface);
+  border-bottom: 1px solid var(--bs-border);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .header h1 {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--bs-text-primary);
   margin: 0;
 }
 
@@ -34,7 +34,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #64748b;
+  color: var(--bs-text-muted);
   font-size: 0.9rem;
 }
 
@@ -42,8 +42,8 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: #fee2e2;
-  color: #b91c1c;
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--bs-danger);
   border: none;
   padding: 0.5rem 1rem;
   border-radius: 6px;
@@ -53,7 +53,7 @@
 }
 
 .logout-btn:hover {
-  background: #fecaca;
+  background: rgba(239, 68, 68, 0.14);
 }
 
 .content {

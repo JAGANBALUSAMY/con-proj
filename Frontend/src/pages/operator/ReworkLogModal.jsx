@@ -138,7 +138,7 @@ const ReworkLogModal = ({ isOpen, onClose, batch, onSuccess }) => {
 
                 <form onSubmit={handleSubmit} className="rework-form">
                     <div className="rework-body">
-                        <div className="work-timer-section" style={{ borderStyle: 'solid', borderColor: '#e2e8f0', background: '#f8fafc' }}>
+                        <div className="work-timer-section" style={{ border: '1px solid var(--bs-border)', background: 'var(--bs-background)' }}>
                             {!startTime ? (
                                 <button
                                     type="button"

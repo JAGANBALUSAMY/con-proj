@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 
 import MetricCard from '@frontend/components/dashboard/MetricCard';
-import Badge from '@frontend/components/ui/Badge';
+import StatusBadge from '@frontend/components/ui/StatusBadge';
 
 const OperatorDashboard = () => {
     const { user } = useAuth();
@@ -65,16 +65,16 @@ const OperatorDashboard = () => {
                 {/* Tactical Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>
-                        <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic">
-                            Personnel Index: <span className="text-primary font-black">{user?.fullName.split(' ')[0]}</span>
+                        <h2 style={{ fontSize: '28px', fontWeight: 800, color: 'var(--bs-text-primary)', letterSpacing: '-0.03em', textTransform: 'uppercase', fontStyle: 'italic' }}>
+                            Personnel Index: <span style={{ color: 'var(--bs-brand)', fontWeight: 800 }}>{user?.fullName.split(' ')[0]}</span>
                         </h2>
-                        <div className="flex items-center gap-3 mt-2">
-                            <span className="flex items-center gap-1.5 px-3 py-1 bg-success/10 text-success rounded-full text-[9px] font-black uppercase tracking-widest border border-success/20">
-                                <span className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '8px' }}>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 12px', backgroundColor: 'rgba(34,197,94,0.1)', color: 'var(--bs-success)', borderRadius: '99px', fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', border: '1px solid rgba(34,197,94,0.2)' }}>
+                                <span style={{ width: '6px', height: '6px', backgroundColor: 'var(--bs-success)', borderRadius: '50%', animation: 'status-pulse 2s infinite' }} />
                                 Active Duty
                             </span>
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest border-l border-slate-200 dark:border-slate-800 pl-3">
-                                Station: <span className="text-slate-900 dark:text-white">{assignedSection.replace('_', ' ')}</span>
+                            <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--bs-text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', borderLeft: '1px solid var(--bs-border)', paddingLeft: '12px' }}>
+                                Station: <span style={{ color: 'var(--bs-text-primary)' }}>{assignedSection.replace('_', ' ')}</span>
                             </span>
                         </div>
                     </div>
@@ -127,26 +127,26 @@ const OperatorDashboard = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <Link
                                 to="/operator/station"
-                                className="card-saas p-8 flex items-center gap-6 hover:border-primary border-transparent group transition-all bg-primary/5 shadow-lg shadow-primary/5 group"
+                                style={{ backgroundColor: 'var(--bs-surface)', border: '1px solid var(--bs-border)', borderRadius: '10px', padding: '32px', display: 'flex', alignItems: 'center', gap: '24px', textDecoration: 'none', transition: 'all 0.15s' }} onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--bs-brand)'; e.currentTarget.style.backgroundColor = 'rgba(14,165,233,0.03)'; }} onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--bs-border)'; e.currentTarget.style.backgroundColor = 'var(--bs-surface)'; }}
                             >
-                                <div className="w-16 h-16 rounded-2xl bg-primary text-white flex items-center justify-center shadow-xl shadow-primary/30 group-hover:scale-105 transition-all rotate-3 group-hover:rotate-0">
+                                <div style={{ width: '64px', height: '64px', borderRadius: '16px', backgroundColor: 'var(--bs-brand)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px rgba(14,165,233,0.35)', flexShrink: 0, transform: 'rotate(3deg)' }}>
                                     <PlayCircle size={32} />
                                 </div>
-                                <div className="space-y-1">
-                                    <h4 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">Active Station</h4>
-                                    <p className="text-[10px] font-bold text-primary uppercase tracking-widest leading-none">Process Assigned Load Now</p>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                    <h4 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--bs-text-primary)', textTransform: 'uppercase', letterSpacing: '-0.02em' }}>Active Station</h4>
+                                    <p style={{ fontSize: '10px', fontWeight: 700, color: 'var(--bs-brand)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Process Assigned Load Now</p>
                                 </div>
                             </Link>
                             <Link
                                 to="/operator/history"
-                                className="card-saas p-8 flex items-center gap-6 hover:border-slate-400 border-transparent group transition-all"
+                                style={{ backgroundColor: 'var(--bs-surface)', border: '1px solid var(--bs-border)', borderRadius: '10px', padding: '32px', display: 'flex', alignItems: 'center', gap: '24px', textDecoration: 'none', transition: 'all 0.15s' }} onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--bs-border)'; }} onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--bs-border)'; }}
                             >
-                                <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 flex items-center justify-center group-hover:bg-slate-200 transition-colors -rotate-3 group-hover:rotate-0">
+                                <div style={{ width: '64px', height: '64px', borderRadius: '16px', backgroundColor: 'var(--bs-background)', color: 'var(--bs-text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transform: 'rotate(-3deg)' }}>
                                     <ClipboardList size={32} />
                                 </div>
-                                <div className="space-y-1">
-                                    <h4 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">Submission Audit</h4>
-                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none">Review Personal Log History</p>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                    <h4 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--bs-text-primary)', textTransform: 'uppercase', letterSpacing: '-0.02em' }}>Submission Audit</h4>
+                                    <p style={{ fontSize: '10px', fontWeight: 700, color: 'var(--bs-text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Review Personal Log History</p>
                                 </div>
                             </Link>
                         </div>
@@ -154,50 +154,50 @@ const OperatorDashboard = () => {
 
                     {/* Secondary Focus: Unit metrics & Recent activity */}
                     <div className="xl:col-span-4 space-y-8">
-                        <section className="card-saas p-6 space-y-6">
-                            <h3 className="text-xs font-black uppercase text-slate-400 tracking-widest mb-4">Tactical Metrics</h3>
-                            <div className="space-y-4">
-                                <div className="flex justify-between items-center p-4 rounded-2xl bg-background border border-border">
-                                    <div className="flex items-center gap-3">
-                                        <Package className="text-primary" size={20} />
-                                        <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Live Load</span>
+                        <section style={{ backgroundColor: 'var(--bs-surface)', border: '1px solid var(--bs-border)', borderRadius: '10px', padding: '24px' }}>
+                            <h3 style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--bs-text-muted)', marginBottom: '16px' }}>Tactical Metrics</h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', borderRadius: '10px', backgroundColor: 'var(--bs-background)', border: '1px solid var(--bs-border)' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <Package size={18} style={{ color: 'var(--bs-brand)' }} />
+                                        <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--bs-text-muted)' }}>Live Load</span>
                                     </div>
-                                    <span className="text-xl font-black">{dashboardData?.batches?.length || 0}</span>
+                                    <span style={{ fontSize: '20px', fontWeight: 800, color: 'var(--bs-text-primary)' }}>{dashboardData?.batches?.length || 0}</span>
                                 </div>
-                                <div className="flex justify-between items-center p-4 rounded-2xl bg-background border border-border">
-                                    <div className="flex items-center gap-3">
-                                        <RotateCcw className="text-warning" size={20} />
-                                        <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Rework</span>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', borderRadius: '10px', backgroundColor: 'var(--bs-background)', border: '1px solid var(--bs-border)' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <RotateCcw size={18} style={{ color: 'var(--bs-warning)' }} />
+                                        <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--bs-text-muted)' }}>Rework</span>
                                     </div>
-                                    <span className="text-xl font-black">{reworkPending}</span>
+                                    <span style={{ fontSize: '20px', fontWeight: 800, color: 'var(--bs-text-primary)' }}>{reworkPending}</span>
                                 </div>
                             </div>
                         </section>
 
-                        <section className="card-saas p-6">
-                            <div className="flex items-center justify-between mb-6">
-                                <h3 className="font-bold text-text-primary flex items-center gap-2 uppercase tracking-tighter">
-                                    <History size={18} className="text-primary" />
+                        <section style={{ backgroundColor: 'var(--bs-surface)', border: '1px solid var(--bs-border)', borderRadius: '10px', padding: '24px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+                                <h3 style={{ fontWeight: 700, color: 'var(--bs-text-primary)', display: 'flex', alignItems: 'center', gap: '8px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                    <History size={16} style={{ color: 'var(--bs-brand)' }} />
                                     Recent Activity
                                 </h3>
                             </div>
-                            <div className="space-y-3">
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                 {dashboardData?.recentLogs?.slice(0, 5).map(log => (
-                                    <div key={log.id} className="p-3 rounded-xl bg-background border border-border flex justify-between items-center group hover:border-primary/30 transition-all">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-[9px] font-black text-slate-400">
+                                    <div key={log.id} style={{ padding: '12px', borderRadius: '10px', backgroundColor: 'var(--bs-background)', border: '1px solid var(--bs-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'border-color 0.1s' }} onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(14,165,233,0.3)'} onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--bs-border)'}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                            <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'var(--bs-surface)', border: '1px solid var(--bs-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', fontWeight: 800, color: 'var(--bs-text-muted)' }}>
                                                 {log.batch.batchNumber.slice(-2)}
                                             </div>
                                             <div>
-                                                <p className="text-xs font-bold text-text-primary tracking-tight">{log.batch.batchNumber}</p>
-                                                <div className="flex items-center gap-1.5">
-                                                    <span className="text-[9px] font-black text-primary uppercase">{log.quantityOut} Qty</span>
-                                                    <span className="text-[9px] text-slate-300">•</span>
-                                                    <span className="text-[9px] font-bold text-slate-400">{new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--bs-text-primary)' }}>{log.batch.batchNumber}</p>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                    <span style={{ fontSize: '9px', fontWeight: 800, color: 'var(--bs-brand)', textTransform: 'uppercase' }}>{log.quantityOut} Qty</span>
+                                                    <span style={{ fontSize: '9px', color: 'var(--bs-border)' }}>•</span>
+                                                    <span style={{ fontSize: '9px', fontWeight: 700, color: 'var(--bs-text-muted)' }}>{new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                                 </div>
                                             </div>
                                         </div>
-                                        <Badge status={log.approvalStatus} />
+                                        <StatusBadge status={log.approvalStatus} size="sm" />
                                     </div>
                                 ))}
                             </div>

@@ -18,7 +18,7 @@
 
 .admin-tools,
 .system-overview {
-    background: white;
+    background: var(--bs-surface);
     border-radius: 12px;
     padding: 1.5rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -29,7 +29,7 @@
     align-items: center;
     gap: 1rem;
     margin-bottom: 1.5rem;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--bs-border);
     padding-bottom: 1rem;
 }
 
@@ -42,24 +42,25 @@
     padding: 0.5rem 1rem;
     border-radius: 6px;
     font-weight: 600;
-    color: #64748b;
+    color: var(--bs-text-muted);
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .tab-btn:hover {
-    background: #f8fafc;
-    color: #1e293b;
+    background: var(--bs-background);
+    color: var(--bs-text-primary);
 }
 
 .tab-btn.active {
-    background: #eff6ff;
-    color: #2563eb;
+    background: rgba(14, 165, 233, 0.08);
+    color: var(--bs-brand);
 }
 
 .stage-badge.secondary {
-    background: #f1f5f9;
-    color: #475569;
+    background: var(--bs-background);
+    border: 1px solid var(--bs-border);
+    color: var(--bs-text-secondary);
 }
 
 .tools-list {
@@ -69,7 +70,7 @@
 }
 
 .health-logs {
-    background: #0f172a;
+    background: var(--bs-sidebar-bg);
     color: #38bdf8;
     padding: 1.5rem;
     border-radius: 8px;
@@ -84,7 +85,7 @@
 
 .btn-close-health {
     margin-top: 1rem;
-    background: #1e293b;
+    background: var(--bs-sidebar-border);
     color: white;
     border: none;
     padding: 0.5rem 1rem;
@@ -109,7 +110,7 @@
 }
 
 .modal-card {
-    background: white;
+    background: var(--bs-surface);
     width: 100%;
     max-width: 500px;
     border-radius: 12px;
@@ -133,7 +134,7 @@
 
 .title-area h3 {
     margin: 0;
-    color: #1e293b;
+    color: var(--bs-text-primary);
 }
 
 .modal-form {
@@ -156,24 +157,24 @@
 
 .section-chip {
     padding: 0.5rem;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--bs-border);
     border-radius: 6px;
-    background: white;
+    background: var(--bs-background);
     font-size: 0.75rem;
     font-weight: 600;
-    color: #64748b;
+    color: var(--bs-text-muted);
     cursor: pointer;
 }
 
 .section-chip.active {
-    background: #eff6ff;
-    border-color: #3b82f6;
-    color: #3b82f6;
+    background: rgba(14, 165, 233, 0.08);
+    border-color: var(--bs-brand);
+    color: var(--bs-brand);
 }
 
 .btn-primary {
-    background: #2563eb;
-    color: white;
+    background: var(--bs-brand);
+    color: #fff;
     border: none;
     padding: 0.75rem 1.5rem;
     border-radius: 6px;
@@ -182,8 +183,9 @@
 }
 
 .btn-secondary {
-    background: white;
-    border: 1px solid #e2e8f0;
+    background: var(--bs-surface);
+    border: 1px solid var(--bs-border);
+    color: var(--bs-text-secondary);
     padding: 0.75rem 1.5rem;
     border-radius: 6px;
     cursor: pointer;
@@ -205,13 +207,13 @@
 
 .dummy-chart {
     height: 200px;
-    background: #f1f5f9;
+    background: var(--bs-background);
     border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     margin-top: 1.5rem;
-    border: 2px dashed #cbd5e1;
-    color: #94a3b8;
+    border: 2px dashed var(--bs-border);
+    color: var(--bs-text-muted);
     font-weight: 500;
 }

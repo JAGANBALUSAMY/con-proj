@@ -100,7 +100,7 @@ const FoldingModal = ({ isOpen, onClose, batch, onSuccess }) => {
                         <div className="folding-section">
                             <h3 className="folding-section-title"><CalendarClock size={16} /> Work Session</h3>
 
-                            <div className="work-timer-section" style={{ borderStyle: 'solid', borderColor: '#e2e8f0', background: '#f8fafc', margin: '1rem 0' }}>
+                            <div className="work-timer-section" style={{ border: '1px solid var(--bs-border)', background: 'var(--bs-background)', margin: '1rem 0' }}>
                                 {!startTime ? (
                                     <button
                                         type="button"

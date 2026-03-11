@@ -5,7 +5,9 @@ import DashboardLayout from '@frontend/layouts/DashboardLayout';
 import api from '@frontend/services/api';
 import { Play, Package, RefreshCcw, Activity } from 'lucide-react';
 import { useBatches } from '@frontend/hooks/useProduction';
-import Badge from '@frontend/components/ui/Badge';
+import StatusBadge from '@frontend/components/ui/StatusBadge';
+import Button from '@frontend/components/ui/Button';
+import PageHeader from '@frontend/components/ui/PageHeader';
 
 import WorkLogModal from './WorkLogModal';
 import QCInspectionModal from './QCInspectionModal';
@@ -60,56 +62,40 @@ const StationPage = () => {
     return (
         <DashboardLayout>
             <div className="space-y-8">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
-                            <Activity size={24} />
-                        </div>
-                        <div>
-                            <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">
-                                {assignedSection.replace('_', ' ')} Station
-                            </h2>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 bg-success rounded-full" />
-                                Live Operational Channel
-                            </p>
-                        </div>
-                    </div>
-                    <button
-                        onClick={fetchStatus}
-                        className={`p-3 rounded-xl bg-background border border-border hover:border-primary/30 transition-all ${isRefreshing ? 'animate-spin' : ''}`}
-                    >
-                        <RefreshCcw size={18} className="text-slate-500" />
-                    </button>
-                </div>
+                <PageHeader
+                    title={`${assignedSection.replace('_', ' ')} Station`}
+                    subtitle="Live Operational Channel"
+                    live
+                    actions={
+                        <Button variant="ghost" size="sm" leftIcon={RefreshCcw} loading={isRefreshing} onClick={fetchStatus} />
+                    }
+                />
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                     {allBatches?.map(batch => (
-                        <div key={batch.id} className="card-saas p-0 overflow-hidden border-transparent hover:border-primary/50 transition-all group flex flex-col shadow-lg hover:shadow-primary/10">
-                            <div className="p-6 space-y-4 flex-1">
-                                <div className="flex justify-between items-start">
+                        <div key={batch.id} style={{ backgroundColor: 'var(--bs-surface)', border: '1px solid var(--bs-border)', borderRadius: '12px', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 4px 24px rgba(0,0,0,0.06)', transition: 'all 0.15s' }} onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(14,165,233,0.45)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(14,165,233,0.1)'; }} onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--bs-border)'; e.currentTarget.style.boxShadow = '0 4px 24px rgba(0,0,0,0.06)'; }}>
+                            <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', flex: 1 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                     <div>
-                                        <h4 className="text-2xl font-black text-slate-900 dark:text-white tracking-widest uppercase italic group-hover:text-primary transition-colors">{batch.batchNumber}</h4>
-                                        <p className="text-[9px] text-slate-400 font-black uppercase tracking-[0.2em] mt-1">{batch.briefTypeName}</p>
+                                        <h4 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--bs-text-primary)', letterSpacing: '0.1em', textTransform: 'uppercase', fontStyle: 'italic' }}>{batch.batchNumber}</h4>
+                                        <p style={{ fontSize: '9px', color: 'var(--bs-text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.2em', marginTop: '4px' }}>{batch.briefTypeName}</p>
                                     </div>
-                                    <Badge status={batch.status} />
+                                    <StatusBadge status={batch.status} />
                                 </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-border/50">
-                                        <p className="text-[9px] text-slate-400 uppercase font-black tracking-widest mb-1">Queue Load</p>
-                                        <p className="text-lg font-black tabular-nums">{batch.totalQuantity} <span className="text-[10px] text-slate-400 italic font-bold">PCS</span></p>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                    <div style={{ padding: '16px', borderRadius: '10px', backgroundColor: 'var(--bs-background)', border: '1px solid var(--bs-border)' }}>
+                                        <p style={{ fontSize: '9px', color: 'var(--bs-text-muted)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.1em', marginBottom: '4px' }}>Queue Load</p>
+                                        <p style={{ fontSize: '17px', fontWeight: 800, color: 'var(--bs-text-primary)' }}>{batch.totalQuantity} <span style={{ fontSize: '10px', color: 'var(--bs-text-muted)', fontStyle: 'italic', fontWeight: 700 }}>PCS</span></p>
                                     </div>
-                                    <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-border/50">
-                                        <p className="text-[9px] text-slate-400 uppercase font-black tracking-widest mb-1">Current Protocol</p>
-                                        <p className="text-[10px] font-black text-primary uppercase tracking-tighter truncate">{batch.currentStage.replace('_', ' ')}</p>
+                                    <div style={{ padding: '16px', borderRadius: '10px', backgroundColor: 'var(--bs-background)', border: '1px solid var(--bs-border)' }}>
+                                        <p style={{ fontSize: '9px', color: 'var(--bs-text-muted)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.1em', marginBottom: '4px' }}>Current Protocol</p>
+                                        <p style={{ fontSize: '10px', fontWeight: 800, color: 'var(--bs-brand)', textTransform: 'uppercase', letterSpacing: '-0.01em' }}>{batch.currentStage.replace('_', ' ')}</p>
                                     </div>
                                 </div>
                             </div>
-
                             <button
                                 onClick={() => openWorkModal(batch)}
-                                className="w-full bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 py-4 flex items-center justify-center gap-3 font-black uppercase text-[10px] tracking-[0.3em] hover:bg-primary dark:hover:bg-primary dark:hover:text-white transition-all group-hover:tracking-[0.4em]"
+                                style={{ width: '100%', backgroundColor: 'var(--bs-sidebar-bg)', color: '#fff', padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', fontWeight: 800, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.3em', border: 'none', cursor: 'pointer', transition: 'background-color 0.15s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bs-brand)'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--bs-sidebar-bg)'}
                             >
                                 <Play size={14} fill="currentColor" />
                                 {assignedSection === 'QUALITY_CHECK' ? 'Engage Inspection' : 'Log Unit Data'}
@@ -118,12 +104,12 @@ const StationPage = () => {
                     ))}
 
                     {(!allBatches || allBatches.length === 0) && (
-                        <div className="col-span-full py-32 flex flex-col items-center justify-center card-saas border-dashed border-2">
-                            <div className="w-20 h-20 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center mb-6">
-                                <Package size={32} className="text-slate-200" />
+                        <div style={{ gridColumn: '1 / -1', padding: '128px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bs-surface)', border: '2px dashed var(--bs-border)', borderRadius: '12px' }}>
+                            <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: 'var(--bs-background)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
+                                <Package size={32} style={{ color: 'var(--bs-border)' }} />
                             </div>
-                            <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.3em]">Channel Idle</h3>
-                            <p className="text-[10px] text-slate-500 font-medium uppercase mt-2">Awaiting batch synchronization from command...</p>
+                            <h3 style={{ fontSize: '13px', fontWeight: 800, color: 'var(--bs-text-muted)', textTransform: 'uppercase', letterSpacing: '0.3em' }}>Channel Idle</h3>
+                            <p style={{ fontSize: '10px', color: 'var(--bs-text-muted)', fontWeight: 500, textTransform: 'uppercase', marginTop: '8px' }}>Awaiting batch synchronization from command...</p>
                         </div>
                     )}
                 </div>

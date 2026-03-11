@@ -27,43 +27,49 @@ const OperatorLeaderboard = () => {
         fetchRankings();
     }, []);
 
-    if (loading) return <div className="p-8 text-center animate-pulse">Calculating performance...</div>;
+    const rankBg = (i) => i === 0 ? 'rgba(234,179,8,0.15)' : i === 1 ? 'rgba(148,163,184,0.15)' : i === 2 ? 'rgba(217,119,6,0.12)' : 'var(--bs-background)';
+    const rankColor = (i) => i === 0 ? 'var(--bs-warning)' : i === 1 ? '#94a3b8' : i === 2 ? '#d97706' : 'var(--bs-text-muted)';
+
+    if (loading) return (
+        <section style={{ backgroundColor: 'var(--bs-surface)', border: '1px solid var(--bs-border)', borderRadius: '10px', padding: '24px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {[...Array(4)].map((_, i) => <div key={i} className="skeleton" style={{ height: '56px', borderRadius: '8px' }} />)}
+            </div>
+        </section>
+    );
 
     return (
-        <section className="card-saas p-6">
-            <div className="flex items-center justify-between mb-6">
-                <h3 className="font-bold text-text-primary flex items-center gap-2">
-                    <Trophy size={18} className="text-warning" /> Performance Leaderboard
+        <section style={{ backgroundColor: 'var(--bs-surface)', border: '1px solid var(--bs-border)', borderRadius: '10px', padding: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+                <h3 style={{ fontWeight: 700, color: 'var(--bs-text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Trophy size={18} style={{ color: 'var(--bs-warning)' }} /> Performance Leaderboard
                 </h3>
             </div>
 
-            <div className="space-y-4">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {rankings.map((op, index) => (
-                    <div key={op.id} className="flex items-center gap-4 p-3 rounded-xl bg-background border border-border">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${index === 0 ? 'bg-warning/20 text-warning' :
-                            index === 1 ? 'bg-slate-200 text-slate-500' :
-                                index === 2 ? 'bg-amber-100 text-amber-700' : 'bg-slate-50 text-slate-400'
-                            }`}>
+                    <div key={op.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', borderRadius: '8px', backgroundColor: 'var(--bs-background)', border: '1px solid var(--bs-border)' }}>
+                        <div style={{ width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '11px', backgroundColor: rankBg(index), color: rankColor(index), flexShrink: 0 }}>
                             #{index + 1}
                         </div>
-
-                        <div className="flex-1 min-w-0">
-                            <h4 className="text-xs font-bold text-text-primary truncate">{op.name}</h4>
-                            <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">{op.role}</p>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--bs-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{op.name}</div>
+                            <div style={{ fontSize: '10px', fontWeight: 600, color: 'var(--bs-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{op.role}</div>
                         </div>
-
-                        <div className="text-right">
-                            <div className="flex items-center justify-end gap-1 text-primary font-bold text-sm">
-                                <TrendingUp size={12} />
-                                {op.efficiency}%
+                        <div style={{ textAlign: 'right' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px', color: 'var(--bs-brand)', fontWeight: 700, fontSize: '13px' }}>
+                                <TrendingUp size={11} />{op.efficiency}%
                             </div>
-                            <p className="text-[9px] font-black text-slate-300 uppercase">{op.units} units</p>
+                            <div style={{ fontSize: '9px', fontWeight: 700, color: 'var(--bs-text-muted)', textTransform: 'uppercase' }}>{op.units} units</div>
                         </div>
                     </div>
                 ))}
             </div>
 
-            <button className="w-full mt-6 py-2.5 rounded-xl border-2 border-slate-100 dark:border-slate-800 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 transition-all">
+            <button style={{ width: '100%', marginTop: '16px', padding: '10px', borderRadius: '8px', border: '1px solid var(--bs-border)', backgroundColor: 'transparent', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--bs-text-muted)', cursor: 'pointer', transition: 'all 0.15s' }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bs-background)'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
                 View Full Workforce Data
             </button>
         </section>

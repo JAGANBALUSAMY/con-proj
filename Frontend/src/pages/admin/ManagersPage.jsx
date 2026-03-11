@@ -3,6 +3,8 @@ import DashboardLayout from '@frontend/layouts/DashboardLayout';
 import ManagerView from '@frontend/pages/admin/ManagerView';
 import CreateManagerModal from '@frontend/pages/admin/CreateManagerModal';
 import UserActionModal from '@frontend/components/Dashboard/UserActionModal';
+import PageHeader from '@frontend/components/ui/PageHeader';
+import Button from '@frontend/components/ui/Button';
 import api from '@frontend/services/api';
 import { ShieldCheck, UserPlus } from 'lucide-react';
 
@@ -35,25 +37,15 @@ const ManagersPage = () => {
     return (
         <DashboardLayout>
             <div className="space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-xl">
-                            <ShieldCheck className="text-primary" size={24} />
-                        </div>
-                        <div>
-                            <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Management Registry</h2>
-                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Authorized Factory Governance</p>
-                        </div>
-                    </div>
-
-                    <button
-                        onClick={() => setIsCreateModalOpen(true)}
-                        className="bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl shadow-slate-900/10 hover:scale-[1.02] active:scale-[0.98] transition-all"
-                    >
-                        <UserPlus size={16} />
-                        Provision Manager
-                    </button>
-                </div>
+                <PageHeader
+                    title="Management Registry"
+                    subtitle="Authorized Factory Governance"
+                    actions={
+                        <Button variant="primary" size="sm" leftIcon={UserPlus} onClick={() => setIsCreateModalOpen(true)}>
+                            Provision Manager
+                        </Button>
+                    }
+                />
 
                 <ManagerView
                     users={users}

@@ -1,6 +1,6 @@
 .analytics-dashboard {
     padding: 24px;
-    background-color: #f8fafc;
+    background-color: var(--bs-background);
     min-height: 100vh;
 }
 
@@ -18,9 +18,9 @@
 }
 
 .back-btn {
-    background: white;
-    border: 1px solid #e2e8f0;
-    color: #475569;
+    background: var(--bs-surface);
+    border: 1px solid var(--bs-border);
+    color: var(--bs-text-secondary);
     width: 40px;
     height: 40px;
     border-radius: 10px;
@@ -33,21 +33,21 @@
 }
 
 .back-btn:hover {
-    background: #f1f5f9;
-    color: #1e293b;
-    border-color: #cbd5e1;
+    background: var(--bs-background);
+    color: var(--bs-text-primary);
+    border-color: var(--bs-border);
     transform: translateX(-2px);
 }
 
 .analytics-header h1 {
     font-size: 28px;
     font-weight: 700;
-    color: #1e293b;
+    color: var(--bs-text-primary);
     margin: 0;
 }
 
 .subtitle {
-    color: #64748b;
+    color: var(--bs-text-muted);
     margin: 4px 0 0 0;
 }
 
@@ -58,10 +58,10 @@
 }
 
 .date-inputs {
-    background: white;
+    background: var(--bs-surface);
     padding: 8px 16px;
     border-radius: 8px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--bs-border);
     display: flex;
     align-items: center;
     gap: 12px;
@@ -70,13 +70,14 @@
 
 .date-inputs input {
     border: none;
+    background: transparent;
     font-family: inherit;
-    color: #475569;
+    color: var(--bs-text-secondary);
     font-size: 14px;
 }
 
 .refresh-btn {
-    background: #1e293b;
+    background: var(--bs-brand);
     color: white;
     border: none;
     padding: 8px 16px;
@@ -90,7 +91,7 @@
 }
 
 .refresh-btn:hover {
-    background: #334155;
+    background: #0284c7;
 }
 
 .analytics-grid {
@@ -100,10 +101,10 @@
 }
 
 .analytics-card {
-    background: white;
+    background: var(--bs-surface);
     padding: 24px;
     border-radius: 12px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--bs-border);
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
@@ -116,14 +117,14 @@
     align-items: center;
     gap: 12px;
     margin-bottom: 24px;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--bs-border);
     padding-bottom: 16px;
 }
 
 .card-header h3 {
     margin: 0;
     font-size: 18px;
-    color: #1e293b;
+    color: var(--bs-text-primary);
 }
 
 .icon-blue {
@@ -131,11 +132,11 @@
 }
 
 .icon-green {
-    color: #10b981;
+    color: var(--bs-success);
 }
 
 .icon-amber {
-    color: #f59e0b;
+    color: var(--bs-warning);
 }
 
 .chart-container {
@@ -151,8 +152,8 @@
 .analytics-table th {
     text-align: left;
     padding: 12px;
-    background: #f8fafc;
-    color: #64748b;
+    background: var(--bs-background);
+    color: var(--bs-text-muted);
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -160,8 +161,8 @@
 
 .analytics-table td {
     padding: 16px 12px;
-    border-top: 1px solid #f1f5f9;
-    color: #334155;
+    border-top: 1px solid var(--bs-border);
+    color: var(--bs-text-secondary);
     font-size: 14px;
 }
 
@@ -174,28 +175,28 @@
 }
 
 .badge-CUTTING {
-    background: #dbeafe;
-    color: #1e40af;
+    background: rgba(59, 130, 246, 0.12);
+    color: #3b82f6;
 }
 
 .badge-STITCHING {
-    background: #fef3c7;
-    color: #92400e;
+    background: rgba(245, 158, 11, 0.12);
+    color: var(--bs-warning);
 }
 
 .badge-LABELING {
-    background: #dcfce7;
-    color: #166534;
+    background: rgba(34, 197, 94, 0.12);
+    color: var(--bs-success);
 }
 
 .badge-QUALITY_CHECK {
-    background: #fee2e2;
-    color: #991b1b;
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--bs-danger);
 }
 
 .badge-PACKING {
-    background: #f3e8ff;
-    color: #6b21a8;
+    background: rgba(139, 92, 246, 0.12);
+    color: #8b5cf6;
 }
 
 .text-right {
@@ -207,8 +208,8 @@
 }
 
 .produced-col {
-    color: #10b981 !important;
-    background-color: #f0fdf4 !important;
+    color: var(--bs-success) !important;
+    background-color: rgba(34, 197, 94, 0.08) !important;
     font-weight: 700;
 }
 
@@ -218,6 +219,6 @@
     align-items: center;
     height: 100vh;
     font-size: 18px;
-    color: #64748b;
+    color: var(--bs-text-muted);
     font-weight: 500;
 }

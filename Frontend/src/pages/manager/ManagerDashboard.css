@@ -26,7 +26,7 @@
 }
 
 .stat-card {
-  background: white;
+  background: var(--bs-surface);
   padding: 1.5rem;
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -50,18 +50,18 @@
 }
 
 .stat-icon.team {
-  background: #e0f2fe;
-  color: #0284c7;
+  background: rgba(14, 165, 233, 0.1);
+  color: var(--bs-brand);
 }
 
 .stat-icon.approval {
-  background: #dcfce7;
-  color: #16a34a;
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--bs-success);
 }
 
 .stat-icon.rework {
-  background: #fee2e2;
-  color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--bs-danger);
 }
 
 .stat-info {
@@ -71,18 +71,18 @@
 
 .stat-label {
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--bs-text-muted);
   font-weight: 500;
 }
 
 .stat-value {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--bs-text-primary);
 }
 
 .approval-section {
-  background: white;
+  background: var(--bs-surface);
   border-radius: 12px;
   padding: 1.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -94,7 +94,7 @@
   align-items: center;
   gap: 0.75rem;
   font-size: 1.1rem;
-  color: #334155;
+  color: var(--bs-text-secondary);
 }
 
 .table-container {
@@ -110,39 +110,40 @@ th,
 td {
   padding: 1rem;
   text-align: left;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--bs-border);
 }
 
 th {
-  background: #f8fafc;
+  background: var(--bs-background);
   font-weight: 600;
-  color: #64748b;
+  color: var(--bs-text-muted);
   font-size: 0.875rem;
 }
 
 td {
-  color: #334155;
+  color: var(--bs-text-secondary);
 }
 
 .badge-stage {
-  background: #f1f5f9;
+  background: var(--bs-background);
+  border: 1px solid var(--bs-border);
   padding: 0.25rem 0.75rem;
   border-radius: 999px;
   font-size: 0.75rem;
   font-weight: 600;
-  color: #475569;
+  color: var(--bs-text-secondary);
   text-transform: uppercase;
   white-space: nowrap;
 }
 
 .qty-out {
-  color: #10b981;
+  color: var(--bs-success);
   font-weight: 600;
 }
 
 .time-col {
   font-size: 0.825rem;
-  color: #64748b;
+  color: var(--bs-text-muted);
   white-space: nowrap;
 }
 
@@ -166,21 +167,21 @@ td {
 }
 
 .btn-approve {
-  background: #dcfce7;
-  color: #166534;
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--bs-success);
 }
 
 .btn-approve:hover {
-  background: #bbf7d0;
+  background: rgba(34, 197, 94, 0.2);
 }
 
 .btn-reject {
-  background: #fee2e2;
-  color: #991b1b;
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--bs-danger);
 }
 
 .btn-reject:hover {
-  background: #fecaca;
+  background: rgba(239, 68, 68, 0.15);
 }
 
 .overview-layout {
@@ -197,7 +198,7 @@ td {
 
 .active-batches,
 .rework-overview {
-  background: white;
+  background: var(--bs-surface);
   padding: 1.5rem;
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -207,7 +208,7 @@ td {
 .rework-overview h3 {
   margin: 0 0 1.5rem 0;
   font-size: 1.1rem;
-  color: #334155;
+  color: var(--bs-text-secondary);
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -220,10 +221,10 @@ td {
 }
 
 .batch-mini-card {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--bs-border);
   border-radius: 8px;
   padding: 1rem;
-  background: #f8fafc;
+  background: var(--bs-background);
 }
 
 .batch-header {
@@ -235,7 +236,7 @@ td {
 
 .batch-no {
   font-weight: 700;
-  color: #0f172a;
+  color: var(--bs-text-primary);
 }
 
 .status-tag {
@@ -247,28 +248,28 @@ td {
 }
 
 .status-tag.pending {
-  background: #fef9c3;
-  color: #854d0e;
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--bs-warning);
 }
 
 .status-tag.in_progress {
-  background: #dbeafe;
-  color: #1e40af;
+  background: rgba(59, 130, 246, 0.12);
+  color: var(--bs-brand);
 }
 
 .status-tag.completed {
-  background: #dcfce7;
-  color: #166534;
+  background: rgba(34, 197, 94, 0.12);
+  color: var(--bs-success);
 }
 
 .status-tag.halted {
-  background: #fee2e2;
-  color: #991b1b;
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--bs-danger);
 }
 
 .batch-brief {
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--bs-text-muted);
   margin: 0 0 1rem 0;
 }
 
@@ -279,14 +280,14 @@ td {
 }
 
 .current-stage {
-  color: #0284c7;
+  color: var(--bs-brand);
   font-weight: 600;
   font-size: 0.75rem;
 }
 
 .qty {
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--bs-text-muted);
 }
 
 .rework-list {
@@ -296,8 +297,8 @@ td {
 }
 
 .rework-item {
-  border: 1px solid #fecaca;
-  background: #fef2f2;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  background: rgba(239, 68, 68, 0.05);
   border-radius: 8px;
   padding: 1rem;
   display: flex;
@@ -313,7 +314,7 @@ td {
 
 .rework-batch {
   font-weight: 700;
-  color: #991b1b;
+  color: var(--bs-danger);
   margin: 0;
 }
 
@@ -340,20 +341,20 @@ td {
 }
 
 .stat-qty.total {
-  color: #b91c1c;
+  color: var(--bs-danger);
 }
 
 .stat-qty.cured {
-  color: #15803d;
+  color: var(--bs-success);
 }
 
 .stat-qty.scrapped {
-  color: #4b5563;
+  color: var(--bs-text-muted);
 }
 
 .rework-op {
   font-size: 0.75rem;
-  color: #991b1b;
+  color: var(--bs-danger);
   margin: 0;
   font-style: italic;
 }
@@ -378,36 +379,36 @@ td {
 }
 
 .btn-approve-sm {
-  background: #dcfce7;
-  color: #166534;
+  background: rgba(34, 197, 94, 0.12);
+  color: var(--bs-success);
 }
 
 .btn-approve-sm:hover {
-  background: #bbf7d0;
+  background: rgba(34, 197, 94, 0.2);
 }
 
 .btn-reject-sm {
-  background: white;
-  border: 1px solid #fecaca;
-  color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: var(--bs-danger);
 }
 
 .btn-reject-sm:hover {
-  background: #fee2e2;
+  background: rgba(239, 68, 68, 0.15);
 }
 
 .empty-msg {
   grid-column: 1 / -1;
   text-align: center;
   padding: 2rem;
-  color: #94a3b8;
+  color: var(--bs-text-muted);
   font-style: italic;
 }
 
 .empty-msg-sm {
   text-align: center;
   padding: 2rem;
-  color: #94a3b8;
+  color: var(--bs-text-muted);
   font-style: italic;
 }
 
@@ -415,7 +416,7 @@ td {
   background: none;
   border: none;
   cursor: pointer;
-  color: #94a3b8;
+  color: var(--bs-text-muted);
   padding: 4px;
   border-radius: 50%;
   transition: all 0.3s ease;
@@ -425,8 +426,8 @@ td {
 }
 
 .btn-refresh:hover {
-  background-color: #f1f5f9;
-  color: #475569;
+  background-color: rgba(100, 116, 139, 0.1);
+  color: var(--bs-text-secondary);
 }
 
 .btn-refresh:disabled {
@@ -461,24 +462,24 @@ td {
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
+  background: var(--bs-background);
+  border: 1px solid var(--bs-border);
   border-radius: 8px;
-  color: #64748b;
+  color: var(--bs-text-muted);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .tab-btn:hover {
-  background: #e2e8f0;
-  color: #475569;
+  background: var(--bs-surface);
+  color: var(--bs-text-secondary);
 }
 
 .tab-btn.active {
-  background: white;
-  color: #0f172a;
-  border-color: #0f172a;
+  background: var(--bs-surface);
+  color: var(--bs-text-primary);
+  border-color: var(--bs-brand);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
@@ -530,26 +531,26 @@ td {
 }
 
 .badge-hold.rework {
-  background: #fef3c7;
-  color: #92400e;
-  border: 1px solid #fcd34d;
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--bs-warning);
+  border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
 .badge-hold.reqc {
-  background: #e0e7ff;
-  color: #3730a3;
-  border: 1px solid #c7d2fe;
+  background: rgba(99, 102, 241, 0.12);
+  color: #6366f1;
+  border: 1px solid rgba(99, 102, 241, 0.3);
 }
 
 .hold-hint {
   font-size: 0.65rem;
-  color: #64748b;
+  color: var(--bs-text-muted);
   font-style: italic;
 }
 
 .batch-mini-card.on-hold {
-  border-left: 4px solid #f59e0b;
-  background: #fffdfa;
+  border-left: 4px solid var(--bs-warning);
+  background: rgba(245, 158, 11, 0.04);
 }
 
 .stage-and-hold {
@@ -559,7 +560,7 @@ td {
 }
 
 .hold-indicator {
-  background: #f59e0b;
+  background: var(--bs-warning);
   color: white;
   font-size: 0.6rem;
   padding: 0.1rem 0.3rem;
@@ -581,11 +582,11 @@ td {
 }
 
 .mini-badge.warning {
-  background: #fef3c7;
-  color: #92400e;
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--bs-warning);
 }
 
 .mini-badge.info {
-  background: #e0e7ff;
-  color: #3730a3;
+  background: rgba(99, 102, 241, 0.12);
+  color: #6366f1;
 }

@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '@frontend/layouts/DashboardLayout';
 import PipelineViz from '@frontend/components/dashboard/PipelineViz';
+import PageHeader from '@frontend/components/ui/PageHeader';
 import api from '@frontend/services/api';
 import { useAuth } from '@frontend/store/AuthContext';
-import { GitBranch, Activity } from 'lucide-react';
+import { Activity } from 'lucide-react';
 
 const ProductionFlowPage = () => {
     const { user } = useAuth();
@@ -49,8 +50,8 @@ const ProductionFlowPage = () => {
 
     if (loading) return (
         <DashboardLayout>
-            <div className="flex items-center justify-center h-[60vh]">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+                <div style={{ width: '40px', height: '40px', border: '3px solid var(--bs-border)', borderTopColor: 'var(--bs-brand)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
             </div>
         </DashboardLayout>
     );
@@ -58,17 +59,16 @@ const ProductionFlowPage = () => {
     return (
         <DashboardLayout>
             <div className="space-y-8">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <GitBranch className="text-primary" size={24} />
-                        <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Factory Production Pipeline</h2>
-                    </div>
-                </div>
+                <PageHeader
+                    title="Factory Production Pipeline"
+                    subtitle="Real-time batch load distribution across all production stages"
+                    live
+                />
 
-                <section className="card-saas p-8 border-t-4 border-t-primary">
-                    <div className="mb-8">
-                        <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-2">Real-Time Load Distribution</h3>
-                        <p className="text-sm text-slate-500 font-medium italic">Visualization of batch volume across all production stages.</p>
+                <section style={{ backgroundColor: 'var(--bs-surface)', border: '1px solid var(--bs-border)', borderTop: '4px solid var(--bs-brand)', borderRadius: '10px', padding: '32px' }}>
+                    <div style={{ marginBottom: '32px' }}>
+                        <h3 style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'var(--bs-text-muted)', marginBottom: '8px' }}>Real-Time Load Distribution</h3>
+                        <p style={{ fontSize: '13px', color: 'var(--bs-text-secondary)', fontWeight: 500, fontStyle: 'italic' }}>Visualization of batch volume across all production stages.</p>
                     </div>
                     <PipelineViz stages={pipelineStages} />
                 </section>
@@ -76,33 +76,29 @@ const ProductionFlowPage = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                     {user?.sections?.map(section => {
                         const stageData = pipelineStages.find(s => s.name === section);
+                        const isError = stageData?.status === 'error';
                         return (
-                            <div key={section} className="card-saas p-6 group hover:border-primary transition-all relative overflow-hidden">
-                                <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform text-primary">
-                                    <Activity size={60} />
-                                </div>
-                                <div className="relative z-10">
-                                    <div className="flex justify-between items-start mb-6">
+                            <div key={section} style={{ backgroundColor: 'var(--bs-surface)', border: '1px solid var(--bs-border)', borderRadius: '10px', padding: '24px', position: 'relative', overflow: 'hidden', transition: 'border-color 0.15s' }} onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--bs-brand)'} onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--bs-border)'}>
+                                <div style={{ position: 'absolute', top: 0, right: 0, padding: '16px', opacity: 0.04 }}><Activity size={60} /></div>
+                                <div style={{ position: 'relative', zIndex: 1 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
                                         <div>
-                                            <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Station Protocol</h3>
-                                            <p className="font-black text-xl text-slate-900 dark:text-white uppercase tracking-tight">{section.replace('_', ' ')}</p>
+                                            <h3 style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--bs-text-muted)' }}>Station Protocol</h3>
+                                            <p style={{ fontWeight: 800, fontSize: '18px', color: 'var(--bs-text-primary)', textTransform: 'uppercase', letterSpacing: '-0.02em' }}>{section.replace('_', ' ')}</p>
                                         </div>
-                                        <div className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${stageData?.status === 'error' ? 'bg-error/10 text-error' : 'bg-success/10 text-success'}`}>
-                                            {stageData?.status === 'error' ? 'CRITICAL' : 'OPTIMAL'}
-                                        </div>
+                                        <span style={{ padding: '2px 8px', borderRadius: '6px', fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', backgroundColor: isError ? 'rgba(239,68,68,0.1)' : 'rgba(34,197,94,0.1)', color: isError ? 'var(--bs-danger)' : 'var(--bs-success)' }}>{isError ? 'CRITICAL' : 'OPTIMAL'}</span>
                                     </div>
-
-                                    <div className="space-y-4">
-                                        <div className="flex justify-between items-end">
-                                            <span className="text-[10px] font-black uppercase text-slate-400">Current Load</span>
-                                            <span className="text-2xl font-black tabular-nums">{stageData?.count || 0} <span className="text-[10px] text-slate-400 italic">Batches</span></span>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                                            <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--bs-text-muted)' }}>Current Load</span>
+                                            <span style={{ fontSize: '22px', fontWeight: 800, color: 'var(--bs-text-primary)' }}>{stageData?.count || 0} <span style={{ fontSize: '10px', color: 'var(--bs-text-muted)', fontStyle: 'italic', fontWeight: 700 }}>Batches</span></span>
                                         </div>
-                                        <div className="flex justify-between items-end">
-                                            <span className="text-[10px] font-black uppercase text-slate-400">QC Discrepancies</span>
-                                            <span className={`text-sm font-black ${stageData?.defects > 0 ? 'text-error' : 'text-slate-500'}`}>{stageData?.defects || 0} Units</span>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                                            <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--bs-text-muted)' }}>QC Discrepancies</span>
+                                            <span style={{ fontSize: '13px', fontWeight: 800, color: (stageData?.defects || 0) > 0 ? 'var(--bs-danger)' : 'var(--bs-text-muted)' }}>{stageData?.defects || 0} Units</span>
                                         </div>
-                                        <div className="h-1.5 bg-background border border-border rounded-full overflow-hidden">
-                                            <div className="h-full bg-primary" style={{ width: `${Math.min(100, (stageData?.count || 0) * 15)}%` }} />
+                                        <div style={{ height: '6px', backgroundColor: 'var(--bs-background)', border: '1px solid var(--bs-border)', borderRadius: '99px', overflow: 'hidden' }}>
+                                            <div style={{ height: '100%', backgroundColor: 'var(--bs-brand)', width: `${Math.min(100, (stageData?.count || 0) * 15)}%`, borderRadius: '99px' }} />
                                         </div>
                                     </div>
                                 </div>

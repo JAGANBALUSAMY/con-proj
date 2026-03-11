@@ -1,6 +1,6 @@
 .empty-state {
-    background: #f8fafc;
-    border: 2px dashed #cbd5e1;
+    background: var(--bs-background);
+    border: 2px dashed var(--bs-border);
     border-radius: 8px;
     padding: 3rem 2rem;
     display: flex;
@@ -12,11 +12,11 @@
 }
 
 .empty-state-icon {
-    color: #cbd5e1;
+    color: var(--bs-text-muted);
 }
 
 .empty-state p {
-    color: #94a3b8;
+    color: var(--bs-text-muted);
     font-size: 0.875rem;
     font-weight: 500;
     margin: 0;

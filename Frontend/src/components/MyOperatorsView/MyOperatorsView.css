@@ -14,7 +14,7 @@
 }
 
 .my-operators-modal {
-    background: white;
+    background: var(--bs-surface);
     width: 100%;
     max-width: 1200px;
     max-height: 90vh;
@@ -31,7 +31,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 1.5rem;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--bs-border);
 }
 
 .header-title {
@@ -44,13 +44,13 @@
     margin: 0;
     font-size: 1.5rem;
     font-weight: 700;
-    color: #1e293b;
+    color: var(--bs-text-primary);
 }
 
 .close-button {
     background: transparent;
     border: none;
-    color: #64748b;
+    color: var(--bs-text-muted);
     cursor: pointer;
     padding: 0.5rem;
     border-radius: 6px;
@@ -61,8 +61,8 @@
 }
 
 .close-button:hover {
-    background: #f1f5f9;
-    color: #1e293b;
+    background: var(--bs-background);
+    color: var(--bs-text-primary);
 }
 
 /* Content */
@@ -89,7 +89,7 @@
 }
 
 .empty-icon {
-    color: #cbd5e1;
+    color: var(--bs-border);
     margin-bottom: 1rem;
 }
 
@@ -97,13 +97,14 @@
     margin: 0;
     font-size: 1.125rem;
     font-weight: 600;
-    color: #64748b;
+    color: var(--bs-text-muted);
+}
 }
 
 .empty-hint {
     margin-top: 0.5rem;
     font-size: 0.875rem;
-    color: #94a3b8;
+    color: var(--bs-text-muted);
 }
 
 /* Scrollbar */
@@ -112,16 +113,16 @@
 }
 
 .my-operators-content::-webkit-scrollbar-track {
-    background: #f8fafc;
+    background: var(--bs-background);
 }
 
 .my-operators-content::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
+    background: var(--bs-border);
     border-radius: 4px;
 }
 
 .my-operators-content::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
+    background: var(--bs-text-muted);
 }
 
 /* Responsive */

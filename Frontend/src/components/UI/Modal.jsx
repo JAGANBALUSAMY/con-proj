@@ -2,15 +2,46 @@ import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 
-const Modal = ({ isOpen, onClose, title, children, footer, maxWidth = 'max-w-lg' }) => {
+/**
+ * Modal — accessible dialog with framer-motion animation
+ *
+ * Props:
+ *   isOpen   — bool
+ *   onClose  — fn
+ *   title    — string
+ *   children — JSX (body)
+ *   footer   — JSX (action buttons)
+ *   size     — 'sm' | 'md' | 'lg' | 'xl'
+ *   maxWidth — legacy compat: CSS string e.g. 'max-w-lg'
+ */
+
+const SIZE_MAP = {
+    sm: '460px',
+    md: '560px',
+    lg: '720px',
+    xl: '900px',
+};
+
+const Modal = ({ isOpen, onClose, title, children, footer, size = 'md', maxWidth }) => {
+    const width = maxWidth
+        ? undefined   // legacy: maxWidth is a Tailwind class, applied via className
+        : (SIZE_MAP[size] || SIZE_MAP.md);
+
     useEffect(() => {
         if (isOpen) {
             document.body.style.overflow = 'hidden';
         } else {
-            document.body.style.overflow = 'unset';
+            document.body.style.overflow = '';
         }
-        return () => { document.body.style.overflow = 'unset'; };
+        return () => { document.body.style.overflow = ''; };
     }, [isOpen]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        const handler = (e) => { if (e.key === 'Escape') onClose?.(); };
+        window.addEventListener('keydown', handler);
+        return () => window.removeEventListener('keydown', handler);
+    }, [isOpen, onClose]);
 
     return (
         <AnimatePresence>
@@ -21,36 +52,70 @@ const Modal = ({ isOpen, onClose, title, children, footer, maxWidth = 'max-w-lg'
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
+                        transition={{ duration: 0.15 }}
                         onClick={onClose}
-                        className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+                        className="absolute inset-0"
+                        style={{ backgroundColor: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(3px)' }}
                     />
 
-                    {/* Modal Card */}
+                    {/* Panel */}
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                        initial={{ opacity: 0, scale: 0.96, y: 12 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                        className={`relative w-full ${maxWidth} bg-card border border-border shadow-2xl rounded-2xl overflow-hidden flex flex-col`}
+                        exit={{ opacity: 0, scale: 0.96, y: 12 }}
+                        transition={{ duration: 0.20, ease: 'easeOut' }}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="modal-title"
+                        className={`relative w-full flex flex-col ${maxWidth || ''}`}
+                        style={{
+                            maxWidth: width,
+                            maxHeight: 'calc(100vh - 64px)',
+                            backgroundColor: 'var(--bs-surface)',
+                            border: '1px solid var(--bs-border)',
+                            borderRadius: '16px',
+                            boxShadow: '0 12px 32px -4px rgb(0 0 0 / 0.35)',
+                            overflow: 'hidden',
+                        }}
                     >
                         {/* Header */}
-                        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-                            <h3 className="text-lg font-bold text-text-primary">{title}</h3>
+                        <div
+                            className="flex items-center justify-between px-6 py-4 shrink-0"
+                            style={{ borderBottom: '1px solid var(--bs-border)' }}
+                        >
+                            <h2
+                                id="modal-title"
+                                className="font-semibold"
+                                style={{ fontSize: '16px', color: 'var(--bs-text-primary)', letterSpacing: '-0.01em' }}
+                            >
+                                {title}
+                            </h2>
                             <button
                                 onClick={onClose}
-                                className="p-2 rounded-lg hover:bg-background text-text-secondary hover:text-text-primary transition-colors"
+                                className="flex items-center justify-center w-7 h-7 rounded-md transition-colors duration-150"
+                                style={{ color: 'var(--bs-text-muted)' }}
+                                onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--bs-background)'; e.currentTarget.style.color = 'var(--bs-text-primary)'; }}
+                                onMouseLeave={e => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = 'var(--bs-text-muted)'; }}
+                                aria-label="Close"
                             >
-                                <X size={20} />
+                                <X size={16} />
                             </button>
                         </div>
 
-                        {/* Content */}
-                        <div className="flex-1 px-6 py-6 overflow-y-auto max-h-[calc(100vh-12rem)] no-scrollbar">
+                        {/* Body */}
+                        <div className="flex-1 overflow-y-auto px-6 py-5 no-scrollbar">
                             {children}
                         </div>
 
                         {/* Footer */}
                         {footer && (
-                            <div className="px-6 py-4 bg-background/50 border-t border-border flex items-center justify-end gap-3">
+                            <div
+                                className="flex items-center justify-end gap-3 px-6 py-4 shrink-0"
+                                style={{
+                                    borderTop: '1px solid var(--bs-border)',
+                                    backgroundColor: 'var(--bs-surface-raised)',
+                                }}
+                            >
                                 {footer}
                             </div>
                         )}

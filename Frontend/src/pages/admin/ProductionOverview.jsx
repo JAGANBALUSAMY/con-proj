@@ -1,31 +1,27 @@
 import React from 'react';
 import DashboardLayout from '@frontend/layouts/DashboardLayout';
 import PipelineViz from '@frontend/components/dashboard/PipelineViz';
+import PageHeader from '@frontend/components/ui/PageHeader';
 import { Factory } from 'lucide-react';
 
 const ProductionOverview = () => {
     return (
         <DashboardLayout>
             <div className="space-y-6">
-                <div className="flex items-center gap-3 mb-2">
-                    <Factory className="text-primary" size={24} />
-                    <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Production Pipeline Overview</h2>
-                </div>
+                <PageHeader title="Production Pipeline Overview" subtitle="Live floor throughput and stage progression" live />
 
-                <div className="card-saas p-8">
+                <div style={{ backgroundColor: 'var(--bs-surface)', border: '1px solid var(--bs-border)', borderRadius: '10px', padding: '32px' }}>
                     <PipelineViz />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="card-saas p-6">
-                        <h3 className="text-lg font-bold mb-4">Pipeline Metrics</h3>
-                        <p className="text-sm text-slate-500">Live throughput data across all stations.</p>
-                        {/* More detailed metrics could go here */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                    <div style={{ backgroundColor: 'var(--bs-surface)', border: '1px solid var(--bs-border)', borderRadius: '10px', padding: '24px' }}>
+                        <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--bs-text-primary)', marginBottom: '12px' }}>Pipeline Metrics</h3>
+                        <p style={{ fontSize: '13px', color: 'var(--bs-text-secondary)' }}>Live throughput data across all stations.</p>
                     </div>
-                    <div className="card-saas p-6">
-                        <h3 className="text-lg font-bold mb-4">BottleNeck Analysis</h3>
-                        <p className="text-sm text-slate-500">Predicted delays and congestion points.</p>
-                        {/* More detailed metrics could go here */}
+                    <div style={{ backgroundColor: 'var(--bs-surface)', border: '1px solid var(--bs-border)', borderRadius: '10px', padding: '24px' }}>
+                        <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--bs-text-primary)', marginBottom: '12px' }}>Bottleneck Analysis</h3>
+                        <p style={{ fontSize: '13px', color: 'var(--bs-text-secondary)' }}>Predicted delays and congestion points.</p>
                     </div>
                 </div>
             </div>

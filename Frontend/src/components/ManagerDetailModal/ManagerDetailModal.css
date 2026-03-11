@@ -14,7 +14,7 @@
 }
 
 .manager-detail-modal {
-    background: white;
+    background: var(--bs-surface);
     width: 100%;
     max-width: 700px;
     max-height: 90vh;
@@ -31,7 +31,7 @@
     justify-content: space-between;
     align-items: flex-start;
     padding: 1.5rem;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--bs-border);
 }
 
 .header-title {
@@ -44,20 +44,20 @@
     margin: 0;
     font-size: 1.25rem;
     font-weight: 700;
-    color: #1e293b;
+    color: var(--bs-text-primary);
 }
 
 .header-subtitle {
     margin: 0.25rem 0 0 0;
     font-size: 0.75rem;
-    color: #64748b;
+    color: var(--bs-text-muted);
     font-weight: 500;
 }
 
 .close-button {
     background: transparent;
     border: none;
-    color: #64748b;
+    color: var(--bs-text-muted);
     cursor: pointer;
     padding: 0.5rem;
     border-radius: 6px;
@@ -68,8 +68,8 @@
 }
 
 .close-button:hover {
-    background: #f1f5f9;
-    color: #1e293b;
+    background: var(--bs-background);
+    color: var(--bs-text-primary);
 }
 
 .close-button:disabled {
@@ -80,7 +80,8 @@
 /* Manager Info */
 .manager-info-section {
     padding: 1.5rem;
-    background: #f8fafc;
+    background: var(--bs-background);
+    border-bottom: 1px solid var(--bs-border);
     display: flex;
     flex-direction: column;
     gap: 1rem;
@@ -95,13 +96,13 @@
 .info-label {
     font-size: 0.875rem;
     font-weight: 600;
-    color: #64748b;
+    color: var(--bs-text-muted);
     min-width: 140px;
 }
 
 .info-value {
     font-size: 0.875rem;
-    color: #1e293b;
+    color: var(--bs-text-primary);
     font-weight: 500;
 }
 
@@ -114,13 +115,13 @@
 }
 
 .status-badge.active {
-    background: #d1fae5;
-    color: #065f46;
+    background: rgba(34, 197, 94, 0.12);
+    color: var(--bs-success);
 }
 
 .status-badge.inactive {
-    background: #fee2e2;
-    color: #991b1b;
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--bs-danger);
 }
 
 .sections-chips {
@@ -130,8 +131,8 @@
 }
 
 .section-chip {
-    background: #e0e7ff;
-    color: #3730a3;
+    background: rgba(14, 165, 233, 0.1);
+    color: var(--bs-brand);
     padding: 0.25rem 0.625rem;
     border-radius: 4px;
     font-size: 0.75rem;
@@ -140,29 +141,31 @@
 
 .no-sections {
     font-size: 0.875rem;
-    color: #94a3b8;
+    color: var(--bs-text-muted);
     font-style: italic;
 }
 
 /* Password Reset */
 .password-reset-section {
     padding: 1.5rem;
-    background: #fef3c7;
-    border-top: 1px solid #fde68a;
-    border-bottom: 1px solid #fde68a;
+    background: rgba(245, 158, 11, 0.08);
+    border-top: 1px solid rgba(245, 158, 11, 0.2);
+    border-bottom: 1px solid rgba(245, 158, 11, 0.2);
 }
 
 .password-reset-section h4 {
     margin: 0 0 1rem 0;
     font-size: 1rem;
     font-weight: 600;
-    color: #92400e;
+    color: var(--bs-warning);
 }
 
 .password-input {
     width: 100%;
     padding: 0.75rem;
-    border: 1px solid #fde68a;
+    border: 1px solid var(--bs-border);
+    background: var(--bs-background);
+    color: var(--bs-text-primary);
     border-radius: 6px;
     font-size: 0.875rem;
     margin-bottom: 1rem;
@@ -185,17 +188,18 @@
 }
 
 .password-actions button:first-child {
-    background: #f1f5f9;
-    color: #64748b;
+    background: var(--bs-background);
+    color: var(--bs-text-muted);
+    border: 1px solid var(--bs-border);
 }
 
 .password-actions button:last-child {
-    background: #f59e0b;
-    color: white;
+    background: var(--bs-warning);
+    color: #fff;
 }
 
 .password-actions button:last-child:hover {
-    background: #d97706;
+    opacity: 0.85;
 }
 
 /* Governance Actions */
@@ -212,9 +216,9 @@
     justify-content: center;
     gap: 0.5rem;
     padding: 0.875rem 1rem;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--bs-border);
     border-radius: 8px;
-    background: white;
+    background: var(--bs-surface);
     font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
@@ -232,50 +236,16 @@
     transform: none;
 }
 
-.action-btn.edit-sections {
-    color: #3b82f6;
-    border-color: #3b82f6;
-}
-
-.action-btn.edit-sections:hover {
-    background: #eff6ff;
-}
-
-.action-btn.reset-password {
-    color: #f59e0b;
-    border-color: #f59e0b;
-}
-
-.action-btn.reset-password:hover {
-    background: #fef3c7;
-}
-
-.action-btn.toggle-status.deactivate {
-    color: #ef4444;
-    border-color: #ef4444;
-}
-
-.action-btn.toggle-status.deactivate:hover {
-    background: #fee2e2;
-}
-
-.action-btn.toggle-status.activate {
-    color: #10b981;
-    border-color: #10b981;
-}
-
-.action-btn.toggle-status.activate:hover {
-    background: #d1fae5;
-}
-
-.action-btn.force-logout {
-    color: #8b5cf6;
-    border-color: #8b5cf6;
-}
-
-.action-btn.force-logout:hover {
-    background: #f3e8ff;
-}
+.action-btn.edit-sections { color: var(--bs-brand); border-color: var(--bs-brand); }
+.action-btn.edit-sections:hover { background: rgba(14, 165, 233, 0.08); }
+.action-btn.reset-password { color: var(--bs-warning); border-color: var(--bs-warning); }
+.action-btn.reset-password:hover { background: rgba(245, 158, 11, 0.08); }
+.action-btn.toggle-status.deactivate { color: var(--bs-danger); border-color: var(--bs-danger); }
+.action-btn.toggle-status.deactivate:hover { background: rgba(239, 68, 68, 0.08); }
+.action-btn.toggle-status.activate { color: var(--bs-success); border-color: var(--bs-success); }
+.action-btn.toggle-status.activate:hover { background: rgba(34, 197, 94, 0.08); }
+.action-btn.force-logout { color: #8b5cf6; border-color: rgba(139, 92, 246, 0.6); }
+.action-btn.force-logout:hover { background: rgba(139, 92, 246, 0.08); }
 
 /* Scrollbar */
 .manager-detail-modal::-webkit-scrollbar {
@@ -283,14 +253,14 @@
 }
 
 .manager-detail-modal::-webkit-scrollbar-track {
-    background: #f8fafc;
+    background: var(--bs-background);
 }
 
 .manager-detail-modal::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
+    background: var(--bs-border);
     border-radius: 4px;
 }
 
 .manager-detail-modal::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
+    background: var(--bs-text-muted);
 }

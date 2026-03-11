@@ -2,7 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '@frontend/layouts/DashboardLayout';
 import TableView from '@frontend/components/tables/TableView';
 import { useTable } from '@frontend/components/tables/useTable';
-import Badge from '@frontend/components/ui/Badge';
+import StatusBadge from '@frontend/components/ui/StatusBadge';
+import PageHeader from '@frontend/components/ui/PageHeader';
+import Button from '@frontend/components/ui/Button';
 import api from '@frontend/services/api';
 import { ClipboardCheck, CheckCircle2, XCircle, RefreshCcw } from 'lucide-react';
 
@@ -52,15 +54,15 @@ const QualityPage = () => {
         {
             key: 'batch.batchNumber',
             label: 'Batch',
-            render: (_, log) => <span className="font-bold">{log.batch.batchNumber}</span>
+            render: (_, log) => <span style={{ fontWeight: 700, color: 'var(--bs-text-primary)' }}>{log.batch.batchNumber}</span>
         },
         { key: 'operator.fullName', label: 'Operator' },
         {
             key: 'quantityIn',
             label: 'Units',
             render: (_, log) => (
-                <div className="font-bold">
-                    {log.quantityIn} {log.quantityOut !== null && <span className="text-primary italic">→ {log.quantityOut}</span>}
+                <div style={{ fontWeight: 700 }}>
+                    {log.quantityIn} {log.quantityOut !== null && <span style={{ color: 'var(--bs-brand)', fontStyle: 'italic' }}>→ {log.quantityOut}</span>}
                 </div>
             )
         },
@@ -75,9 +77,9 @@ const QualityPage = () => {
             sortable: false,
             className: 'text-right',
             render: (_, log) => (
-                <div className="flex justify-end gap-2">
-                    <button className="p-1.5 text-success hover:bg-success/10 rounded-lg" onClick={() => handleApprove(log.id)}><CheckCircle2 size={16} /></button>
-                    <button className="p-1.5 text-error hover:bg-error/10 rounded-lg" onClick={() => handleReject(log.id)}><XCircle size={16} /></button>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                    <button style={{ padding: '6px', color: 'var(--bs-success)', backgroundColor: 'transparent', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'background 0.1s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(34,197,94,0.1)'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'} onClick={() => handleApprove(log.id)}><CheckCircle2 size={16} /></button>
+                    <button style={{ padding: '6px', color: 'var(--bs-danger)', backgroundColor: 'transparent', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'background 0.1s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.1)'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'} onClick={() => handleReject(log.id)}><XCircle size={16} /></button>
                 </div>
             )
         }
@@ -86,20 +88,13 @@ const QualityPage = () => {
     return (
         <DashboardLayout>
             <div className="space-y-6">
-                <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-3">
-                        <ClipboardCheck className="text-primary" size={24} />
-                        <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Quality Sign-off Requests</h2>
-                    </div>
-                    <button
-                        onClick={() => { setIsRefreshing(true); fetchQueue(); }}
-                        className={`p-2 rounded-full hover:bg-slate-50 transition-colors ${isRefreshing ? 'animate-spin' : ''}`}
-                    >
-                        <RefreshCcw size={20} className="text-slate-500" />
-                    </button>
-                </div>
+                <PageHeader
+                    title="Quality Sign-off Requests"
+                    subtitle="Pending production log approvals requiring your authorization"
+                    actions={<Button variant="ghost" size="sm" leftIcon={RefreshCcw} loading={isRefreshing} onClick={() => { setIsRefreshing(true); fetchQueue(); }} />}
+                />
 
-                <section className="card-saas p-6">
+                <section style={{ backgroundColor: 'var(--bs-surface)', border: '1px solid var(--bs-border)', borderRadius: '10px', padding: '24px' }}>
                     <TableView
                         data={paginatedData}
                         columns={columns}

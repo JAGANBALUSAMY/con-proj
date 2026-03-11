@@ -13,7 +13,8 @@
 }
 
 .folding-modal {
-    background: white;
+    background: var(--bs-surface);
+    border: 1px solid var(--bs-border);
     border-radius: 16px;
     width: 90%;
     max-width: 600px;
@@ -39,11 +40,11 @@
 
 .folding-header {
     padding: 1.5rem;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--bs-border);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: #f8fafc;
+    background: var(--bs-background);
     border-radius: 16px 16px 0 0;
 }
 
@@ -51,48 +52,51 @@
     display: flex;
     align-items: center;
     gap: 1rem;
-    color: #0f172a;
+    color: var(--bs-text-primary);
 }
 
 .folding-header-title svg {
-    color: #0ea5e9;
+    color: var(--bs-brand);
     /* Sky Blue for Folding */
 }
 
 .folding-batch-ref {
     margin: 0;
     font-size: 0.875rem;
-    color: #64748b;
+    color: var(--bs-text-muted);
     font-weight: 500;
 }
 
 .folding-header h2 {
     margin: 0;
-    font-size: 1.25rem;
-    font-weight: 700;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--bs-text-primary);
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
 }
 
 .folding-close {
     background: none;
     border: none;
     cursor: pointer;
-    color: #94a3b8;
+    color: var(--bs-text-muted);
     padding: 0.5rem;
     border-radius: 8px;
     transition: all 0.2s;
 }
 
 .folding-close:hover {
-    background: #f1f5f9;
-    color: #64748b;
+    background: var(--bs-background);
+    color: var(--bs-text-secondary);
 }
 
 .folding-context-bar {
     display: flex;
     padding: 1rem 1.5rem;
-    background: #f1f5f9;
+    background: var(--bs-background);
     gap: 2rem;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--bs-border);
 }
 
 .folding-context-item {
@@ -101,30 +105,30 @@
 }
 
 .folding-context-item.active .ctx-value {
-    color: #0ea5e9;
+    color: var(--bs-brand);
 }
 
 .ctx-label {
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #64748b;
+    color: var(--bs-text-muted);
     font-weight: 600;
 }
 
 .ctx-value {
     font-size: 1.1rem;
     font-weight: 700;
-    color: #1e293b;
+    color: var(--bs-text-primary);
 }
 
 .folding-info-box {
     margin: 1.5rem 1.5rem 0 1.5rem;
     padding: 0.75rem 1rem;
-    background: #e0f2fe;
-    border: 1px solid #bae6fd;
+    background: rgba(14, 165, 233, 0.06);
+    border: 1px solid rgba(14, 165, 233, 0.2);
     border-radius: 8px;
-    color: #0369a1;
+    color: var(--bs-brand);
     font-size: 0.875rem;
 }
 
@@ -152,15 +156,15 @@
 }
 
 .folding-section-title {
-    font-size: 0.9rem;
-    color: #475569;
-    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--bs-text-secondary);
+    font-weight: 700;
     margin: 0;
     display: flex;
     align-items: center;
     gap: 0.5rem;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
 }
 
 .folding-row {
@@ -176,32 +180,36 @@
 }
 
 .folding-field label {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #334155;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--bs-text-secondary);
 }
 
 .folding-field input {
     padding: 0.625rem;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--bs-border);
     border-radius: 8px;
     font-size: 0.95rem;
+    background: var(--bs-background);
+    color: var(--bs-text-primary);
     transition: all 0.2s;
 }
 
 .folding-field input:focus {
     outline: none;
-    border-color: #0ea5e9;
+    border-color: var(--bs-brand);
     box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
 }
 
 .folding-error {
-    background: #fef2f2;
-    color: #dc2626;
+    background: rgba(239, 68, 68, 0.08);
+    color: var(--bs-danger);
     padding: 0.75rem;
     border-radius: 8px;
     font-size: 0.875rem;
-    border: 1px solid #fecaca;
+    border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
 .folding-actions {
@@ -209,8 +217,8 @@
     justify-content: flex-end;
     gap: 1rem;
     padding: 1.25rem 1.5rem;
-    border-top: 1px solid #f1f5f9;
-    background: #f8fafc;
+    border-top: 1px solid var(--bs-border);
+    background: var(--bs-background);
     border-radius: 0 0 16px 16px;
 }
 
@@ -218,9 +226,9 @@
     padding: 0.625rem 1.25rem;
     border-radius: 8px;
     font-weight: 600;
-    background: white;
-    border: 1px solid #cbd5e1;
-    color: #64748b;
+    background: var(--bs-surface);
+    border: 1px solid var(--bs-border);
+    color: var(--bs-text-muted);
     cursor: pointer;
 }
 

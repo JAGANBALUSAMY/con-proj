@@ -1,6 +1,7 @@
 .section-editor {
     padding: 1.5rem;
-    background: #f8fafc;
+    background: var(--bs-background);
+    border: 1px solid var(--bs-border);
     border-radius: 8px;
 }
 
@@ -8,18 +9,18 @@
     margin: 0 0 0.5rem 0;
     font-size: 1rem;
     font-weight: 600;
-    color: #1e293b;
+    color: var(--bs-text-primary);
 }
 
 .section-editor-note {
     margin: 0 0 1rem 0;
     font-size: 0.875rem;
-    color: #64748b;
+    color: var(--bs-text-muted);
 }
 
 .section-editor-error {
-    background: #fee2e2;
-    color: #991b1b;
+    background: rgba(239, 68, 68, 0.08);
+    color: var(--bs-danger);
     padding: 0.75rem;
     border-radius: 6px;
     font-size: 0.875rem;
@@ -38,16 +39,16 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.75rem;
-    background: white;
-    border: 1px solid #e2e8f0;
+    background: var(--bs-surface);
+    border: 1px solid var(--bs-border);
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .section-checkbox-label:hover {
-    border-color: #3b82f6;
-    background: #eff6ff;
+    border-color: var(--bs-brand);
+    background: rgba(14, 165, 233, 0.05);
 }
 
 .section-checkbox-label input[type="checkbox"] {
@@ -57,7 +58,7 @@
 .section-checkbox-label span {
     font-size: 0.875rem;
     font-weight: 500;
-    color: #334155;
+    color: var(--bs-text-secondary);
     text-transform: capitalize;
 }
 
@@ -79,20 +80,21 @@
 }
 
 .btn-cancel {
-    background: #f1f5f9;
-    color: #64748b;
+    background: var(--bs-background);
+    color: var(--bs-text-muted);
+    border: 1px solid var(--bs-border);
 }
 
 .btn-cancel:hover {
-    background: #e2e8f0;
-    color: #1e293b;
+    background: var(--bs-border);
+    color: var(--bs-text-primary);
 }
 
 .btn-save {
-    background: #3b82f6;
-    color: white;
+    background: var(--bs-brand);
+    color: #fff;
 }
 
 .btn-save:hover {
-    background: #2563eb;
+    opacity: 0.85;
 }

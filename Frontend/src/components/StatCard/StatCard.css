@@ -1,5 +1,5 @@
 .stat-card {
-    background: white;
+    background: var(--bs-surface);
     padding: 1.5rem;
     border-radius: 12px;
     display: flex;
@@ -21,13 +21,13 @@
 
 .stat-label {
     font-size: 0.875rem;
-    color: #64748b;
+    color: var(--bs-text-muted);
     font-weight: 500;
 }
 
 .stat-value {
     font-size: 1.5rem;
     font-weight: 700;
-    color: #1e293b;
+    color: var(--bs-text-primary);
     margin-top: 0.25rem;
 }

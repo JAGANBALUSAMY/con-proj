@@ -12,7 +12,7 @@
 }
 
 .transfer-requests-modal {
-    background: white;
+    background: var(--bs-surface);
     border-radius: 12px;
     width: 90%;
     max-width: 900px;
@@ -26,10 +26,10 @@
     justify-content: space-between;
     align-items: center;
     padding: 24px;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--bs-border);
     position: sticky;
     top: 0;
-    background: white;
+    background: var(--bs-surface);
     z-index: 10;
 }
 
@@ -42,11 +42,11 @@
 .header-title h2 {
     margin: 0;
     font-size: 1.5rem;
-    color: #111827;
+    color: var(--bs-text-primary);
 }
 
 .header-title svg {
-    color: #f59e0b;
+    color: var(--bs-warning);
 }
 
 .close-button {
@@ -59,7 +59,7 @@
 }
 
 .close-button:hover {
-    background: #f3f4f6;
+    background: var(--bs-background);
 }
 
 .transfer-requests-content {
@@ -69,8 +69,8 @@
 .transfer-tabs {
     display: flex;
     padding: 0 24px;
-    border-bottom: 1px solid #e5e7eb;
-    background: #f9fafb;
+    border-bottom: 1px solid var(--bs-border);
+    background: var(--bs-background);
 }
 
 .tab-button {
@@ -79,18 +79,18 @@
     background: none;
     font-weight: 600;
     font-size: 0.95rem;
-    color: #6b7280;
+    color: var(--bs-text-muted);
     cursor: pointer;
     position: relative;
     transition: all 0.2s;
 }
 
 .tab-button:hover {
-    color: #374151;
+    color: var(--bs-text-secondary);
 }
 
 .tab-button.active {
-    color: #2563eb;
+    color: var(--bs-brand);
 }
 
 .tab-button.active::after {
@@ -100,13 +100,13 @@
     left: 0;
     right: 0;
     height: 2px;
-    background: #2563eb;
+    background: var(--bs-brand);
 }
 
 .empty-transfers {
     text-align: center;
     padding: 60px 20px;
-    color: #6b7280;
+    color: var(--bs-text-muted);
 }
 
 .empty-icon {
@@ -126,10 +126,10 @@
 }
 
 .transfer-card {
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--bs-border);
     border-radius: 12px;
     padding: 20px;
-    background: white;
+    background: var(--bs-surface);
     transition: box-shadow 0.2s;
 }
 
@@ -151,7 +151,7 @@
 .operator-info h4 {
     margin: 0 0 4px 0;
     font-size: 1.125rem;
-    color: #111827;
+    color: var(--bs-text-primary);
 }
 
 .status-badge {
@@ -163,28 +163,28 @@
 }
 
 .status-badge.pending {
-    background: #fef3c7;
-    color: #92400e;
+    background: rgba(245, 158, 11, 0.12);
+    color: var(--bs-warning);
 }
 
 .status-badge.accepted {
-    background: #d1fae5;
-    color: #065f46;
+    background: rgba(34, 197, 94, 0.12);
+    color: var(--bs-success);
 }
 
 .status-badge.rejected {
-    background: #fee2e2;
-    color: #991b1b;
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--bs-danger);
 }
 
 .status-badge.cancelled {
-    background: #f3f4f6;
-    color: #4b5563;
+    background: var(--bs-background);
+    color: var(--bs-text-muted);
 }
 
 .employee-code {
     font-size: 0.875rem;
-    color: #6b7280;
+    color: var(--bs-text-muted);
     font-family: 'Courier New', monospace;
 }
 
@@ -194,7 +194,8 @@
     gap: 12px;
     margin: 16px 0;
     padding: 12px;
-    background: #f9fafb;
+    background: var(--bs-background);
+    border: 1px solid var(--bs-border);
     border-radius: 8px;
 }
 
@@ -206,17 +207,17 @@
 }
 
 .section-badge.from {
-    background: #dbeafe;
-    color: #1e40af;
+    background: rgba(59, 130, 246, 0.12);
+    color: var(--bs-brand);
 }
 
 .section-badge.to {
-    background: #d1fae5;
-    color: #065f46;
+    background: rgba(34, 197, 94, 0.12);
+    color: var(--bs-success);
 }
 
 .arrow {
-    color: #10b981;
+    color: var(--bs-success);
 }
 
 .requester-info,
@@ -229,19 +230,19 @@
 }
 
 .rejection-info .value {
-    color: #ef4444;
+    color: var(--bs-danger);
     font-style: italic;
 }
 
 .requester-info .label,
 .request-date .label {
-    color: #6b7280;
+    color: var(--bs-text-muted);
     font-weight: 600;
 }
 
 .requester-info .value,
 .request-date .value {
-    color: #374151;
+    color: var(--bs-text-secondary);
 }
 
 .transfer-actions {
@@ -249,7 +250,7 @@
     gap: 12px;
     justify-content: flex-end;
     padding-top: 16px;
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid var(--bs-border);
 }
 
 .btn-accept,
@@ -267,27 +268,27 @@
 }
 
 .btn-accept {
-    background: #10b981;
+    background: var(--bs-success);
     color: white;
 }
 
 .btn-accept:hover:not(:disabled) {
-    background: #059669;
+    opacity: 0.85;
 }
 
 .btn-reject {
-    background: #ef4444;
+    background: var(--bs-danger);
     color: white;
 }
 
 .btn-reject:hover:not(:disabled) {
-    background: #dc2626;
+    opacity: 0.85;
 }
 
 .btn-accept:disabled,
 .btn-reject:disabled,
 .btn-cancel-request:disabled {
-    background: #9ca3af;
+    opacity: 0.5;
     cursor: not-allowed;
 }
 
@@ -301,15 +302,14 @@
     font-size: 0.95rem;
     cursor: pointer;
     transition: all 0.2s;
-    border: 1px solid #d1d5db;
-    background: white;
-    color: #374151;
+    border: 1px solid var(--bs-border);
+    background: var(--bs-surface);
+    color: var(--bs-text-secondary);
 }
 
 .btn-cancel-request:hover:not(:disabled) {
-    background: #f9fafb;
-    border-color: #9ca3af;
-    color: #111827;
+    background: var(--bs-background);
+    color: var(--bs-text-primary);
 }
 
 /* Reject Modal */
@@ -327,7 +327,7 @@
 }
 
 .reject-modal {
-    background: white;
+    background: var(--bs-surface);
     border-radius: 12px;
     padding: 24px;
     width: 90%;
@@ -337,13 +337,15 @@
 
 .reject-modal h3 {
     margin: 0 0 16px 0;
-    color: #111827;
+    color: var(--bs-text-primary);
 }
 
 .reject-modal textarea {
     width: 100%;
     padding: 12px;
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--bs-border);
+    background: var(--bs-background);
+    color: var(--bs-text-primary);
     border-radius: 8px;
     font-size: 1rem;
     font-family: inherit;
@@ -353,7 +355,7 @@
 
 .reject-modal textarea:focus {
     outline: none;
-    border-color: #ef4444;
+    border-color: var(--bs-danger);
     box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
 }
 
@@ -375,19 +377,20 @@
 }
 
 .btn-cancel {
-    background: #f3f4f6;
-    color: #374151;
+    background: var(--bs-background);
+    color: var(--bs-text-secondary);
+    border: 1px solid var(--bs-border);
 }
 
 .btn-cancel:hover {
-    background: #e5e7eb;
+    background: var(--bs-border);
 }
 
 .btn-confirm-reject {
-    background: #ef4444;
+    background: var(--bs-danger);
     color: white;
 }
 
 .btn-confirm-reject:hover {
-    background: #dc2626;
+    opacity: 0.85;
 }

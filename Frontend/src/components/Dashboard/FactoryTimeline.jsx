@@ -21,24 +21,24 @@ const eventIcons = {
 };
 
 const eventColors = {
-    PROD: 'text-primary bg-primary/10 border-primary/20',
-    QC: 'text-success bg-success/10 border-success/20',
-    STAGE: 'text-info bg-info/10 border-info/20',
-    ALERT: 'text-error bg-error/10 border-error/20',
-    BATCH: 'text-slate-500 bg-slate-100 border-slate-200',
-    DEFAULT: 'text-slate-400 bg-slate-50 border-slate-100'
+    PROD: { color: 'var(--bs-brand)', bg: 'rgba(14,165,233,0.1)', border: 'rgba(14,165,233,0.2)' },
+    QC: { color: 'var(--bs-success)', bg: 'rgba(34,197,94,0.1)', border: 'rgba(34,197,94,0.2)' },
+    STAGE: { color: 'var(--bs-accent)', bg: 'rgba(139,92,246,0.1)', border: 'rgba(139,92,246,0.2)' },
+    ALERT: { color: 'var(--bs-danger)', bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.2)' },
+    BATCH: { color: 'var(--bs-text-muted)', bg: 'var(--bs-background)', border: 'var(--bs-border)' },
+    DEFAULT: { color: 'var(--bs-text-muted)', bg: 'var(--bs-background)', border: 'var(--bs-border)' }
 };
 
 const FactoryTimeline = ({ events = [], loading = false }) => {
     if (loading) {
         return (
-            <div className="space-y-6 animate-pulse p-4">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '4px' }}>
                 {[...Array(4)].map((_, i) => (
-                    <div key={i} className="flex gap-4">
-                        <div className="w-8 h-8 rounded-full bg-slate-100" />
-                        <div className="flex-1 space-y-2">
-                            <div className="h-2 bg-slate-100 rounded w-1/4" />
-                            <div className="h-3 bg-slate-100 rounded w-full" />
+                    <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                        <div className="skeleton" style={{ width: '28px', height: '28px', borderRadius: '8px', flexShrink: 0 }} />
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <div className="skeleton" style={{ height: '8px', borderRadius: '4px', width: '25%' }} />
+                            <div className="skeleton" style={{ height: '12px', borderRadius: '4px', width: '80%' }} />
                         </div>
                     </div>
                 ))}
@@ -48,22 +48,21 @@ const FactoryTimeline = ({ events = [], loading = false }) => {
 
     if (events.length === 0) {
         return (
-            <div className="p-12 text-center text-slate-400 border-2 border-dashed border-border rounded-2xl">
-                <Clock className="mx-auto mb-2 opacity-20" size={32} />
-                <p className="text-[10px] font-black uppercase tracking-widest">No recent floor activity</p>
+            <div style={{ padding: '32px', textAlign: 'center', border: '1.5px dashed var(--bs-border)', borderRadius: '10px' }}>
+                <Clock style={{ margin: '0 auto 8px', opacity: 0.2, color: 'var(--bs-text-muted)' }} size={28} />
+                <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--bs-text-muted)' }}>No recent floor activity</p>
             </div>
         );
     }
 
     return (
-        <div className="relative pl-4">
-            {/* Thread Line */}
-            <div className="absolute left-[27px] top-2 bottom-2 w-px bg-gradient-to-b from-primary/50 via-border to-transparent" />
+        <div style={{ position: 'relative', paddingLeft: '4px' }}>
+            <div style={{ position: 'absolute', left: '27px', top: '8px', bottom: '8px', width: '1px', background: 'linear-gradient(to bottom, rgba(14,165,233,0.4), var(--bs-border), transparent)' }} />
 
-            <div className="space-y-6">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {events.map((event, index) => {
                     const Icon = eventIcons[event.type] || eventIcons.DEFAULT;
-                    const colorClass = eventColors[event.type] || eventColors.DEFAULT;
+                    const c = eventColors[event.type] || eventColors.DEFAULT;
 
                     return (
                         <motion.div
@@ -71,31 +70,28 @@ const FactoryTimeline = ({ events = [], loading = false }) => {
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: index * 0.05 }}
-                            className="relative flex gap-4 group"
+                            style={{ position: 'relative', display: 'flex', gap: '14px' }}
                         >
-                            <div className={`
-                                relative z-10 w-7 h-7 rounded-lg border flex items-center justify-center transition-all group-hover:scale-110 shadow-sm
-                                ${colorClass}
-                            `}>
-                                <Icon size={14} />
+                            <div style={{ position: 'relative', zIndex: 10, width: '28px', height: '28px', borderRadius: '8px', border: `1px solid ${c.border}`, backgroundColor: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: c.color }}>
+                                <Icon size={13} />
                             </div>
 
-                            <div className="flex-1 pb-1">
-                                <div className="flex items-center justify-between mb-0.5">
-                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                            <div style={{ flex: 1, paddingBottom: '4px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
+                                    <span style={{ fontSize: '9px', fontWeight: 800, color: 'var(--bs-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                                         {event.timestamp || 'Just Now'}
                                     </span>
                                     {event.batchId && (
-                                        <span className="text-[9px] font-bold text-primary bg-primary/5 px-1.5 rounded uppercase">
+                                        <span style={{ fontSize: '9px', fontWeight: 700, color: 'var(--bs-brand)', backgroundColor: 'rgba(14,165,233,0.08)', padding: '1px 6px', borderRadius: '4px', textTransform: 'uppercase' }}>
                                             {event.batchId}
                                         </span>
                                     )}
                                 </div>
-                                <p className="text-xs font-bold text-text-primary leading-snug group-hover:text-primary transition-colors">
+                                <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--bs-text-primary)', lineHeight: 1.4 }}>
                                     {event.message}
                                 </p>
                                 {event.meta && (
-                                    <div className="text-[10px] text-slate-500 mt-1 font-medium bg-background/50 p-1.5 rounded-lg border border-border/50 inline-block uppercase tracking-tight">
+                                    <div style={{ fontSize: '10px', color: 'var(--bs-text-muted)', marginTop: '4px', fontWeight: 500, backgroundColor: 'var(--bs-background)', padding: '4px 8px', borderRadius: '6px', border: '1px solid var(--bs-border)', display: 'inline-block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                                         {event.meta}
                                     </div>
                                 )}

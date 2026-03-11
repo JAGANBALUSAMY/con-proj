@@ -30,49 +30,44 @@ const MachineStatusPanel = () => {
         return () => clearInterval(interval);
     }, []);
 
-    if (loading) return <div className="p-8 text-center animate-pulse">Scanning production floor...</div>;
+    const statusColor = (s) => s === 'ONLINE' ? 'var(--bs-success)' : s === 'OFFLINE' ? 'var(--bs-text-muted)' : 'var(--bs-warning)';
+    const barColor = (load) => load > 90 ? 'var(--bs-danger)' : load > 70 ? 'var(--bs-warning)' : 'var(--bs-brand)';
+
+    if (loading) return (
+        <section style={{ backgroundColor: 'var(--bs-surface)', border: '1px solid var(--bs-border)', borderRadius: '10px', padding: '24px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {[...Array(4)].map((_, i) => <div key={i} className="skeleton" style={{ height: '52px', borderRadius: '8px' }} />)}
+            </div>
+        </section>
+    );
 
     return (
-        <section className="card-saas p-6">
-            <div className="flex items-center justify-between mb-6">
-                <h3 className="font-bold text-text-primary flex items-center gap-2">
-                    <Cpu size={18} className="text-primary" /> Machine Matrix
+        <section style={{ backgroundColor: 'var(--bs-surface)', border: '1px solid var(--bs-border)', borderRadius: '10px', padding: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+                <h3 style={{ fontWeight: 700, color: 'var(--bs-text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Cpu size={18} style={{ color: 'var(--bs-brand)' }} /> Machine Matrix
                 </h3>
-                <span className="text-[10px] font-bold text-success bg-success/10 px-2 py-0.5 rounded-full uppercase">
-                    Live Status
+                <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--bs-success)', backgroundColor: 'rgba(34,197,94,0.1)', padding: '2px 10px', borderRadius: '999px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Live
                 </span>
             </div>
 
-            <div className="grid grid-cols-1 gap-4">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {machines.map((m) => (
-                    <div key={m.id} className="p-3 rounded-xl bg-background border border-border group hover:border-primary/30 transition-all">
-                        <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-3">
-                                {m.status === 'ONLINE' ? (
-                                    <Wifi size={14} className="text-success" />
-                                ) : m.status === 'OFFLINE' ? (
-                                    <WifiOff size={14} className="text-slate-400" />
-                                ) : (
-                                    <AlertTriangle size={14} className="text-warning" />
-                                )}
-                                <span className="text-xs font-bold text-text-primary">{m.name}</span>
+                    <div key={m.id} style={{ padding: '12px', borderRadius: '8px', backgroundColor: 'var(--bs-background)', border: '1px solid var(--bs-border)', transition: 'border-color 0.15s' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                {m.status === 'ONLINE' ? <Wifi size={13} style={{ color: 'var(--bs-success)' }} /> : m.status === 'OFFLINE' ? <WifiOff size={13} style={{ color: 'var(--bs-text-muted)' }} /> : <AlertTriangle size={13} style={{ color: 'var(--bs-warning)' }} />}
+                                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--bs-text-primary)' }}>{m.name}</span>
+                                <span style={{ fontSize: '9px', fontWeight: 600, color: 'var(--bs-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{m.type}</span>
                             </div>
-                            <span className={`text-[10px] font-black uppercase ${m.status === 'ONLINE' ? 'text-success' :
-                                m.status === 'OFFLINE' ? 'text-slate-400' : 'text-warning'
-                                }`}>
-                                {m.status}
-                            </span>
+                            <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', color: statusColor(m.status) }}>{m.status}</span>
                         </div>
-
-                        <div className="flex items-center gap-4">
-                            <div className="flex-1 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                <div
-                                    className={`h-full transition-all duration-500 ${m.load > 90 ? 'bg-error' : m.load > 70 ? 'bg-warning' : 'bg-primary'
-                                        }`}
-                                    style={{ width: `${m.load}%` }}
-                                />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div style={{ flex: 1, height: '5px', backgroundColor: 'var(--bs-border)', borderRadius: '99px', overflow: 'hidden' }}>
+                                <div style={{ height: '100%', width: `${m.load}%`, backgroundColor: barColor(m.load), borderRadius: '99px', transition: 'width 0.5s ease' }} />
                             </div>
-                            <span className="text-[10px] font-bold text-slate-500 w-8">{m.load}%</span>
+                            <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--bs-text-muted)', width: '30px' }}>{m.load}%</span>
                         </div>
                     </div>
                 ))}

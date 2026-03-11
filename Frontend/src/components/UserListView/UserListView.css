@@ -14,7 +14,7 @@
 }
 
 .user-list-modal {
-    background: white;
+    background: var(--bs-surface);
     width: 100%;
     max-width: 1200px;
     max-height: 90vh;
@@ -31,7 +31,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 1.5rem;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--bs-border);
 }
 
 .header-title {
@@ -44,13 +44,13 @@
     margin: 0;
     font-size: 1.5rem;
     font-weight: 700;
-    color: #1e293b;
+    color: var(--bs-text-primary);
 }
 
 .close-button {
     background: transparent;
     border: none;
-    color: #64748b;
+    color: var(--bs-text-muted);
     cursor: pointer;
     padding: 0.5rem;
     border-radius: 6px;
@@ -61,8 +61,8 @@
 }
 
 .close-button:hover {
-    background: #f1f5f9;
-    color: #1e293b;
+    background: var(--bs-background);
+    color: var(--bs-text-primary);
 }
 
 /* Tabs */
@@ -70,8 +70,8 @@
     display: flex;
     gap: 0.5rem;
     padding: 1rem 1.5rem;
-    border-bottom: 1px solid #f1f5f9;
-    background: #f8fafc;
+    border-bottom: 1px solid var(--bs-border);
+    background: var(--bs-background);
 }
 
 .tab-button {
@@ -84,25 +84,26 @@
     border-radius: 8px;
     font-size: 0.875rem;
     font-weight: 600;
-    color: #64748b;
+    color: var(--bs-text-muted);
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .tab-button:hover {
-    background: #e2e8f0;
-    color: #1e293b;
+    background: var(--bs-border);
+    color: var(--bs-text-primary);
 }
 
 .tab-button.active {
-    background: white;
-    color: #3b82f6;
+    background: var(--bs-surface);
+    color: var(--bs-brand);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
 }
 
 .tab-count {
-    background: #e2e8f0;
-    color: #64748b;
+    background: var(--bs-border);
+    color: var(--bs-text-muted);
     padding: 0.125rem 0.5rem;
     border-radius: 12px;
     font-size: 0.75rem;
@@ -110,8 +111,8 @@
 }
 
 .tab-button.active .tab-count {
-    background: #dbeafe;
-    color: #3b82f6;
+    background: rgba(14, 165, 233, 0.12);
+    color: var(--bs-brand);
 }
 
 /* Content */
@@ -133,11 +134,11 @@
     align-items: center;
     justify-content: center;
     padding: 4rem 2rem;
-    color: #94a3b8;
+    color: var(--bs-text-muted);
 }
 
 .empty-icon {
-    color: #cbd5e1;
+    color: var(--bs-border);
     margin-bottom: 1rem;
 }
 
@@ -153,16 +154,16 @@
 }
 
 .user-list-content::-webkit-scrollbar-track {
-    background: #f8fafc;
+    background: var(--bs-background);
 }
 
 .user-list-content::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
+    background: var(--bs-border);
     border-radius: 4px;
 }
 
 .user-list-content::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
+    background: var(--bs-text-muted);
 }
 
 /* Responsive */

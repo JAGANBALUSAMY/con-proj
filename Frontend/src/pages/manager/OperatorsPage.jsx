@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@frontend/layouts/DashboardLayout';
 import OperatorRegistry from '@frontend/components/dashboard/OperatorRegistry';
 import UserActionModal from '@frontend/components/dashboard/UserActionModal';
+import PageHeader from '@frontend/components/ui/PageHeader';
 import api from '@frontend/services/api';
-import { Users, ShieldCheck } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 
 const OperatorsPage = () => {
     const [operators, setOperators] = useState([]);
@@ -33,22 +34,16 @@ const OperatorsPage = () => {
     return (
         <DashboardLayout>
             <div className="space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-xl">
-                            <Users className="text-primary" size={24} />
+                <PageHeader
+                    title="Assigned Operator Force"
+                    subtitle="Section Specialist Registry — Performance tracking and station monitoring"
+                    actions={
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', backgroundColor: 'rgba(34,197,94,0.06)', borderRadius: '8px', border: '1px solid rgba(34,197,94,0.15)' }}>
+                            <ShieldCheck size={14} style={{ color: 'var(--bs-success)' }} />
+                            <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--bs-success)' }}>Verified Command</span>
                         </div>
-                        <div>
-                            <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Assigned Operator Force</h2>
-                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Section Specialist Registry</p>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 px-4 py-2 bg-success/5 rounded-lg border border-success/10">
-                        <ShieldCheck size={16} className="text-success" />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-success">Verified Command</span>
-                    </div>
-                </div>
+                    }
+                />
 
                 <OperatorRegistry
                     operators={operators}

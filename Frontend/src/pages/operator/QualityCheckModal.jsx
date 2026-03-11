@@ -230,7 +230,7 @@ const QualityCheckModal = ({ isOpen, onClose, batch, onSuccess }) => {
                                         </button>
                                     </div>
 
-                                    <div className="work-timer-section" style={{ borderStyle: 'solid', borderColor: '#e2e8f0', background: '#f8fafc', marginTop: '1rem' }}>
+                                    <div className="work-timer-section" style={{ border: '1px solid var(--bs-border)', background: 'var(--bs-background)', marginTop: '1rem' }}>
                                         {!startTime ? (
                                             <button
                                                 type="button"
@@ -257,7 +257,7 @@ const QualityCheckModal = ({ isOpen, onClose, batch, onSuccess }) => {
                                                 placeholder="Select a pool above"
                                                 required
                                             />
-                                            <p className="field-hint" style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '0.25rem' }}>
+                                            <p className="field-hint" style={{ fontSize: '0.7rem', color: 'var(--bs-text-muted)', marginTop: '0.25rem' }}>
                                                 Rule: You must inspect the entire selected pool at once.
                                             </p>
                                         </div>

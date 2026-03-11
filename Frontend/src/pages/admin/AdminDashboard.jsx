@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@frontend/store/AuthContext';
 import DashboardLayout from '@frontend/layouts/DashboardLayout';
 import api from '@frontend/services/api';
@@ -13,35 +13,20 @@ import {
     Package,
     RefreshCcw,
     UserPlus,
-    History,
-    Sparkles,
-    TrendingUp,
-    TrendingDown,
-    Zap,
-    AlertCircle,
-    BarChart2,
-    PieChart as PieIcon,
-    TrendingUp as TrendIcon,
-    Flame
+    History
 } from 'lucide-react';
 
-import { 
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, 
-    ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, AreaChart, Area,
-    ComposedChart, Legend 
-} from 'recharts';
-import { generateProductionReportPDF } from '@frontend/utils/exportProductionReport';
-import CreateManagerModal from './CreateManagerModal';
-import CreateBatchModal from './CreateBatchModal';
-import MetricCard from '@frontend/components/Dashboard/MetricCard';
-import MachineStatusPanel from '@frontend/components/Dashboard/MachineStatusPanel';
-import FactoryTimeline from '@frontend/components/Dashboard/FactoryTimeline';
-import OperatorLeaderboard from '@frontend/components/Dashboard/OperatorLeaderboard';
+import MetricCard from '@frontend/components/dashboard/MetricCard';
+import StatusBadge from '@frontend/components/ui/StatusBadge';
+import Button from '@frontend/components/ui/Button';
+import PageHeader from '@frontend/components/ui/PageHeader';
 import TableView from '@frontend/components/tables/TableView';
 import { useTable } from '@frontend/components/tables/useTable';
-import Badge from "@frontend/components/UI/Badge";
-
-const CHART_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#6366f1'];
+import MachineStatusPanel from '@frontend/components/dashboard/MachineStatusPanel';
+import OperatorLeaderboard from '@frontend/components/dashboard/OperatorLeaderboard';
+import FactoryTimeline from '@frontend/components/dashboard/FactoryTimeline';
+import CreateManagerModal from './CreateManagerModal';
+import CreateBatchModal from './CreateBatchModal';
 
 const AdminDashboard = () => {
     const { user } = useAuth();
@@ -52,8 +37,6 @@ const AdminDashboard = () => {
     const [isCreateBatchModalOpen, setIsCreateBatchModalOpen] = useState(false);
     const [viewTab, setViewTab] = useState('ACTIVE');
     const [timelineEvents, setTimelineEvents] = useState([]);
-    const [recentReports, setRecentReports] = useState([]);
-    const [reportLoading, setReportLoading] = useState(true);
 
     const fetchStats = async () => {
         try {
@@ -74,21 +57,8 @@ const AdminDashboard = () => {
         }
     };
 
-    const fetchRecentReports = async () => {
-        setReportLoading(true);
-        try {
-            const response = await api.get('/reports/daily/recent');
-            setRecentReports(response.data);
-        } catch (error) {
-            console.error('Failed to fetch recent reports:', error);
-        } finally {
-            setReportLoading(false);
-        }
-    };
-
     useEffect(() => {
         fetchStats();
-        fetchRecentReports();
         const interval = setInterval(fetchStats, 60000);
         return () => clearInterval(interval);
     }, []);
@@ -98,17 +68,8 @@ const AdminDashboard = () => {
         if (!socket) return;
         const handleSync = () => fetchStats();
         socket.on('batch:status_updated', handleSync);
-        return () => {
-            socket.off('batch:status_updated', handleSync);
-        };
+        return () => socket.off('batch:status_updated', handleSync);
     }, [socket]);
-                        <section className="card-saas p-6">
-                            <h3 className="font-bold text-text-primary mb-6 flex items-center gap-2">
-                                <History size={18} className="text-primary" />
-                                Live Floor Trail
-                            </h3>
-                            <FactoryTimeline events={timelineEvents} loading={loading} />
-                        </section>
 
     const tableData = useMemo(() =>
         viewTab === 'ACTIVE' ? stats?.activeBatchList : stats?.batchHistory,
@@ -133,18 +94,18 @@ const AdminDashboard = () => {
         {
             key: 'batchNumber',
             label: 'Batch ID',
-            render: (val) => <span className="font-bold text-text-primary">{val}</span>
+            render: (val) => <span style={{ fontWeight: 700, color: 'var(--bs-text-primary)' }}>{val}</span>
         },
         { key: 'briefTypeName', label: 'Configuration' },
         {
             key: 'currentStage',
             label: 'Phase',
-            render: (val) => <Badge status={val} />
+            render: (val) => <StatusBadge status={val} />
         },
         {
             key: 'totalQuantity',
             label: 'Quantity',
-            render: (val) => <span className="font-semibold">{val} <span className="text-[10px] text-slate-400">pcs</span></span>
+            render: (val) => <span style={{ fontWeight: 600 }}>{val} <span style={{ fontSize: '10px', color: 'var(--bs-text-muted)' }}>pcs</span></span>
         }
     ];
 
@@ -157,8 +118,42 @@ const AdminDashboard = () => {
     return (
         <DashboardLayout>
             <div className="space-y-8">
+                {/* Page Header */}
+                <PageHeader
+                    title="Admin Dashboard"
+                    subtitle={`Welcome back, ${user?.fullName || 'Administrator'} — Factory overview at a glance`}
+                    live
+                    actions={
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                leftIcon={RefreshCcw}
+                                loading={isRefreshing}
+                                onClick={() => { setIsRefreshing(true); fetchStats(); }}
+                            />
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                leftIcon={UserPlus}
+                                onClick={() => setIsCreateManagerModalOpen(true)}
+                            >
+                                Add Manager
+                            </Button>
+                            <Button
+                                variant="primary"
+                                size="sm"
+                                leftIcon={Package}
+                                onClick={() => setIsCreateBatchModalOpen(true)}
+                            >
+                                New Batch
+                            </Button>
+                        </div>
+                    }
+                />
+
                 {/* 1. Governance Metrics */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 items-stretch">
                     <MetricCard
                         title="Workforce"
                         value={stats?.totalUsers || 0}
@@ -183,33 +178,32 @@ const AdminDashboard = () => {
                     />
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                     {/* Left Column: Specialized Status & Intelligence */}
-                    <div className="lg:col-span-4 space-y-8">
+                    <div className="lg:col-span-4 space-y-6">
                         <MachineStatusPanel />
 
-
-                        <section className="card-saas p-6">
-                            <h3 className="font-bold text-text-primary mb-6 flex items-center gap-2">
-                                <History size={18} className="text-primary" />
+                        <section style={{ backgroundColor: 'var(--bs-surface)', border: '1px solid var(--bs-border)', borderRadius: '10px', padding: '20px' }}>
+                            <h3 style={{ fontWeight: 700, color: 'var(--bs-text-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <History size={18} style={{ color: 'var(--bs-brand)' }} />
                                 Live Floor Trail
                             </h3>
                             <FactoryTimeline events={timelineEvents} loading={loading} />
                         </section>
 
-                        <section className="card-saas p-6">
-                            <h3 className="font-bold text-text-primary mb-6 flex items-center gap-2">
-                                <Activity size={18} className="text-primary" />
+                        <section style={{ backgroundColor: 'var(--bs-surface)', border: '1px solid var(--bs-border)', borderRadius: '10px', padding: '20px' }}>
+                            <h3 style={{ fontWeight: 700, color: 'var(--bs-text-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <Activity size={18} style={{ color: 'var(--bs-brand)' }} />
                                 System Health
                             </h3>
-                            <div className="space-y-4">
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                 {healthMetrics.map((m) => (
-                                    <div key={m.label} className="flex items-center justify-between p-3 rounded-xl bg-background border border-border">
-                                        <div className="flex items-center gap-3">
-                                            <m.icon size={16} className={m.color} />
-                                            <span className="text-xs font-semibold">{m.label}</span>
+                                    <div key={m.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: '8px', backgroundColor: 'var(--bs-background)', border: '1px solid var(--bs-border)' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <m.icon size={15} style={{ color: m.color === 'text-success' ? 'var(--bs-success)' : 'var(--bs-brand)' }} />
+                                            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--bs-text-secondary)' }}>{m.label}</span>
                                         </div>
-                                        <span className={`text-[10px] font-bold uppercase ${m.color}`}>{m.status}</span>
+                                        <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: m.color === 'text-success' ? 'var(--bs-success)' : 'var(--bs-brand)' }}>{m.status}</span>
                                     </div>
                                 ))}
                             </div>
@@ -217,61 +211,20 @@ const AdminDashboard = () => {
                     </div>
 
                     {/* Right Column: Production Oversight */}
-                    <div className="lg:col-span-8 space-y-8">
-                        <section className="card-saas p-6">
-                            <div className="flex items-center justify-between mb-6">
-                                <div className="flex bg-background p-1 rounded-xl border border-border">
+                    <div className="lg:col-span-8 space-y-6">
+                        <section style={{ backgroundColor: 'var(--bs-surface)', border: '1px solid var(--bs-border)', borderRadius: '10px', padding: '20px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+                                <div style={{ display: 'flex', backgroundColor: 'var(--bs-background)', padding: '4px', borderRadius: '10px', border: '1px solid var(--bs-border)' }}>
                                     <button
-                                        className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${viewTab === 'ACTIVE' ? 'bg-card shadow-sm text-primary' : 'text-text-secondary'}`}
+                                        style={{ padding: '7px 16px', fontSize: '11px', fontWeight: 700, borderRadius: '7px', border: 'none', cursor: 'pointer', transition: 'all 0.15s', backgroundColor: viewTab === 'ACTIVE' ? 'var(--bs-surface)' : 'transparent', color: viewTab === 'ACTIVE' ? 'var(--bs-brand)' : 'var(--bs-text-muted)', boxShadow: viewTab === 'ACTIVE' ? 'var(--bs-shadow-sm)' : 'none' }}
                                         onClick={() => setViewTab('ACTIVE')}
-                                    >
-                                        Active Floor
-                                    </button>
+                                    >Active Floor</button>
                                     <button
-                                        className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${viewTab === 'HISTORY' ? 'bg-card shadow-sm text-primary' : 'text-text-secondary'}`}
+                                        style={{ padding: '7px 16px', fontSize: '11px', fontWeight: 700, borderRadius: '7px', border: 'none', cursor: 'pointer', transition: 'all 0.15s', backgroundColor: viewTab === 'HISTORY' ? 'var(--bs-surface)' : 'transparent', color: viewTab === 'HISTORY' ? 'var(--bs-brand)' : 'var(--bs-text-muted)', boxShadow: viewTab === 'HISTORY' ? 'var(--bs-shadow-sm)' : 'none' }}
                                         onClick={() => setViewTab('HISTORY')}
-                                    >
-                                        History
-                                    </button>
+                                    >History</button>
                                 </div>
-                                <div className="p-2 rounded-full hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => { setIsRefreshing(true); fetchStats(); }}>
-                                    <RefreshCcw size={16} className={isRefreshing ? 'animate-spin' : ''} />
-                                </div>
-                            </div>
-
-                            {/* 7-Day Production Trend Chart */}
-                            <div className="mb-8 p-6 bg-slate-50/50 rounded-2xl border border-slate-100 dark:bg-slate-900/50 dark:border-slate-800">
-                                <div className="flex items-center justify-between mb-6">
-                                    <div>
-                                        <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">7-Day Production Velocity</h4>
-                                        <p className="text-[10px] text-slate-400 font-medium">Units processed across verified batches</p>
-                                    </div>
-                                    <TrendingUp size={16} className="text-primary" />
-                                </div>
-                                <div>
-                                    <div className="h-[200px] w-full">
-                                        <ResponsiveContainer width="100%" height="100%" minHeight={200}>
-                                            <AreaChart data={recentReports.map(r => ({
-                                                date: new Date(r.reportDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-                                                units: r.metrics?.kpis?.units_processed || 0
-                                            }))}>
-                                                <defs>
-                                                    <linearGradient id="colorUnits" x1="0" y1="0" x2="0" y2="1">
-                                                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                                                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                                                    </linearGradient>
-                                                </defs>
-                                                <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.1} />
-                                                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 700, fill: '#94a3b8' }} />
-                                                <YAxis hide />
-                                                <RechartsTooltip
-                                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', fontSize: '10px' }}
-                                                />
-                                                <Area type="monotone" dataKey="units" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorUnits)" />
-                                            </AreaChart>
-                                        </ResponsiveContainer>
-                                    </div>
-                                </div>
+                                <Button variant="ghost" size="sm" leftIcon={RefreshCcw} loading={isRefreshing} onClick={() => { setIsRefreshing(true); fetchStats(); }} />
                             </div>
 
                             <TableView
@@ -291,22 +244,26 @@ const AdminDashboard = () => {
                             />
                         </section>
 
-                        <section className="card-saas p-6">
-                            <h3 className="font-bold text-text-primary mb-6">Governance Quick Actions</h3>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <section style={{ backgroundColor: 'var(--bs-surface)', border: '1px solid var(--bs-border)', borderRadius: '10px', padding: '20px' }}>
+                            <h3 style={{ fontWeight: 700, color: 'var(--bs-text-primary)', marginBottom: '16px' }}>Governance Quick Actions</h3>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                                 <button
                                     onClick={() => setIsCreateManagerModalOpen(true)}
-                                    className="p-4 rounded-xl border border-dashed border-border hover:border-primary hover:bg-primary/5 transition-all text-center group"
+                                    style={{ padding: '16px', borderRadius: '10px', border: '1px dashed var(--bs-border)', backgroundColor: 'transparent', cursor: 'pointer', textAlign: 'center', transition: 'all 0.15s' }}
+                                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--bs-brand)'; e.currentTarget.style.backgroundColor = 'rgba(14,165,233,0.05)'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--bs-border)'; e.currentTarget.style.backgroundColor = 'transparent'; }}
                                 >
-                                    <UserPlus className="mx-auto text-slate-400 group-hover:text-primary mb-2" size={24} />
-                                    <span className="text-[10px] font-black uppercase text-slate-500 group-hover:text-primary tracking-widest">Register Manager</span>
+                                    <UserPlus size={22} style={{ margin: '0 auto 8px', color: 'var(--bs-text-muted)' }} />
+                                    <span style={{ display: 'block', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--bs-text-muted)' }}>Register Manager</span>
                                 </button>
                                 <button
                                     onClick={() => setIsCreateBatchModalOpen(true)}
-                                    className="p-4 rounded-xl border border-dashed border-border hover:border-primary hover:bg-primary/5 transition-all text-center group"
+                                    style={{ padding: '16px', borderRadius: '10px', border: '1px dashed var(--bs-border)', backgroundColor: 'transparent', cursor: 'pointer', textAlign: 'center', transition: 'all 0.15s' }}
+                                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--bs-brand)'; e.currentTarget.style.backgroundColor = 'rgba(14,165,233,0.05)'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--bs-border)'; e.currentTarget.style.backgroundColor = 'transparent'; }}
                                 >
-                                    <Package className="mx-auto text-slate-400 group-hover:text-primary mb-2" size={24} />
-                                    <span className="text-[10px] font-black uppercase text-slate-500 group-hover:text-primary tracking-widest">Initiate Batch</span>
+                                    <Package size={22} style={{ margin: '0 auto 8px', color: 'var(--bs-text-muted)' }} />
+                                    <span style={{ display: 'block', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--bs-text-muted)' }}>Initiate Batch</span>
                                 </button>
                             </div>
                         </section>

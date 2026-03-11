@@ -18,7 +18,9 @@ import CreateOperatorModal from './CreateOperatorModal';
 import CreateBatchModal from './CreateBatchModal';
 import MetricCard from '@frontend/components/dashboard/MetricCard';
 import PipelineViz from '@frontend/components/dashboard/PipelineViz';
-import Badge from '@frontend/components/ui/Badge';
+import StatusBadge from '@frontend/components/ui/StatusBadge';
+import Button from '@frontend/components/ui/Button';
+import PageHeader from '@frontend/components/ui/PageHeader';
 import TableView from '@frontend/components/tables/TableView';
 import { useTable } from '@frontend/components/tables/useTable';
 import FactoryTimeline from '@frontend/components/dashboard/FactoryTimeline';
@@ -72,23 +74,23 @@ const ManagerDashboard = () => {
         {
             key: 'batch.batchNumber',
             label: 'Batch',
-            render: (_, log) => <span className="font-bold text-slate-900 dark:text-white">{log.batch.batchNumber}</span>
+            render: (_, log) => <span style={{ fontWeight: 700, color: 'var(--bs-text-primary)' }}>{log.batch.batchNumber}</span>
         },
         { key: 'operator.fullName', label: 'Operator', render: (_, log) => log.operator.fullName },
-        { key: 'stage', label: 'Stage', render: (val) => <Badge status={val} /> },
+        { key: 'stage', label: 'Stage', render: (val) => <StatusBadge status={val} /> },
         {
             key: 'quantityIn',
             label: 'Units',
             render: (_, log) => (
-                <div className="font-bold text-sm text-text-primary">
-                    {log.quantityIn} {log.quantityOut !== null && <span className="text-primary italic">→ {log.quantityOut}</span>}
+                <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--bs-text-primary)' }}>
+                    {log.quantityIn} {log.quantityOut !== null && <span style={{ color: 'var(--bs-brand)', fontStyle: 'italic' }}>→ {log.quantityOut}</span>}
                 </div>
             )
         },
         {
             key: 'createdAt',
             label: 'Arrived',
-            render: (val) => <span className="text-[10px] font-bold text-slate-500 uppercase">{new Date(val).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+            render: (val) => <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--bs-text-muted)', textTransform: 'uppercase' }}>{new Date(val).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
         },
         {
             key: 'id',
@@ -96,15 +98,13 @@ const ManagerDashboard = () => {
             sortable: false,
             className: 'text-right',
             render: (_, log) => (
-                <div className="flex justify-end gap-2">
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                     {log.type === 'BATCH' ? (
-                        <button className="btn-saas bg-primary text-white text-[10px] py-1 px-3 shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all" onClick={() => handleBatchStart(log.id)}>
-                            START
-                        </button>
+                        <Button variant="primary" size="sm" onClick={() => handleBatchStart(log.id)}>START</Button>
                     ) : (
                         <>
-                            <button className="p-1.5 text-success hover:bg-success/10 rounded-lg transition-colors" onClick={() => handleApprove(log.id)}><CheckCircle2 size={16} /></button>
-                            <button className="p-1.5 text-error hover:bg-error/10 rounded-lg transition-colors" onClick={() => handleReject(log.id)}><XCircle size={16} /></button>
+                            <button style={{ padding: '6px', color: 'var(--bs-success)', backgroundColor: 'transparent', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'background 0.1s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(34,197,94,0.1)'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'} onClick={() => handleApprove(log.id)}><CheckCircle2 size={16} /></button>
+                            <button style={{ padding: '6px', color: 'var(--bs-danger)', backgroundColor: 'transparent', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'background 0.1s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.1)'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'} onClick={() => handleReject(log.id)}><XCircle size={16} /></button>
                         </>
                     )}
                 </div>
@@ -180,26 +180,26 @@ const ManagerDashboard = () => {
                 <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
                     {/* Left: Interactive Insights & Timeline */}
                     <div className="xl:col-span-8 space-y-8">
-                        <section className="card-saas p-8 bg-gradient-to-br from-primary/5 to-transparent border-l-4 border-l-primary relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-8 opacity-5">
+                        <section style={{ backgroundColor: 'var(--bs-surface)', border: '1px solid var(--bs-border)', borderLeft: '4px solid var(--bs-brand)', borderRadius: '10px', padding: '32px', position: 'relative', overflow: 'hidden' }}>
+                            <div style={{ position: 'absolute', top: 0, right: 0, padding: '32px', opacity: 0.04 }}>
                                 <Activity size={120} />
                             </div>
-                            <div className="relative z-10">
-                                <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-2">Section Operational Health</h3>
-                                <p className="text-sm text-slate-500 font-medium max-w-lg">
-                                    Your assigned sections are currently operating at <span className="text-success font-bold">92% efficiency</span>.
+                            <div style={{ position: 'relative', zIndex: 1 }}>
+                                <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--bs-text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px' }}>Section Operational Health</h3>
+                                <p style={{ fontSize: '13px', color: 'var(--bs-text-secondary)', fontWeight: 500, maxWidth: '440px', lineHeight: 1.6 }}>
+                                    Your assigned sections are currently operating at <span style={{ color: 'var(--bs-success)', fontWeight: 700 }}>92% efficiency</span>.
                                     There are {dashboardData?.approvalQueue?.length || 0} items awaiting your signature in the Quality Office.
                                 </p>
-                                <div className="mt-6 flex gap-3">
-                                    <button onClick={() => window.location.href = '/manager/quality'} className="btn-saas bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-[10px] px-6 py-2.5">Open Quality Office</button>
-                                    <button onClick={() => window.location.href = '/manager/flow'} className="btn-saas border border-slate-200 dark:border-slate-800 text-[10px] px-6 py-2.5">Monitor Flow</button>
+                                <div style={{ marginTop: '24px', display: 'flex', gap: '12px' }}>
+                                    <Button variant="primary" size="sm" onClick={() => window.location.href = '/manager/quality'}>Open Quality Office</Button>
+                                    <Button variant="secondary" size="sm" onClick={() => window.location.href = '/manager/flow'}>Monitor Flow</Button>
                                 </div>
                             </div>
                         </section>
 
-                        <section className="card-saas p-6">
-                            <h3 className="font-bold text-text-primary mb-6 flex items-center gap-2 uppercase tracking-tighter">
-                                <History size={18} className="text-primary" />
+                        <section style={{ backgroundColor: 'var(--bs-surface)', border: '1px solid var(--bs-border)', borderRadius: '10px', padding: '24px' }}>
+                            <h3 style={{ fontWeight: 700, color: 'var(--bs-text-primary)', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                <History size={18} style={{ color: 'var(--bs-brand)' }} />
                                 Live Floor Trail
                             </h3>
                             <FactoryTimeline events={timelineEvents} loading={loading} />
@@ -208,50 +208,44 @@ const ManagerDashboard = () => {
 
                     {/* Right: Station Actions & Quick Add */}
                     <div className="xl:col-span-4 space-y-8">
-                        <section className="card-saas p-6 border-t-4 border-t-primary">
-                            <h3 className="font-bold text-text-primary mb-6 uppercase tracking-tighter">Command Actions</h3>
-                            <div className="grid grid-cols-1 gap-4">
-                                <button onClick={() => setShowCreateModal(true)} className="p-4 rounded-xl border border-dashed border-border hover:border-primary hover:bg-primary/5 transition-all flex items-center gap-4 group text-left">
-                                    <div className="w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                                        <Users className="text-slate-400 group-hover:text-primary" size={24} />
-                                    </div>
+                        <section style={{ backgroundColor: 'var(--bs-surface)', border: '1px solid var(--bs-border)', borderTop: '4px solid var(--bs-brand)', borderRadius: '10px', padding: '24px' }}>
+                            <h3 style={{ fontWeight: 700, color: 'var(--bs-text-primary)', marginBottom: '24px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Command Actions</h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                <button onClick={() => setShowCreateModal(true)} style={{ padding: '16px', borderRadius: '10px', border: '1px dashed var(--bs-border)', backgroundColor: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '16px', textAlign: 'left', transition: 'all 0.15s' }} onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--bs-brand)'; e.currentTarget.style.backgroundColor = 'rgba(14,165,233,0.04)'; }} onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--bs-border)'; e.currentTarget.style.backgroundColor = 'transparent'; }}>
+                                    <div style={{ width: '44px', height: '44px', borderRadius: '10px', backgroundColor: 'var(--bs-background)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Users size={22} style={{ color: 'var(--bs-text-muted)' }} /></div>
                                     <div>
-                                        <span className="block text-[10px] font-black uppercase text-slate-500 group-hover:text-primary tracking-widest">Provision Personnel</span>
-                                        <span className="text-xs font-bold text-slate-400">Add new operator to fleet</span>
+                                        <span style={{ display: 'block', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--bs-text-muted)' }}>Provision Personnel</span>
+                                        <span style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--bs-text-secondary)', marginTop: '2px' }}>Add new operator to fleet</span>
                                     </div>
                                 </button>
-                                <button onClick={() => setShowCreateBatchModal(true)} className="p-4 rounded-xl border border-dashed border-border hover:border-primary hover:bg-primary/5 transition-all flex items-center gap-4 group text-left">
-                                    <div className="w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                                        <Package className="text-slate-400 group-hover:text-primary" size={24} />
-                                    </div>
+                                <button onClick={() => setShowCreateBatchModal(true)} style={{ padding: '16px', borderRadius: '10px', border: '1px dashed var(--bs-border)', backgroundColor: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '16px', textAlign: 'left', transition: 'all 0.15s' }} onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--bs-brand)'; e.currentTarget.style.backgroundColor = 'rgba(14,165,233,0.04)'; }} onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--bs-border)'; e.currentTarget.style.backgroundColor = 'transparent'; }}>
+                                    <div style={{ width: '44px', height: '44px', borderRadius: '10px', backgroundColor: 'var(--bs-background)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Package size={22} style={{ color: 'var(--bs-text-muted)' }} /></div>
                                     <div>
-                                        <span className="block text-[10px] font-black uppercase text-slate-500 group-hover:text-primary tracking-widest">Initiate Run</span>
-                                        <span className="text-xs font-bold text-slate-400">Spawn new production batch</span>
+                                        <span style={{ display: 'block', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--bs-text-muted)' }}>Initiate Run</span>
+                                        <span style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--bs-text-secondary)', marginTop: '2px' }}>Spawn new production batch</span>
                                     </div>
                                 </button>
                             </div>
                         </section>
 
-                        <div className="p-6 bg-slate-900 rounded-3xl text-white overflow-hidden relative group">
-                            <div className="relative z-10">
-                                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Shift Intelligence</h4>
-                                <div className="space-y-4">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-xs font-medium text-slate-300">Target Output</span>
-                                        <span className="text-xs font-black">2,400 Units</span>
+                        <div style={{ padding: '24px', backgroundColor: 'var(--bs-sidebar-bg)', borderRadius: '12px', color: '#fff', position: 'relative', overflow: 'hidden' }}>
+                            <div style={{ position: 'relative', zIndex: 1 }}>
+                                <h4 style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.16em', color: 'rgba(148,163,184,0.8)', marginBottom: '16px' }}>Shift Intelligence</h4>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ fontSize: '12px', fontWeight: 500, color: 'rgba(203,213,225,0.9)' }}>Target Output</span>
+                                        <span style={{ fontSize: '12px', fontWeight: 800 }}>2,400 Units</span>
                                     </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-xs font-medium text-slate-300">Current Pace</span>
-                                        <span className="text-xs font-black text-primary">2,180 Units</span>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ fontSize: '12px', fontWeight: 500, color: 'rgba(203,213,225,0.9)' }}>Current Pace</span>
+                                        <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--bs-brand)' }}>2,180 Units</span>
                                     </div>
-                                    <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-                                        <div className="h-full bg-primary w-[85%]" />
+                                    <div style={{ height: '5px', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '99px', overflow: 'hidden' }}>
+                                        <div style={{ height: '100%', backgroundColor: 'var(--bs-brand)', width: '85%', borderRadius: '99px' }} />
                                     </div>
                                 </div>
                             </div>
-                            <div className="absolute -bottom-4 -right-4 opacity-10 group-hover:scale-110 transition-transform">
-                                <Activity size={100} />
-                            </div>
+                            <div style={{ position: 'absolute', bottom: '-16px', right: '-16px', opacity: 0.07 }}><Activity size={90} /></div>
                         </div>
                     </div>
                 </div>
