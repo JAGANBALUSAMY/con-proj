@@ -14,7 +14,8 @@ import {
     ChevronLeft,
     ChevronRight,
     Workflow,
-    Activity
+    Activity,
+    History
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@frontend/store/AuthContext';

@@ -148,6 +148,17 @@ model DailyReport {
   generatedAt DateTime @default(now())
 }
 
+model AIReport {
+  id          Int      @id @default(autoincrement())
+  filterHash  String   @unique
+  filters     Json
+  reportText  String
+  generatedAt DateTime @default(now())
+  generatedBy Int
+
+  user User @relation(fields: [generatedBy], references: [id])
+}
+
 model SectionAssignment {
   id        Int             @id @default(autoincrement())
   userId    Int

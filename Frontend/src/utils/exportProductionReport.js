@@ -25,9 +25,9 @@ const captureChart = async (ref) => {
     try {
         console.log("Capturing chart...", ref.current);
         const canvas = await html2canvas(ref.current, {
-            scale: 1.5, // Reduced scale for faster processing
+            scale: 2, // Increased scale for premium quality
             useCORS: true,
-            logging: true, // Enable logging for debugging
+            logging: false, // Cleaner logs
             backgroundColor: '#ffffff',
             allowTaint: true
         });
@@ -44,6 +44,9 @@ const captureChart = async (ref) => {
 export const generateProductionReportPDF = async (report, chartRefs) => {
     try {
         console.log("PDF Generation Started...");
+        // 1. Cooling delay: Allow Recharts animations and layout shifts to stabilize
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
         const doc = new jsPDF('p', 'mm', 'a4');
         const pageWidth = doc.internal.pageSize.getWidth();
         const margin = 20;
@@ -143,7 +146,13 @@ export const generateProductionReportPDF = async (report, chartRefs) => {
 
         await addChartToPDF('Stage Efficiency (Average Time)', chartRefs.efficiency);
         await addChartToPDF('Defect Distribution', chartRefs.defects);
-        await addChartToPDF('Operator Throughput', chartRefs.performance);
+        await addChartToPDF('7-Day Consumption Velocity', chartRefs.trend);
+        
+        // V9 Advanced Analytics
+        await addChartToPDF('Factory Throughput Trend', chartRefs.throughput);
+        await addChartToPDF('Stage Bottleneck Heatmap', chartRefs.bottleneck);
+        await addChartToPDF('Operator Efficiency Ranking', chartRefs.efficiencyRanking);
+        await addChartToPDF('Defect Root Cause Analysis', chartRefs.rootCause);
 
         // Ensure we start a new page for long analysis if needed
         if (yPos > 200) {
@@ -161,7 +170,7 @@ export const generateProductionReportPDF = async (report, chartRefs) => {
         console.log("Saving PDF...");
         const dateStr = new Date().toISOString().split('T')[0];
         doc.save(`Production_Report_${dateStr}.pdf`);
-        window.alert('Download started successfully. Please check your downloads folder.');
+        window.alert('✅ Industrial Report Generated Successfully! Please check your downloads folder.');
     } catch (err) {
         console.error("CRITICAL PDF ERROR:", err);
         window.alert(`PDF Generation Failed: ${err.message}. Check console for details.`);

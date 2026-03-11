@@ -1,11 +1,19 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import DashboardLayout from '@frontend/layouts/DashboardLayout';
 import TableView from '@frontend/components/tables/TableView';
 import { useTable } from '@frontend/components/tables/useTable';
 import api from '@frontend/services/api';
-import { FileText, Download, Sparkles, RefreshCw, AlertCircle, Brain, Clock, Users, Database, ChevronDown } from 'lucide-react';
+import { 
+    FileText, Download, Sparkles, RefreshCw, AlertCircle, Brain, 
+    Clock, Users, Database, ChevronDown, BarChart2, Activity,
+    PieChart as PieIcon, TrendingUp as TrendIcon, TrendingDown, Flame, Zap 
+} from 'lucide-react';
 import { exportToCSV } from '@frontend/services/exportUtils';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { 
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, 
+    ResponsiveContainer, PieChart, Pie, Cell, Legend, AreaChart, Area, 
+    ComposedChart, Line 
+} from 'recharts';
 import { generateProductionReportPDF } from '@frontend/utils/exportProductionReport';
 import Badge from '@frontend/components/ui/Badge';
 import { SkeletonLoader } from '@frontend/components/UI/StateFeedback';
@@ -17,7 +25,9 @@ const ReportsPage = () => {
     const [loading, setLoading] = useState(true);
 
     // AI Section States
-    const [aiReport, setAiReport] = useState(null);
+    const [aiReport, setAiReport] = useState(null); // This held the "generated" report
+    const [latestReport, setLatestReport] = useState(null); // This will hold the auto-fetched latest report
+    const [latestAiLoading, setLatestAiLoading] = useState(false);
     const [aiLoading, setAiLoading] = useState(false);
     const [aiError, setAiError] = useState(null);
     const [isCached, setIsCached] = useState(false);
@@ -29,9 +39,13 @@ const ReportsPage = () => {
     });
 
     // Chart Refs for potential export later
-    const efficiencyRef = React.useRef(null);
-    const defectsRef = React.useRef(null);
-    const performanceRef = React.useRef(null);
+    const efficiencyRef = useRef(null);
+    const defectsRef = useRef(null);
+    const trendRef = useRef(null);
+    const throughputRef = useRef(null);
+    const bottleneckRef = useRef(null);
+    const efficiencyRankingRef = useRef(null);
+    const rootCauseRef = useRef(null);
 
     const parsedReport = useMemo(() => {
         if (!aiReport) return null;
@@ -47,6 +61,18 @@ const ReportsPage = () => {
     const [availableStages] = useState(['CUTTING', 'STITCHING', 'QUALITY_CHECK', 'LABELING', 'PACKING']);
     const [operators, setOperators] = useState([]);
 
+    const fetchLatestReport = async () => {
+        setLatestAiLoading(true);
+        try {
+            const response = await api.get('/reports/daily/latest');
+            setLatestReport(response.data);
+        } catch (error) {
+            console.error('Failed to fetch latest report:', error);
+        } finally {
+            setLatestAiLoading(false);
+        }
+    };
+
     const fetchReportData = async () => {
         setLoading(true);
         try {
@@ -57,6 +83,9 @@ const ReportsPage = () => {
             // Also fetch operators for AI filters
             const opsRes = await api.get('/users?role=OPERATOR');
             setOperators(opsRes.data.users || []);
+            
+            // Fetch initial intelligence
+            fetchLatestReport();
         } catch (error) {
             console.error('Failed to fetch reports:', error);
         } finally {
@@ -96,16 +125,17 @@ const ReportsPage = () => {
         fetchReportData();
     }, []);
 
-    const handleExportPDF = async (e) => {
+    const handleExportPDF = async (targetReport, e) => {
         if (e) {
             e.preventDefault();
             e.stopPropagation();
         }
         
-        console.log("PDF Export Clicked (ReportsPage). aiReport status:", !!aiReport);
+        const reportToExport = targetReport || parsedReport;
+        console.log("PDF Export Clicked. report status:", !!reportToExport);
         
-        if (!parsedReport) {
-            window.alert('Diagnostic: No parsed AI report data available to export.');
+        if (!reportToExport) {
+            window.alert('Diagnostic: No report data available to export.');
             return;
         }
 
@@ -113,15 +143,19 @@ const ReportsPage = () => {
         window.alert('Industrial Intelligence Engine: Preparing PDF Export...');
         
         try {
-            console.log("Calling generateProductionReportPDF (ReportsPage)...");
-            await generateProductionReportPDF(parsedReport, {
+            console.log("Calling generateProductionReportPDF...");
+            await generateProductionReportPDF(reportToExport, {
                 efficiency: efficiencyRef,
                 defects: defectsRef,
-                performance: performanceRef
+                trend: trendRef,
+                throughput: throughputRef,
+                bottleneck: bottleneckRef,
+                efficiencyRanking: efficiencyRankingRef,
+                rootCause: rootCauseRef
             });
         } catch (error) {
-            console.error('Export Wrapper Catch (ReportsPage):', error);
-            alert(`Export failed at wrapper: ${error.message}`);
+            console.error('Export Wrapper Catch:', error);
+            alert(`Export failed: ${error.message}`);
         } finally {
             setIsExporting(false);
         }
@@ -151,7 +185,7 @@ const ReportsPage = () => {
                 <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3">
                         <FileText className="text-primary" size={24} />
-                        <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Production Reports</h2>
+                        <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Production Intelligence Hub</h2>
                     </div>
                     <button
                         onClick={() => exportToCSV(data, columns, `production_audit_${new Date().toISOString().split('T')[0]}`)}
@@ -161,6 +195,110 @@ const ReportsPage = () => {
                         Export Audit Log
                     </button>
                 </div>
+
+                {/* Relocated Latest Executive Intelligence Widget */}
+                <section className="card-saas p-0 overflow-hidden border-primary/20 bg-gradient-to-br from-white to-primary/5 dark:from-card-dark dark:to-primary/5">
+                    <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-card-dark">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-primary/10 rounded-lg">
+                                <Sparkles className="text-primary animate-pulse" size={20} />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-900 dark:text-white uppercase tracking-tight">Latest Executive Intelligence</h3>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Auto-Generated Performance Synthesis</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <button 
+                                onClick={fetchLatestReport}
+                                disabled={latestAiLoading}
+                                className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-all disabled:opacity-50"
+                            >
+                                <RefreshCw size={14} className={latestAiLoading ? 'animate-spin' : ''} />
+                            </button>
+                            {latestReport && (
+                                <button
+                                    onClick={(e) => handleExportPDF(latestReport.metrics, e)}
+                                    disabled={isExporting}
+                                    className="flex items-center gap-2 px-4 py-2 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-[1.02] transition-all shadow-lg active:scale-95 disabled:opacity-50"
+                                >
+                                    <Download size={12} />
+                                    Export PDF
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="p-6">
+                        {latestAiLoading ? (
+                            <div className="flex flex-col items-center justify-center py-12 gap-4">
+                                <Brain size={40} className="text-primary/20 animate-pulse" />
+                                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Synthesizing latest factory data...</span>
+                            </div>
+                        ) : !latestReport ? (
+                            <div className="flex flex-col items-center justify-center py-12 gap-3 text-center">
+                                <AlertCircle size={32} className="text-slate-200" />
+                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">No Intelligence Records Found</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-6">
+                                <div className="space-y-2">
+                                    <span className="text-[10px] font-black text-primary uppercase tracking-widest px-1">Executive Summary • {new Date(latestReport.reportDate).toLocaleDateString()}</span>
+                                    <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-semibold bg-white/80 dark:bg-card-dark/80 p-5 rounded-2xl border border-primary/10 italic shadow-sm">
+                                        "{latestReport.metrics?.executive_summary || latestReport.metrics?.summary || latestReport.summary}"
+                                    </p>
+                                </div>
+
+                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                    {[
+                                        { label: 'Units Processed', value: (latestReport.metrics?.kpis?.units_processed || 0).toLocaleString(), icon: Database, color: 'text-primary' },
+                                        { label: 'Defect Rate', value: `${(latestReport.metrics?.kpis?.defect_rate || 0).toFixed(2)}%`, icon: AlertCircle, color: 'text-warning' },
+                                        { label: 'Batches Analyzed', value: latestReport.metrics?.kpis?.total_batches || 0, icon: FileText, color: 'text-slate-500' },
+                                        { label: 'Top Performer', value: latestReport.metrics?.kpis?.top_operator || 'N/A', icon: Users, color: 'text-success' }
+                                    ].map((kpi, idx) => (
+                                        <div key={idx} className="p-4 rounded-2xl bg-white dark:bg-card-dark border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:border-primary/20">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1 tracking-widest">{kpi.label}</span>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-sm font-black text-slate-900 dark:text-white">{kpi.value}</span>
+                                                <kpi.icon size={14} className={kpi.color} />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div className="p-5 rounded-2xl bg-primary/5 border border-primary/10">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <Brain size={16} className="text-primary" />
+                                            <span className="text-[10px] font-black text-primary uppercase tracking-widest">Detailed Analysis</span>
+                                        </div>
+                                        <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-semibold">
+                                            {latestReport.metrics?.operational_analysis || "Operational synthesis pending..."}
+                                        </p>
+                                    </div>
+                                    <div className="p-5 rounded-2xl bg-error/5 border border-error/10">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <TrendingDown size={16} className="text-error" />
+                                            <span className="text-[10px] font-black text-error uppercase tracking-widest">Risk Assessment</span>
+                                        </div>
+                                        <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-semibold">
+                                            {latestReport.metrics?.risk_assessment || "Risk evaluation currently unavailable."}
+                                        </p>
+                                    </div>
+                                    <div className="p-5 rounded-2xl bg-success/5 border border-success/10">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <Zap size={16} className="text-success" />
+                                            <span className="text-[10px] font-black text-success uppercase tracking-widest">Recommendations</span>
+                                        </div>
+                                        <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-semibold">
+                                            {latestReport.metrics?.recommendations || "Awaiting strategy generation..."}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </section>
 
                 <section className="card-saas p-6">
                     <TableView
@@ -360,7 +498,8 @@ const ReportsPage = () => {
 
                                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                             <div className="space-y-4">
-                                                <div ref={efficiencyRef} className="h-[260px] w-full p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800">
+                                            <div ref={efficiencyRef}>
+                                                <div className="h-[260px] w-full p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800">
                                                     <span className="text-[10px] font-bold text-slate-400 uppercase block mb-4 px-1">Stage Efficiency</span>
                                                     <ResponsiveContainer width="100%" height="80%">
                                                         <BarChart data={parsedReport.stage_efficiency || parsedReport.metrics?.stage_efficiency || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -376,9 +515,11 @@ const ReportsPage = () => {
                                                     </ResponsiveContainer>
                                                 </div>
                                             </div>
+                                            </div>
 
                                             <div className="space-y-4">
-                                                <div ref={defectsRef} className="h-[260px] w-full p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800">
+                                            <div ref={defectsRef}>
+                                                <div className="h-[260px] w-full p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800">
                                                     <span className="text-[10px] font-bold text-slate-400 uppercase block mb-4 px-1">Defect Distribution</span>
                                                     <ResponsiveContainer width="100%" height="80%">
                                                         <PieChart>
@@ -396,6 +537,117 @@ const ReportsPage = () => {
                                                             </Pie>
                                                             <RechartsTooltip />
                                                             <Legend verticalAlign="bottom" align="center" iconType="circle" wrapperStyle={{ fontSize: '9px', paddingTop: '15px' }} />
+                                                        </PieChart>
+                                                    </ResponsiveContainer>
+                                                </div>
+                                            </div>
+                                            </div>
+                                        </div>
+
+                                        {/* New Advanced Analytics Expansion */}
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                            {/* 1. Production Velocity Trend */}
+                                            <div ref={trendRef}>
+                                                <div className="h-[260px] w-full p-6 rounded-2xl bg-slate-50/50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800">
+                                                    <div className="flex items-center gap-2 mb-4">
+                                                        <TrendIcon size={16} className="text-primary" />
+                                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">7-Day Trend Velocity</span>
+                                                    </div>
+                                                    <ResponsiveContainer width="100%" height="80%">
+                                                        <AreaChart data={parsedReport.throughput_trend || parsedReport.metrics?.throughput_trend || []}>
+                                                            <defs>
+                                                                <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                                                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                                                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                                                </linearGradient>
+                                                            </defs>
+                                                            <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.1} />
+                                                            <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 9 }} />
+                                                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9 }} />
+                                                            <Area type="monotone" dataKey="value" stroke="#3b82f6" fillOpacity={1} fill="url(#colorValue)" strokeWidth={2} />
+                                                            <RechartsTooltip />
+                                                        </AreaChart>
+                                                    </ResponsiveContainer>
+                                                </div>
+                                            </div>
+
+                                            {/* 2. Throughput Projection */}
+                                            <div ref={throughputRef}>
+                                                <div className="h-[260px] w-full p-6 rounded-2xl bg-slate-50/50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800">
+                                                    <div className="flex items-center gap-2 mb-4">
+                                                        <Activity size={16} className="text-primary" />
+                                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Throughput Volume</span>
+                                                    </div>
+                                                    <ResponsiveContainer width="100%" height="80%">
+                                                        <BarChart data={parsedReport.throughput_trend || parsedReport.metrics?.throughput_trend || []}>
+                                                            <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.1} />
+                                                            <XAxis dataKey="label" hide />
+                                                            <Bar dataKey="value" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                                                            <RechartsTooltip />
+                                                        </BarChart>
+                                                    </ResponsiveContainer>
+                                                </div>
+                                            </div>
+
+                                            {/* 3. Bottleneck Analysis Heatmap */}
+                                            <div ref={bottleneckRef}>
+                                                <div className="h-[260px] w-full p-6 rounded-2xl bg-slate-50/50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800">
+                                                    <div className="flex items-center gap-2 mb-4">
+                                                        <Flame size={16} className="text-error" />
+                                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Bottleneck Heatmap</span>
+                                                    </div>
+                                                    <ResponsiveContainer width="100%" height="80%">
+                                                        <ComposedChart data={parsedReport.bottleneck_heatmap || parsedReport.metrics?.bottleneck_heatmap || []}>
+                                                            <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.1} />
+                                                            <XAxis dataKey="stage" hide />
+                                                            <Bar dataKey="delay_factor" fill="#ef4444" opacity={0.6} barSize={30} />
+                                                            <Line type="monotone" dataKey="delay_factor" stroke="#ef4444" strokeWidth={3} dot={{ fill: '#ef4444' }} />
+                                                            <RechartsTooltip />
+                                                        </ComposedChart>
+                                                    </ResponsiveContainer>
+                                                </div>
+                                            </div>
+
+                                            {/* 4. Operator Efficiency Rankings */}
+                                            <div ref={efficiencyRankingRef}>
+                                                <div className="h-[260px] w-full p-6 rounded-2xl bg-slate-50/50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800">
+                                                    <div className="flex items-center gap-2 mb-4">
+                                                        <BarChart2 size={16} className="text-success" />
+                                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Efficiency Rankings</span>
+                                                    </div>
+                                                    <ResponsiveContainer width="100%" height="80%">
+                                                        <BarChart layout="vertical" data={parsedReport.operator_efficiency || parsedReport.metrics?.operator_efficiency || []} margin={{ left: 20 }}>
+                                                            <XAxis type="number" hide />
+                                                            <YAxis dataKey="name" type="category" tick={{ fontSize: 9, fontWeight: 700 }} width={80} />
+                                                            <Bar dataKey="score" fill="#10b981" radius={[0, 4, 4, 0]} barSize={20} />
+                                                            <RechartsTooltip />
+                                                        </BarChart>
+                                                    </ResponsiveContainer>
+                                                </div>
+                                            </div>
+
+                                            {/* 5. Defect Root Causes */}
+                                            <div ref={rootCauseRef}>
+                                                <div className="h-[260px] w-full p-6 rounded-2xl bg-slate-50/50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800">
+                                                    <div className="flex items-center gap-2 mb-4">
+                                                        <PieIcon size={16} className="text-warning" />
+                                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Root Cause Attribution</span>
+                                                    </div>
+                                                    <ResponsiveContainer width="100%" height="80%">
+                                                        <PieChart>
+                                                            <Pie
+                                                                data={parsedReport.defect_root_causes || parsedReport.metrics?.defect_root_causes || []}
+                                                                innerRadius={50}
+                                                                outerRadius={70}
+                                                                dataKey="percentage"
+                                                                nameKey="cause"
+                                                                label={({ cause, percentage }) => `${cause}: ${percentage}%`}
+                                                            >
+                                                                {(parsedReport.defect_root_causes || parsedReport.metrics?.defect_root_causes)?.map((entry, index) => (
+                                                                    <Cell key={`cell-${index}`} fill={CHART_COLORS[(index + 4) % CHART_COLORS.length]} />
+                                                                ))}
+                                                            </Pie>
+                                                            <RechartsTooltip />
                                                         </PieChart>
                                                     </ResponsiveContainer>
                                                 </div>

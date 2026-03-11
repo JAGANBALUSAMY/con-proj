@@ -24,12 +24,20 @@ const getAnalysis = async (summary, options = {}) => {
           "stage_efficiency": array,
           "defect_distribution": array,
           "operator_performance": array,
+          "throughput_trend": array,
+          "bottleneck_heatmap": array,
+          "operator_efficiency": array,
+          "defect_root_causes": array,
           "operational_analysis": "string",
           "risk_assessment": "string",
           "recommendations": "string"
         }
 
         Report Requirements:
+        - throughput_trend: Time-series of units (last 7 data points).
+        - bottleneck_heatmap: Identify stages with delays (stage name, delay_factor 0.1-1.0).
+        - operator_efficiency: Rank top 5 (name, efficiency_score 0-100).
+        - defect_root_causes: Breakdown of WHY defects happen (cause, percentage).
         Executive Summary: 2–3 sentences describing the overall production condition.
         Operational Analysis: Explain production efficiency across stages and identify bottlenecks.
         Risk Assessment: Identify quality risks or defect concentration patterns.

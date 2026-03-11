@@ -1,11 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { 
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, 
+    ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, 
+    ComposedChart, Line 
+} from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@frontend/layouts/DashboardLayout';
 import MetricCard from '@frontend/components/dashboard/MetricCard';
 import Badge from '@frontend/components/ui/Badge';
 import api from '@frontend/services/api';
-import { Clock, TrendingUp, AlertTriangle, RefreshCw, Calendar, ArrowLeft, BarChart3, ChevronDown } from 'lucide-react';
+import { 
+    Clock, TrendingUp, AlertTriangle, RefreshCw, Calendar, 
+    ArrowLeft, BarChart3, ChevronDown, Flame, Sparkles, Zap,
+    BarChart2, PieChart as PieIcon
+} from 'lucide-react';
 
 import { useAuth } from '@frontend/store/AuthContext';
 
@@ -20,41 +28,65 @@ const AnalyticsPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [dateRange, setDateRange] = useState({ start: '', end: '' });
+    const [dailyReport, setDailyReport] = useState(null);
+    const [reportLoading, setReportLoading] = useState(true);
 
     const fetchAnalytics = async () => {
         setLoading(true);
         setError(null);
+        setReportLoading(true);
         try {
             const params = {};
             if (dateRange.start) params.startDate = dateRange.start;
             if (dateRange.end) params.endDate = dateRange.end;
 
-            const [effRes, perfRes, defRes] = await Promise.all([
+            // Fetch main analytics and AI report in parallel
+            const [effRes, perfRes, defRes, reportRes] = await Promise.allSettled([
                 api.get('/analytics/efficiency', { params }),
                 api.get('/analytics/performance', { params }),
-                api.get('/analytics/defects', { params })
+                api.get('/analytics/defects', { params }),
+                api.get('/reports/daily/latest')
             ]);
 
-            // Role-based filtering
-            let filteredEff = effRes.data || [];
-            let filteredPerf = perfRes.data || [];
-            let filteredDef = defRes.data || [];
+            // Role-based filtering logic
+            let rawEff = effRes.status === 'fulfilled' ? (effRes.value.data || []) : [];
+            let rawPerf = perfRes.status === 'fulfilled' ? (perfRes.value.data || []) : [];
+            let rawDef = defRes.status === 'fulfilled' ? (defRes.value.data || []) : [];
 
             if (user?.role === 'MANAGER' && user?.sections?.[0]) {
                 const managerSection = user.sections[0];
-                filteredEff = filteredEff.filter(e => e.stage === managerSection);
-                filteredPerf = filteredPerf.filter(p => p.stage === managerSection);
-                filteredDef = filteredDef.filter(d => d.stage === managerSection || !d.stage);
+                rawEff = rawEff.filter(e => e.stage === managerSection);
+                rawPerf = rawPerf.filter(p => p.stage === managerSection);
+                rawDef = rawDef.filter(d => d.stage === managerSection || !d.stage);
             }
 
-            setEfficiency(filteredEff);
-            setPerformance(filteredPerf);
-            setDefects(filteredDef);
+            setEfficiency(rawEff);
+            setPerformance(rawPerf);
+            setDefects(rawDef);
+
+            // Handle report result (safe — never blocks main analytics on failure)
+            if (reportRes.status === 'fulfilled') {
+                try {
+                    const reportData = reportRes.value.data;
+                    if (reportData && reportData.metrics) {
+                        const metrics = typeof reportData.metrics === 'string'
+                            ? JSON.parse(reportData.metrics)
+                            : reportData.metrics;
+                        setDailyReport(metrics);
+                    }
+                } catch (parseErr) {
+                    console.warn('Could not parse AI report data:', parseErr);
+                }
+            } else {
+                // 404 (no reports yet) or 500 (server error) — silently ignore
+                console.warn('AI Report not available:', reportRes.reason?.response?.status === 404 ? 'No report generated yet' : 'Server error');
+            }
         } catch (err) {
             console.error('Error fetching analytics:', err);
             setError('Operational intelligence sync failed.');
         } finally {
             setLoading(false);
+            setReportLoading(false);
         }
     };
 
@@ -126,7 +158,127 @@ const AnalyticsPage = () => {
                     />
                 </div>
 
-                {/* 3. Visualization Grid */}
+                {/* 3. AI-Enhanced Intelligence Synthesis (V10 Expansion) */}
+                {dailyReport && (
+                    <div className="space-y-6">
+                        <div className="flex items-center gap-3 px-1">
+                            <Sparkles size={20} className="text-primary animate-pulse" />
+                            <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">AI-Enhanced Intelligence Synthesis</h3>
+                            <div className="h-px flex-1 bg-slate-100 dark:bg-slate-800" />
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            {/* 1. Factory Throughput Trend */}
+                            <div className="card-saas p-6 border-primary/10 bg-gradient-to-br from-white to-primary/5">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div>
+                                        <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-tighter">Throughput Velocity Projection</h4>
+                                        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">Daily industrial processing volume</p>
+                                    </div>
+                                    <TrendingUp size={18} className="text-primary" />
+                                </div>
+                                <div className="h-[240px] w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart data={dailyReport.throughput_trend || dailyReport.metrics?.throughput_trend || []}>
+                                            <defs>
+                                                <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                                </linearGradient>
+                                            </defs>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.1} />
+                                            <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 700 }} />
+                                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9 }} />
+                                            <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', fontSize: '10px' }} />
+                                            <Area type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
+
+                            {/* 2. Stage Bottleneck Heatmap */}
+                            <div className="card-saas p-6 border-error/10 bg-gradient-to-br from-white to-error/5">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div>
+                                        <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-tighter">Manufacturing Bottleneck Heatmap</h4>
+                                        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">Cross-stage delay factor analysis</p>
+                                    </div>
+                                    <Flame size={18} className="text-error" />
+                                </div>
+                                <div className="h-[240px] w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <ComposedChart data={dailyReport.bottleneck_heatmap || dailyReport.metrics?.bottleneck_heatmap || []}>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.1} />
+                                            <XAxis dataKey="stage" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 700 }} />
+                                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9 }} />
+                                            <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', fontSize: '10px' }} />
+                                            <Bar dataKey="delay_factor" fill="#ef4444" radius={[4, 4, 0, 0]} opacity={0.6} />
+                                            <Line type="monotone" dataKey="delay_factor" stroke="#ef4444" strokeWidth={3} dot={{ fill: '#ef4444', r: 4 }} />
+                                        </ComposedChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
+
+                            {/* 3. Operator Efficiency Ranking */}
+                            <div className="card-saas p-6 border-success/10 bg-gradient-to-br from-white to-success/5">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div>
+                                        <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-tighter">Precision Efficiency Ranking</h4>
+                                        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">Personnel performance benchmarking</p>
+                                    </div>
+                                    <Zap size={18} className="text-success" />
+                                </div>
+                                <div className="h-[240px] w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart layout="vertical" data={dailyReport.operator_efficiency || dailyReport.metrics?.operator_efficiency || []} margin={{ left: 20 }}>
+                                            <XAxis type="number" hide />
+                                            <YAxis dataKey="name" type="category" tick={{ fontSize: 9, fontWeight: 700 }} width={80} />
+                                            <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', fontSize: '10px' }} />
+                                            <Bar dataKey="score" fill="#10b981" radius={[0, 4, 4, 0]} barSize={20}>
+                                                {dailyReport.operator_efficiency?.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={index === 0 ? '#059669' : '#10b981'} />
+                                                ))}
+                                            </Bar>
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
+
+                            {/* 4. Defect Root Cause Chart */}
+                            <div className="card-saas p-6 border-warning/10 bg-gradient-to-br from-white to-warning/5">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div>
+                                        <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-tighter">Yield Root Cause Attribution</h4>
+                                        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">Categorical breakdown of quality loss</p>
+                                    </div>
+                                    <PieIcon size={18} className="text-warning" />
+                                </div>
+                                <div className="h-[240px] w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart>
+                                            <Pie
+                                                data={dailyReport.defect_root_causes || dailyReport.metrics?.defect_root_causes || []}
+                                                innerRadius={60}
+                                                outerRadius={80}
+                                                paddingAngle={5}
+                                                dataKey="percentage"
+                                                nameKey="cause"
+                                            >
+                                                {dailyReport.defect_root_causes?.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', fontSize: '10px' }} />
+                                            <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '9px', fontWeight: 700 }} />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* 4. Native Operational Analysis Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     {/* Efficiency Chart */}
                     <div className="lg:col-span-12 xl:col-span-8 card-saas p-6">

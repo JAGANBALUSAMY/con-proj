@@ -32,6 +32,30 @@ const ReportSchema = z.object({
             units: z.number()
         })
     ),
+    throughput_trend: z.array(
+        z.object({
+            label: z.string(),
+            value: z.number()
+        })
+    ).optional(),
+    bottleneck_heatmap: z.array(
+        z.object({
+            stage: z.string(),
+            delay_factor: z.number()
+        })
+    ).optional(),
+    operator_efficiency: z.array(
+        z.object({
+            name: z.string(),
+            score: z.number()
+        })
+    ).optional(),
+    defect_root_causes: z.array(
+        z.object({
+            cause: z.string(),
+            percentage: z.number()
+        })
+    ).optional(),
     operational_analysis: z.string().optional(),
     risk_assessment: z.string().optional(),
     recommendations: z.string().optional(),
@@ -121,8 +145,13 @@ const getLatestReport = async (req, res) => {
 
         return res.json(report);
     } catch (error) {
-        console.error('Fetch Latest Report Error:', error);
-        return res.status(500).json({ error: 'Failed to fetch the latest report' });
+        console.error('Fetch Latest Report Error:', {
+            message: error.message,
+            code: error.code,
+            meta: error.meta,
+            stack: error.stack?.split('\n').slice(0, 4).join('\n')
+        });
+        return res.status(500).json({ error: 'Failed to fetch the latest report', detail: error.message });
     }
 };
 

@@ -4,7 +4,7 @@ import TableView from '@frontend/components/tables/TableView';
 import { useTable } from '@frontend/components/tables/useTable';
 import Badge from '@frontend/components/ui/Badge';
 import api from '@frontend/services/api';
-import { History, RefreshCcw } from 'lucide-react';
+import { History as HistoryIcon, RefreshCcw } from 'lucide-react';
 
 const HistoryPage = () => {
     const [logs, setLogs] = useState([]);
@@ -63,7 +63,7 @@ const HistoryPage = () => {
             <div className="space-y-6">
                 <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3">
-                        <History className="text-primary" size={24} />
+                        <HistoryIcon className="text-primary" size={24} />
                         <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Your Submission History</h2>
                     </div>
                     <button
