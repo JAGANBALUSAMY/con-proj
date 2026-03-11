@@ -9,16 +9,16 @@ Any violation **MUST be rejected**.
 
 ## 1. Architecture Constraints
 
-- Frontend: React + Vite (UI only)
-- Backend: Node.js + Express + Prisma
-- AI Service: Python FastAPI (**STRICTLY READ-ONLY**)
-- Database: PostgreSQL
-- Communication: REST APIs only
+- **Frontend**: React 19 + Vite (Modern, Dark-Mode aesthetics)
+- **Backend**: Node.js + Express 5 + Prisma ORM
+- **AI Service**: Node.js + Ollama (Local inference, **STRICTLY READ-ONLY**)
+- **Database**: PostgreSQL (Prisma-managed schema)
+- **Structure**: Modular Monorepo with absolute path aliases
 
 ### Rules
-- Frontend must **NEVER** access the database directly
-- AI service must **NEVER** write to the database
-- Backend is the **ONLY** layer allowed to mutate data
+- Frontend must **NEVER** access the database directly.
+- AI service must **NEVER** write to the production database directly; it returns structured insights to the Backend.
+- Backend is the **ONLY** layer allowed to mutate production data.
 
 ---
 

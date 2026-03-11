@@ -1,399 +1,187 @@
-# Factory Production System
+# BRIEFSYNC | Industrial Intelligence Platform
 
-A batch-based production tracking system for garment manufacturing with strict role-based access control, approval workflows, and section isolation.
+A high-fidelity, batch-based production tracking and industrial intelligence system designed for modern manufacturing. BRIEFSYNC provides real-time visibility, AI-driven performance synthesis, and strict governance across the production floor.
 
-## 🎯 Project Overview
+# Project Overview
 
-This system manages the complete lifecycle of garment production batches through multiple stages (Cutting → Stitching → Quality Check → Labeling → Folding → Packing) with a hierarchical user management system and approval-gated workflows.
+BRIEFSYNC is a comprehensive manufacturing execution system (MES) designed to digitize the complete lifecycle of garment production. By tracking batches through a modular traversal system—from initial cutting to final packing—it eliminates manual paperwork and provides stakeholders with actionable data.
 
-### Key Features
+**Problem Solved**: Manufacturing floors often suffer from fragmented data, lack of real-time visibility, and complex quality control loops. BRIEFSYNC solves this by enforcing a strict role-based governance model and unifying all production metrics into an AI-enhanced dashboard.
 
-- **Role-Based Access Control**: ADMIN → MANAGER → OPERATOR hierarchy
-- **Batch Start Gate**: Batches must be started by a Manager before work can begin
-- **Approval Workflows**: Production logs require Manager approval before batch progression
-- **Quantity Ledger**: Strict tracking of output-to-input consistency across the entire lifecycle
-- **Section Isolation**: Managers and Operators are restricted to assigned production sections
-- **Verification System**: Operators must be verified by their creating Manager before login
-- **Audit Trails**: Complete tracking of who created, verified, and approved each action
-- **Infrastructure Safeguards**: Server-side pagination, WebSocket standardization, and 60s auto-refresh fallbacks
+**Target Users**: 
+*   **Factory Owners/Admins**: Seeking executive-level intelligence and system-wide governance.
+*   **Production Managers**: Managing approval workflows, team verification, and sectional throughput.
+*   **Station Operators**: Logging real-time production units and quality metrics at specific workstations.
 
-## 🏗️ Architecture
+**Key Capabilities**:
+*   Automated AI synthesis of daily production performance.
+*   Strict quantity integrity via a specialized Quality Control Ledger.
+*   Real-time factory timeline synchronization via WebSockets.
+*   Professional PDF reporting for executive shareholders.
 
-### Tech Stack
+# Features
 
-**Backend**:
-- Node.js + Express.js
-- PostgreSQL with Prisma ORM
-- JWT Authentication with bcrypt
-- Socket.IO for real-time dashboard refreshes
-- RESTful API
+*   **Role-Based Access Control (RBAC)**: Fine-grained permissions for Admin, Manager, and Operator roles.
+*   **AI Executive Summaries**: Localized LLM (Ollama) integration for generating strategic production insights.
+*   **Live Production Timeline**: A real-time stream of all factory-floor activities using Socket.IO.
+*   **Multi-Stage Tracking**: Structured batch traversal through Cutting, Stitching, QC, Labeling, Folding, and Packing.
+*   **Quality Ledger Model**: Professional defect tracking with support for re-QC passes and rework loops.
+*   **Interactive Analytics**: Responsive chart suites for stage efficiency, operator performance, and yield analysis.
+*   **PDF Intelligence Reports**: One-click generation of high-fidelity production reports with embedded charts.
 
-**Frontend**:
-- React 18 + Vite
-- React Router for routing
-- Axios for API calls
-- Lucide React for iconography
-- Context API for state management
+# System Architecture
 
-### Database Schema
+BRIEFSYNC utilizes a modular monorepo architecture designed for scalability and high-performance data processing.
 
-**Core Models**:
-- `User` - ADMIN, MANAGER, OPERATOR with verification status
-- `SectionAssignment` - Maps users to production stages
-- `Batch` - Production batches with stage tracking and ledger pools
-- `ProductionLog` - Work records with approval status
-- `ReworkRecord` - Defect correction tracking with approval
-- `DefectRecord` - Quality issues tracking
-- `Machine` - Production equipment
-- `Box` - Final product packaging (Internal)
+*   **Frontend**: A modern Single Page Application (SPA) built with React 19, focusing on high-density data visualization and low-latency interaction.
+*   **Backend**: A RESTful API built on Express 5, implementing strict Zod validation and structured repository patterns.
+*   **Database**: A relational PostgreSQL database managed through the Prisma ORM for type-safe queries and logical migrations.
+*   **AI Layer**: A dedicated intelligence engine that interfaces with a local Ollama instance to perform off-line inference on production datasets.
+*   **Infrastructure**: Layered monorepo with absolute path aliases (`#backend`, `#frontend`, `#infra`, `#ai`) for clean dependency management.
 
-## 🚀 Getting Started
+# Technology Stack
+
+*   **Frontend**: React 19, Vite, Tailwind CSS 4, Framer Motion, Recharts, Lucide Icons.
+*   **Backend**: Node.js, Express 5, Socket.IO, JSON Web Tokens (JWT), BcryptJS.
+*   **Database**: PostgreSQL, Prisma ORM.
+*   **AI / ML**: Ollama (LLM Engine), Llama 3 (Model), Zod (Schema Validation).
+*   **Tools**: Axios, jsPDF, html2canvas, Nodemon.
+
+# Project Folder Structure
+
+```text
+con-proj/
+├── Backend/             # Express API, Controllers, and Business Logic
+│   └── src/             # Application source code
+├── Frontend/            # React Client Application
+│   └── src/             # Components, Pages, and Global Context
+├── AI/                  # Intelligence Engine and Inference Pipelines
+│   └── inference/       # Local LLM prompting and synthesis logic
+├── Infrastructure/      # Shared assets and Database configuration
+│   └── database/        # Prisma Schema, Migrations, and Seeding Scripts
+├── docs/                # Technical documentation and system constraints
+├── package.json         # Workspace manifest and root automation scripts
+└── README.md            # Project documentation
+```
+
+# Installation Guide
 
 ### Prerequisites
+*   **Node.js**: v20.0.0 or higher
+*   **PostgreSQL**: v14.0 or higher
+*   **Ollama**: Installed and running locally (required for AI features)
+
+### Step-by-Step Setup
+
+1.  **Clone the Repository**
+    ```bash
+    git clone <repository-url>
+    cd con-proj
+    ```
+
+2.  **Install Dependencies**
+    ```bash
+    npm install
+    ```
+
+3.  **Environment Configuration**
+    Create a `.env` file in the root directory (and specifically in `Backend/` if required):
+    ```env
+    DATABASE_URL="postgresql://user:password@localhost:5432/briefsync_db"
+    JWT_SECRET="your_secure_secret"
+    OLLAMA_HOST="http://localhost:11434"
+    PORT=5000
+    ```
+
+4.  **Database Initialization**
+    ```bash
+    # Generate Prisma Client
+    npm run prisma:generate
+    
+    # Run Migrations
+    npm run prisma:migrate
+    
+    # Seed Initial Data (Admin Account + Sections)
+    npm run prisma:seed:rich
+    ```
+
+5.  **Running the Platform**
+    
+    *   **Terminal 1 (Backend)**:
+        ```bash
+        npm run dev:backend
+        ```
+    *   **Terminal 2 (Frontend)**:
+        ```bash
+        npm run dev:frontend
+        ```
+
+# Usage
+
+After installation, access the platform at `http://localhost:5173`.
+
+*   **Administrators**: Use the Admin Hub to create Manager partitions and view factory-wide executive intelligence.
+*   **Managers**: Access the Operations Center to approve operator logs, verify new team members, and monitor active batches.
+*   **Operators**: Access the Production Terminal to log work, track personal history, and view workstation assignments.
+
+# API Endpoints
+
+| Endpoint | Method | Purpose |
+| :--- | :--- | :--- |
+| `/api/auth/login` | POST | Authenticate user via Employee Code |
+| `/api/dashboard/admin` | GET | Comprehensive factory statistics (Admin) |
+| `/api/ai/report` | POST | Generate/Regenerate AI synthesis using Ollama |
+| `/api/approvals/production/:id/approve` | PATCH | Approve an operator's production submission |
+| `/api/analytics/summary` | GET | Aggregated throughput and defect metrics |
+| `/api/users/operator` | POST | Create a new production operator (Manager) |
+
+# AI / ML Components
+
+BRIEFSYNC leverages a local **Ollama** engine to maintain data privacy while providing enterprise-grade insights.
+
+*   **Model**: Llama 3 (8B) optimized for high-speed local inference.
+*   **Workflow**: The backend aggregates raw production records into a structured CSV/JSON summary, which is then passed to the AI engine with a specific "Industrial Analyst" prompt.
+*   **Optimization**: Implements a deterministic hashing mechanism for report caching to avoid redundant LLM invocations for identical datasets.
+*   **Validation**: All AI outputs are validated against a strict Zod schema to ensure JSON structure integrity before UI rendering.
+
+# Deployment
+
+### Containerization
+A production-ready `Dockerfile` (to be added) can be used to wrap the Node.js backend. The frontend should be built and served as static assets.
+
+### Cloud Configuration
+*   **Database**: AWS RDS (PostgreSQL) or similar.
+*   **Storage**: S3 for persistent PDF storage if necessary.
+*   **Inference**: A dedicated EC2 instance with GPU support is recommended for Ollama if running in the cloud.
+
+# Screenshots or Demo
+
+*   **Live UI Preview**: [Insert Screenshot URL Here]
+*   **Interactive Demo**: [Insert Link to Staging/Demo Environment]
+
+# Future Improvements
+
+*   **IoT Integration**: Direct machine-to-cloud logging via MQTT/ESP32.
+*   **Mobile App**: Dedicated Flutter or React Native app for floor supervisors.
+*   **Predictive Maintenance**: Using production logs to predict machine failure points.
+*   **Inventory Tracking**: Integration with raw material procurement (WMS).
+
+# Contributing
+
+1.  Fork the repository.
+2.  Create a feature branch (`git checkout -b feature/NewFeature`).
+3.  Commit your changes (`git commit -m 'Add some NewFeature'`).
+4.  Push to the branch (`git push origin feature/NewFeature`).
+5.  Open a Pull Request.
 
-- Node.js (v18+)
-- PostgreSQL (v14+)
-- npm or yarn
-
-### Installation
-
-1. **Clone the repository**
-```bash
-git clone <repository-url>
-cd con-proj
-```
-
-2. **Install dependencies**
-```bash
-# Backend
-cd apps/backend
-npm install
-
-# Frontend
-cd ../frontend
-npm install
-```
-
-3. **Configure environment variables**
-
-Create `apps/backend/.env`:
-```env
-DATABASE_URL="postgresql://factory_user:1234@localhost:5432/briefs_factory_db"
-JWT_SECRET=your-super-secret-key-here
-JWT_EXPIRES_IN=8h
-PORT=5000
-```
-
-4. **Set up the database**
-```bash
-cd apps/backend
-
-# Run migrations
-npx prisma migrate dev
-
-# Seed initial ADMIN account
-npm run prisma:seed
-```
-
-5. **Start the development servers**
-```bash
-# Terminal 1 - Backend
-cd apps/backend
-npm run dev
-
-# Terminal 2 - Frontend
-cd apps/frontend
-npm run dev
-```
-
-6. **Access the application**
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:5000
-
-### Default Credentials
-
-**Admin Account** (created by seed):
-- Employee Code: `ADMIN001`
-- Password: `admin123`
-
-**Demo Manager** (if created):
-- Employee Code: `EMP001`
-- Password: `1234`
-
-## 📁 Project Structure
-
-```
-con-proj/
-├── apps/
-│   ├── backend/
-│   │   ├── prisma/
-│   │   │   ├── schema.prisma
-│   │   │   ├── seed.js
-│   │   │   └── migrations/
-│   │   ├── src/
-│   │   │   ├── controllers/
-│   │   │   │   ├── authController.js
-│   │   │   │   ├── userController.js
-│   │   │   │   ├── dashboardController.js
-│   │   │   │   └── approvalController.js
-│   │   │   ├── middleware/
-│   │   │   │   └── authMiddleware.js
-│   │   │   ├── routes/
-│   │   │   │   ├── authRoutes.js
-│   │   │   │   ├── userRoutes.js
-│   │   │   │   ├── dashboardRoutes.js
-│   │   │   │   └── approvalRoutes.js
-│   │   │   ├── utils/
-│   │   │   │   ├── jwt.js
-│   │   │   │   └── prisma.js
-│   │   │   └── app.js
-│   │   └── package.json
-│   └── frontend/
-│       ├── src/
-│       │   ├── components/
-│       │   │   ├── Layout/
-│       │   │   ├── ProtectedRoute/
-│       │   │   └── DashboardRedirect/
-│       │   ├── context/
-│       │   │   └── AuthContext.jsx
-│       │   ├── pages/
-│       │   │   ├── Login/
-│       │   │   ├── AdminDashboard/
-│       │   │   ├── ManagerDashboard/
-│       │   │   └── OperatorDashboard/
-│       │   ├── utils/
-│       │   │   └── api.js
-│       │   ├── App.jsx
-│       │   └── main.jsx
-│       └── package.json
-├── docs/
-│   ├── CONSTRAINTS.md
-│   ├── PROJECT_TRACKER.md
-│   └── AUTHORIZATION_EXAMPLES.md
-└── README.md
-```
-
-## 🔐 User Roles & Permissions
-
-### ADMIN
-- **Capabilities**:
-  - Create Manager accounts
-  - Assign Managers to production sections
-  - View global factory statistics (read-only)
-  - Access system health logs
-- **Restrictions**:
-  - Cannot approve production work (governance-only role)
-
-### MANAGER
-- **Capabilities**:
-  - Create Operator accounts (inherit Manager's sections)
-  - Verify Operators (PENDING → VERIFIED)
-  - Approve/Reject production logs
-  - Approve/Reject rework records (for defects originating in their section)
-  - View team members and their work
-  - View active batches in assigned sections
-- **Restrictions**:
-  - Can only manage Operators they created
-  - Limited to assigned production sections
-  - Cannot approve work from other Managers' operators
-
-### OPERATOR
-- **Capabilities**:
-  - Log production work (PENDING status)
-  - Record defects and rework
-  - View personal work history
-  - View batches in assigned section
-- **Restrictions**:
-  - Must be VERIFIED to log in
-  - Limited to assigned production sections
-  - Cannot approve own work
-
-## 🎨 Current Features
-
-### ✅ Fully Implemented
-
-- **Authentication System**
-  - Employee code-based login
-  - JWT token management
-  - Password hashing with bcrypt
-  - Auto-logout on token expiration
-
-- **Admin Dashboard**
-  - System statistics (users, batches, sections)
-  - Create Manager accounts with section assignment
-  - Create new batches (cloth intake planning)
-  - System health monitoring
-
-- **Manager Dashboard**
-  - Production approval queue
-  - Rework approval queue
-  - Team overview with verification status
-  - Create Operator accounts
-  - Verify Operators (one-click)
-  - Create new batches (section isolation enforced)
-  - Active batches in assigned sections
-
-- **Operator Dashboard**
-  - View batches in assigned section (section isolation enforced)
-  - Log production work with time tracking
-  - Work log modal with validation (endTime >= startTime)
-  - Personal work history with approval status
-  - All logs created with PENDING status (requires Manager approval)
-
-- **User Management**
-  - Hierarchical user creation (ADMIN → MANAGER → OPERATOR)
-  - Section inheritance (Operators inherit Manager's sections)
-  - Verification workflow (PENDING → VERIFIED)
-  - Ownership tracking and enforcement
-
-- **Authorization**
-  - Role-based middleware
-  - Section isolation
-  - Ownership checks
-  - Admin governance bypass (read-only)
-
-- **Production Workflow**
-  - Batch creation (ADMIN/MANAGER with section isolation)
-  - **Batch Start Gate**: Manager must explicitly start a batch before operators see it
-  - **Work Isolation**: Operators only see batches active in their station that aren't pending approval
-  - Manager approval workflow with automated stage advancement
-  - Section-based batch filtering and real-time dashboard refreshes (Socket.IO)
-- **Infrastructure & Reliability**
-  - **Server-Side Pagination**: Efficient data loading for large user and batch lists
-  - **WebSocket Standardization**: Centralized event definitions for predictable real-time updates
-  - **Auto-Refresh Fallback**: 60-second background polling ensuring dashboard accuracy
-  - **Backend Role Enforcement**: Strict API-level validation of roles and section permissions
-
-- **Operator Section Transfer**
-  - Select operator → Target section → Target Manager workflow
-  - Approval-gated mobility (Constraint 12)
-  - Auto-cleanup of stale assignments (Constraint 9)
-  - Ownership preservation (Constraint 8)
-
-- **Rework Management (Direct-Fix Model)**
-  - Direct Sectional routing (Cutting/Stitching handle their own fixes)
-  - Manager approval workflow locked to origin section
-  - Dynamic "Log Rework" actions on Operator Dashboard
-  - Static rework stage assignment (No mediator dropdown)
-
-- **Advanced Production Stages**
-  - **Labeling, Folding, Packing**: Strict quantity gating (Input = Output = Usable).
-  - **Packing & Export**: Box creation and batch completion on approval.
-  - **Quality Check (Ledger Model)**: Strict tracking of Cleared, Defective, Cured, and Scrapped quantities. Pool-based inspection (Initial vs Re-QC).
-  - **Quantity Integrity**: Mid-flow quantity fixes ensure "Previous Out = Current In" consistency (e.g., Stitching receives exactly what Cutting produced).
-
-### ❌ Not Yet Implemented
-
-- *None - All core functional requirements are satisfied.*
-
-## 🔧 API Endpoints
-
-### Authentication
-- `POST /api/auth/login` - Login with employee code and password
-
-### User Management
-- `POST /api/users/manager` - Create Manager (Admin only)
-- `POST /api/users/operator` - Create Operator (Manager only)
-- `PATCH /api/users/:id/verify` - Verify Operator (Manager only)
-- `GET /api/users` - Get all users (Admin only)
-
-### Dashboards
-- `GET /api/dashboard/admin` - Admin statistics
-- `GET /api/dashboard/manager` - Manager data (team, approvals, batches)
-- `GET /api/dashboard/operator` - Operator data (batches, logs)
-
-### Approvals
-- `PATCH /api/approvals/production/:id/approve` - Approve production log
-- `PATCH /api/approvals/production/:id/reject` - Reject production log
-- `PATCH /api/approvals/rework/:id/approve` - Approve rework record
-
-## 🧪 Testing the System
-
-### API-Based End-to-End Verification (NEW)
-The system includes a robust E2E test suite that simulates a complete 100-unit batch lifecycle.
-
-**Run the E2E Test Suite:**
-```bash
-cd apps/backend
-npm run test:e2e
-```
-
-**What the E2E test verifies:**
-1. High-fidelity batch creation and user setup.
-2. Full 9-stage production traversal (Cutting → Packing).
-3. Complex Quality Check ledger balancing (Initial QC vs Re-QC).
-4. Sectional Rework routing and cross-section approval authority.
-5. Final Batch Completion with 100% quantity integrity.
-
-### Manual End-to-End Workflow
-
-1. **Login as Admin** (`ADMIN001` / `admin123`)
-   - Create a Manager with sections (e.g., CUTTING, STITCHING)
-
-2. **Login as Manager** (use credentials you created)
-   - Create an Operator
-   - Verify the Operator (click "Verify" button)
-
-3. **Login as Operator** (use credentials you created)
-   - View assigned section
-   - (Work logging UI coming soon)
-
-4. **Back to Manager**
-   - View approval queue
-   - Approve/Reject work
-
-## 📊 Database Migrations
-
-All migrations are in `apps/backend/prisma/migrations/`:
-
-1. `20260204083945_init` - Initial schema
-2. `20260206034554_approval_and_audit_final` - Approval fields for ProductionLog
-3. `20260207090611_sync_rework_approval_fields` - Approval fields for ReworkRecord
-
-To reset the database:
-```bash
-cd apps/backend
-npx prisma migrate reset
-npm run prisma:seed
-```
-
-## 🐛 Known Issues & Fixes
-
-All critical issues have been resolved:
-- ✅ JWT_SECRET configuration
-- ✅ Manager Dashboard 500 error (ReworkRecord schema sync)
-- ✅ Login case sensitivity (normalized to uppercase)
-- ✅ Admin bypass for read operations
-
-## 🛣️ Roadmap
-
-### 🎉 Phase 1: Completed
-- [x] Hierarchical RBAC & Governance
-- [x] Full Production Workflow (Cutting → Packing)
-- [x] Direct Sectional Rework Model
-- [x] Quality Control & Defect Tracking
-- [x] Automated Time Capture & Hardening
-- [x] Production Analytics Dashboard
-- [x] QC Ledger Model (Quantity Integrity & Re-QC)
-- [x] API-Based E2E Production Lifecycle Test
-- [x] Batch Start Approval Gate
-- [x] Shipment Removal & Dashboard Consolidation
-- [x] Infrastructure Safeguards (Pagination, WS Constants, Auto-Refresh)
-
-## 📝 Documentation
-
-- `docs/CONSTRAINTS.md` - Business rules and data integrity requirements
-- `docs/PROJECT_TRACKER.md` - Complete development timeline and daily logs
-- `docs/AUTHORIZATION_EXAMPLES.md` - Middleware usage examples
-
-## 🤝 Contributing
-
-This is a private factory management system. For questions or issues, contact the development team.
-
-## 📄 License
-
-Proprietary - All rights reserved
+# License
+
+Proprietary - All rights reserved. Registered to BRIEFSYNC Industrial Systems.
+
+# Author / Credits
+
+*   **Lead Architect**: Project Team
+*   **Core Contributors**: BRIEFSYNC Development Partners
 
 ---
-
-**Current Status**: 100% Core Complete | **Last Updated**: March 07, 2026
+*Last Protocol Update: March 2026*
