@@ -16,6 +16,7 @@ const reworkRoutes = require('#backend/routes/reworkRoutes');
 const analyticsRoutes = require('#backend/routes/analyticsRoutes');
 const machineRoutes = require('#backend/routes/machineRoutes');
 const aiRoutes = require('#backend/routes/aiRoutes');
+const reportRoutes = require('#backend/routes/reportRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -40,6 +41,7 @@ app.use('/api/rework', reworkRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/machines', machineRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/reports', reportRoutes);
 
 // Root test route
 app.get('/', (req, res) => {

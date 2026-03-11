@@ -62,8 +62,19 @@ const restrictToSection = (...allowedSections) => {
     };
 };
 
+const validateServiceToken = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    const serviceToken = process.env.SERVICE_TOKEN || 'n8n-factory-secret-2024';
+
+    if (!authHeader || authHeader !== `Bearer ${serviceToken}`) {
+        return res.status(401).json({ error: 'Unauthorized: Invalid service token' });
+    }
+    next();
+};
+
 module.exports = {
     protect,
     restrictTo,
     restrictToSection,
+    validateServiceToken
 };

@@ -152,9 +152,61 @@ const getOperatorRankings = async () => {
     }));
 };
 
+/**
+ * Aggregate daily production metrics for n8n/AI consumption
+ */
+const getDailySummary = async (dateStr) => {
+    const reportDate = new Date(dateStr || new Date());
+    reportDate.setUTCHours(0, 0, 0, 0);
+
+    const nextDay = new Date(reportDate);
+    nextDay.setUTCDate(reportDate.getUTCDate() + 1);
+
+    const where = {
+        approvalStatus: 'APPROVED',
+        startTime: {
+            gte: reportDate,
+            lt: nextDay
+        }
+    };
+
+    // 1. Throughput (Quantity Out)
+    const throughput = await analyticsRepository.getProductionLogGroupBy(where, ['stage']);
+
+    // 2. Completed Batches
+    const completedBatches = await analyticsRepository.getBatchCount({
+        status: 'COMPLETED',
+        updatedAt: {
+            gte: reportDate,
+            lt: nextDay
+        }
+    });
+
+    // 3. Efficiency (Avg Duration per Stage)
+    const efficiency = await getProductionEfficiency({ startDate: reportDate, endDate: nextDay }, { role: 'ADMIN' });
+
+    // 4. Quality (Defect Counts)
+    const defects = await getDefectStats({ startDate: reportDate, endDate: reportDate }, { role: 'ADMIN' });
+    const defectSummaryTop5 = defects.slice(0, 5);
+
+    // 5. Operator Winners
+    const rankings = await getOperatorRankings();
+    const topOperatorsTop5 = rankings.slice(0, 5);
+
+    return {
+        reportDate,
+        totalBatches: await analyticsRepository.getBatchCount({ createdAt: { gte: reportDate, lt: nextDay } }),
+        completedBatches,
+        avgStageTimes: Object.fromEntries(Object.entries(efficiency).slice(0, 6)), // Limit to 6 stages
+        defectSummaryTop5,
+        topOperatorsTop5
+    };
+};
+
 module.exports = {
     getProductionEfficiency,
     getOperatorPerformance,
     getDefectStats,
-    getOperatorRankings
+    getOperatorRankings,
+    getDailySummary
 };

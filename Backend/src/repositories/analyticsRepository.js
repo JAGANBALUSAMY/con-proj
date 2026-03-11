@@ -86,10 +86,18 @@ const getTopPerformers = async (where, take = 10) => {
     });
 };
 
+/**
+ * Get count of batches based on filters
+ */
+const getBatchCount = async (where) => {
+    return await prisma.batch.count({ where });
+};
+
 module.exports = {
     getApprovedLogsForEfficiency,
     getProductionLogGroupBy,
     getDefectRecordGroupBy,
     findUserById,
-    getTopPerformers
+    getTopPerformers,
+    getBatchCount
 };

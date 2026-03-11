@@ -12,6 +12,7 @@
         "dev:backend": "npm run dev --workspace=Backend",
         "dev:frontend": "npm run dev --workspace=Frontend",
         "test:backend": "npm run test:e2e --workspace=Backend",
-        "prisma:generate": "npm run prisma:generate --workspace=Backend"
+        "prisma:generate": "npm run prisma:generate --workspace=Backend",
+        "prisma:seed:rich": "npm run prisma:seed:rich --workspace=Backend"
     }
 }

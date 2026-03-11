@@ -133,8 +133,10 @@ const getAggregatedSummary = async (filters) => {
     };
 };
 
+const analyst = require('con-proj-ai/inference/analyst');
+
 /**
- * Generate AI Report using local Ollama model.
+ * Generate AI Report using local AI orchestration.
  */
 const generateAIReport = async (req, res) => {
     try {
@@ -155,67 +157,47 @@ const generateAIReport = async (req, res) => {
             });
 
             if (cachedReport) {
-                return res.json({ report: cachedReport.reportText, cached: true });
+                // Parse if it's a JSON string
+                let reportData = cachedReport.reportText;
+                try {
+                    reportData = JSON.parse(cachedReport.reportText);
+                } catch (e) {
+                    // Fallback to raw text if parsing fails (legacy reports)
+                }
+                return res.json({ report: reportData, cached: true });
             }
         }
 
         // Fetch aggregated data
         const summary = await getAggregatedSummary(filters);
 
-        // Interact with Ollama
-        const prompt = `You are an industrial production analyst.
+        // Analyze using orchestrated analyst
+        const result = await analyst.getAnalysis(summary, {
+            model: process.env.AI_MODEL || 'llama3',
+            fallbackOnFailure: process.env.AI_FALLBACK_ON_FAILURE !== 'false'
+        });
 
-Analyze the manufacturing summary provided.
-
-Focus on:
-- production efficiency
-- stage delays
-- defect patterns
-- operator productivity
-
-Do NOT invent numbers. Only use the data provided.
-
-Write a concise report (120–200 words).
-
-Data:
-${JSON.stringify(summary, null, 2)}`;
-
-        try {
-            const ollamaRes = await axios.post('http://localhost:11434/api/generate', {
-                model: 'llama3', // or 'mistral'
-                prompt: prompt,
-                stream: false
-            }, {
-                timeout: 10000 // 10s timeout
-            });
-
-            const generatedText = ollamaRes.data.response;
-
-            // Save to cache (update if exists during regenerate)
-            const report = await prisma.aIReport.upsert({
-                where: { filterHash },
-                update: {
-                    reportText: generatedText,
-                    generatedAt: new Date(),
-                    generatedBy: req.user.userId
-                },
-                create: {
-                    filterHash,
-                    filters: filters,
-                    reportText: generatedText,
-                    generatedBy: req.user.userId
-                }
-            });
-
-            return res.json({ report: report.reportText, cached: false });
-
-        } catch (ollamaErr) {
-            console.error('Ollama Service Error:', ollamaErr.message);
-            if (ollamaErr.code === 'ECONNABORTED') {
-                return res.status(504).json({ error: 'AI generation timed out (10s limit).' });
+        // Save to cache (update if exists during regenerate)
+        const report = await prisma.aIReport.upsert({
+            where: { filterHash },
+            update: {
+                reportText: JSON.stringify(result.data),
+                generatedAt: new Date(),
+                generatedBy: req.user.userId
+            },
+            create: {
+                filterHash,
+                filters: filters,
+                reportText: JSON.stringify(result.data),
+                generatedBy: req.user.userId
             }
-            return res.status(503).json({ error: 'Local AI service unavailable. Please ensure Ollama is running.' });
-        }
+        });
+
+        return res.json({
+            report: result.data, // Send the object directly
+            cached: false,
+            method: result.method
+        });
 
     } catch (error) {
         console.error('AI Report Error:', error);

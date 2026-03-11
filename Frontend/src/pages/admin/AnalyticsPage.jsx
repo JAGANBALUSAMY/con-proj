@@ -140,7 +140,7 @@ const AnalyticsPage = () => {
                             </div>
                         </div>
                         <div className="h-[350px] w-full relative">
-                            <ResponsiveContainer width="100%" height="100%">
+                            <ResponsiveContainer width="100%" height="100%" debounce={100}>
                                 <BarChart data={efficiency} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#CBD5E1" strokeOpacity={0.2} />
                                     <XAxis dataKey="stage" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 800, fill: '#64748B' }} />
@@ -163,7 +163,7 @@ const AnalyticsPage = () => {
                             <AlertTriangle size={20} className="text-amber-500" />
                         </div>
                         <div className="h-[300px] w-full relative">
-                            <ResponsiveContainer width="100%" height="100%">
+                            <ResponsiveContainer width="100%" height="100%" debounce={100}>
                                 <PieChart>
                                     <Pie
                                         data={defects}

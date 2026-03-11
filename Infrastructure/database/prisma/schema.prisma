@@ -140,15 +140,12 @@ model User {
   aiReports AIReport[]
 }
 
-model AIReport {
+model DailyReport {
   id          Int      @id @default(autoincrement())
-  filterHash  String   @unique
-  filters     Json
-  reportText  String
+  reportDate  DateTime @unique // Normalized: YYYY-MM-DDT00:00:00Z
+  summary     String
+  metrics     Json     // Stores key KPIs {throughput, defectRate, topOperatorUnits}
   generatedAt DateTime @default(now())
-  generatedBy Int
-
-  user User @relation(fields: [generatedBy], references: [id])
 }
 
 model SectionAssignment {

@@ -12,21 +12,23 @@
         "prisma:generate": "prisma generate --schema=../Infrastructure/database/prisma/schema.prisma",
         "prisma:migrate": "prisma migrate dev",
         "prisma:seed": "prisma db seed",
+        "prisma:seed:rich": "node ../Infrastructure/database/seeds/rich_seed.js",
         "test:e2e": "jest tests/e2e-batch-flow.test.js --runInBand --forceExit"
     },
     "dependencies": {
-        "con-proj-ai": "file:../AI",
-        "con-proj-infra": "file:../Infrastructure",
         "@prisma/client": "^5.10.0",
         "axios": "^1.13.6",
         "bcryptjs": "^2.4.3",
+        "con-proj-ai": "file:../AI",
+        "con-proj-infra": "file:../Infrastructure",
         "cors": "^2.8.6",
         "dotenv": "^17.2.3",
         "express": "^5.2.1",
         "jsonwebtoken": "^9.0.3",
         "morgan": "^1.10.1",
         "pg": "^8.18.0",
-        "socket.io": "^4.8.3"
+        "socket.io": "^4.8.3",
+        "zod": "^4.3.6"
     },
     "devDependencies": {
         "jest": "^30.2.0",

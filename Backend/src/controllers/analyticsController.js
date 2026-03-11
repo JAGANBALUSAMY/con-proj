@@ -52,9 +52,24 @@ const getOperatorRankings = async (req, res) => {
     }
 };
 
+/**
+ * Get Daily Summary for n8n automation
+ */
+const getDailySummary = async (req, res) => {
+    try {
+        const { date } = req.query;
+        const summary = await analyticsService.getDailySummary(date);
+        return res.json(summary);
+    } catch (error) {
+        console.error('Daily Summary Error:', error);
+        return res.status(500).json({ error: 'Failed to fetch daily summary' });
+    }
+};
+
 module.exports = {
     getProductionEfficiency,
     getOperatorPerformance,
     getDefectStats,
-    getOperatorRankings
+    getOperatorRankings,
+    getDailySummary
 };

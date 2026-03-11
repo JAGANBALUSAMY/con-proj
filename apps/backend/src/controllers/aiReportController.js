@@ -163,52 +163,69 @@ const generateAIReport = async (req, res) => {
         // Fetch aggregated data
         const summary = await getAggregatedSummary(filters);
 
-        // Interact with Ollama
-        const prompt = `You are an industrial production analyst.
+        // Prepare structured prompt
+        const prompt = `You are an industrial production analytics system.
+        Analyze the provided manufacturing metrics and return ONLY valid JSON.
+        Do NOT include markdown backticks. Do NOT include explanations.
+        
+        Return exactly this schema:
+        {
+          "summary": "Concise performance overview string",
+          "kpis": {
+            "total_batches": number,
+            "units_processed": number,
+            "defect_rate": number,
+            "top_operator": "string"
+          },
+          "stage_efficiency": [{"stage": "string", "avg_time": number}],
+          "defect_distribution": [{"defect": "string", "count": number}],
+          "operator_performance": [{"operator": "string", "units": number}],
+          "chart_insights": {
+            "efficiency": "One sentence analyzing the stage durations",
+            "defects": "One sentence analyzing the defect distribution"
+          },
+          "insight": "Professional deep-dive recommendation < 40 words"
+        }
 
-Analyze the manufacturing summary provided.
-
-Focus on:
-- production efficiency
-- stage delays
-- defect patterns
-- operator productivity
-
-Do NOT invent numbers. Only use the data provided.
-
-Write a concise report (120–200 words).
-
-Data:
-${JSON.stringify(summary, null, 2)}`;
+        Data to analyze:
+        ${JSON.stringify(summary, null, 2)}`;
 
         try {
             const ollamaRes = await axios.post('http://localhost:11434/api/generate', {
-                model: 'llama3', // or 'mistral'
+                model: 'llama3',
                 prompt: prompt,
                 stream: false
             }, {
-                timeout: 10000 // 10s timeout
+                timeout: 30000
             });
 
-            const generatedText = ollamaRes.data.response;
+            const rawResponse = ollamaRes.data.response;
+            const cleaned = rawResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+
+            let finalData;
+            try {
+                finalData = JSON.parse(cleaned);
+            } catch (e) {
+                finalData = cleaned; // Fallback to raw if parsing fails
+            }
 
             // Save to cache (update if exists during regenerate)
             const report = await prisma.aIReport.upsert({
                 where: { filterHash },
                 update: {
-                    reportText: generatedText,
+                    reportText: typeof finalData === 'string' ? finalData : JSON.stringify(finalData),
                     generatedAt: new Date(),
                     generatedBy: req.user.userId
                 },
                 create: {
                     filterHash,
                     filters: filters,
-                    reportText: generatedText,
+                    reportText: typeof finalData === 'string' ? finalData : JSON.stringify(finalData),
                     generatedBy: req.user.userId
                 }
             });
 
-            return res.json({ report: report.reportText, cached: false });
+            return res.json({ report: finalData, cached: false });
 
         } catch (ollamaErr) {
             console.error('Ollama Service Error:', ollamaErr.message);

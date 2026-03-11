@@ -1,0 +1,194 @@
+{
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "field": "cronExpression",
+                            "expression": "0 18 * * *"
+                        }
+                    ]
+                }
+            },
+            "id": "e6f7a8b9-c0d1-e2f3-g4h5-i6j7k8l9m0n1",
+            "name": "Cron Trigger",
+            "type": "n8n-nodes-base.cron",
+            "typeVersion": 1,
+            "position": [
+                100,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "http://localhost:5005/api/analytics/summary",
+                "authentication": "headerAuth",
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer n8n-factory-secret-2024"
+                        }
+                    ]
+                },
+                "options": {
+                    "retryOnFail": true,
+                    "maxRetries": 3,
+                    "waitBetweenRetries": 5000
+                }
+            },
+            "id": "a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6",
+            "name": "Fetch Summary",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                300,
+                300
+            ],
+            "continueOnFail": false
+        },
+        {
+            "parameters": {
+                "jsCode": "const summary = $node[\"Fetch Summary\"].json;\n\nconst prompt = `You are an industrial production analytics system.\\nAnalyze the provided manufacturing metrics and return ONLY valid JSON.\\nDo NOT include markdown backticks. Do NOT include explanations.\\n\\nReturn exactly this schema:\\n{\\n  \"summary\": \"Concise performance overview string\",\\n  \"kpis\": {\\n    \"total_batches\": number,\\n    \"units_processed\": number,\\n    \"defect_rate\": number,\\n    \"top_operator\": \"string\"\\n  },\\n  \"stage_efficiency\": [{\"stage\": \"string\", \"avg_time\": number}],\\n  \"defect_distribution\": [{\"defect\": \"string\", \"count\": number}],\\n  \"operator_performance\": [{\"operator\": \"string\", \"units\": number}],\\n  \"insight\": \"Professional deep-dive recommendation < 40 words\"\\n}\\n\\nRules:\\n- Do not include markdown\\n- Do not include explanations\\n- Do not invent data\\n- Use only provided metrics\\n\\nFactory Metrics:\\n${JSON.stringify(summary, null, 2)}`;\n\nreturn {\n  prompt,\n  summary,\n  reportDate: summary.reportDate\n};"
+            },
+            "id": "q1w2e3r4-t5y6-u7i8-o9p0-a1s2d3f4g5h6",
+            "name": "Build AI Prompt",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                500,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "http://localhost:11434/api/generate",
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "model",
+                            "value": "llama3"
+                        },
+                        {
+                            "name": "prompt",
+                            "value": "={{ $node[\"Build AI Prompt\"].json.prompt }}"
+                        },
+                        {
+                            "name": "stream",
+                            "value": "false"
+                        }
+                    ]
+                },
+                "options": {
+                    "retryOnFail": true,
+                    "maxRetries": 3,
+                    "waitBetweenRetries": 5000
+                }
+            },
+            "id": "z1x2c3v4-b5n6-m7q8-w9e0-r1t2y3u4i5o6",
+            "name": "Ollama Inference",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                700,
+                300
+            ],
+            "continueOnFail": false
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "http://localhost:5005/api/reports/daily",
+                "authentication": "headerAuth",
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer n8n-factory-secret-2024"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "summary",
+                            "value": "={{ $node[\"Ollama Inference\"].json.response }}"
+                        },
+                        {
+                            "name": "metrics",
+                            "value": "={{ $node[\"Build AI Prompt\"].json.summary }}"
+                        },
+                        {
+                            "name": "reportDate",
+                            "value": "={{ $node[\"Build AI Prompt\"].json.reportDate }}"
+                        }
+                    ]
+                },
+                "options": {
+                    "retryOnFail": true,
+                    "maxRetries": 3,
+                    "waitBetweenRetries": 5000
+                }
+            },
+            "id": "p1o2i3u4-y5t6-r7e8-w9q0-l1k2j3h4g5f6",
+            "name": "Save Daily Report",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                900,
+                300
+            ],
+            "continueOnFail": false
+        }
+    ],
+    "connections": {
+        "Cron Trigger": {
+            "main": [
+                [
+                    {
+                        "node": "Fetch Summary",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Fetch Summary": {
+            "main": [
+                [
+                    {
+                        "node": "Build AI Prompt",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Build AI Prompt": {
+            "main": [
+                [
+                    {
+                        "node": "Ollama Inference",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Ollama Inference": {
+            "main": [
+                [
+                    {
+                        "node": "Save Daily Report",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}
