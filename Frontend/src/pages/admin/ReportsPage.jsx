@@ -98,6 +98,52 @@ const ReportsPage = () => {
         searchKeys: ['batchNumber', 'briefTypeName']
     });
 
+    const formattedAiReport = useMemo(() => {
+        if (!aiReport) return '';
+        if (typeof aiReport === 'string') return aiReport;
+
+        if (typeof aiReport === 'object') {
+            const lines = [];
+
+            if (aiReport.executive_summary) {
+                lines.push('Executive Summary');
+                lines.push(String(aiReport.executive_summary));
+                lines.push('');
+            }
+
+            if (aiReport.operational_analysis) {
+                lines.push('Operational Analysis');
+                lines.push(String(aiReport.operational_analysis));
+                lines.push('');
+            }
+
+            if (aiReport.risk_assessment) {
+                lines.push('Risk Assessment');
+                lines.push(String(aiReport.risk_assessment));
+                lines.push('');
+            }
+
+            if (aiReport.recommendations) {
+                lines.push('Recommendations');
+                lines.push(String(aiReport.recommendations));
+                lines.push('');
+            }
+
+            if (aiReport.kpis && typeof aiReport.kpis === 'object') {
+                lines.push('KPIs');
+                for (const [key, value] of Object.entries(aiReport.kpis)) {
+                    lines.push(`- ${key}: ${value}`);
+                }
+                lines.push('');
+            }
+
+            const text = lines.join('\n').trim();
+            return text || JSON.stringify(aiReport, null, 2);
+        }
+
+        return String(aiReport);
+    }, [aiReport]);
+
     return (
         <DashboardLayout>
             <div className="space-y-6">
@@ -229,7 +275,7 @@ const ReportsPage = () => {
                                     <div style={{ width: '3px', height: '20px', backgroundColor: 'var(--bs-brand)', borderRadius: '99px' }} />
                                     <h4 style={{ fontWeight: 700, color: 'var(--bs-text-primary)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Production Intelligence Synthesis</h4>
                                 </div>
-                                <div style={{ fontSize: '13px', color: 'var(--bs-text-secondary)', lineHeight: 1.7, fontWeight: 500, whiteSpace: 'pre-wrap' }}>{aiReport}</div>
+                                <div style={{ fontSize: '13px', color: 'var(--bs-text-secondary)', lineHeight: 1.7, fontWeight: 500, whiteSpace: 'pre-wrap' }}>{formattedAiReport}</div>
                                 <div style={{ paddingTop: '20px', borderTop: '1px solid var(--bs-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                     <div>
                                         <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--bs-text-muted)', textTransform: 'uppercase' }}>Analysis Scope</div>

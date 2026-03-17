@@ -309,7 +309,7 @@ const AnalyticsPage = () => {
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4"><Badge status={p.stage} /></td>
+                                            <td className="px-6 py-4"><StatusBadge status={p.stage} /></td>
                                             <td className="px-6 py-4 font-bold text-slate-500">{p.totalReceived}</td>
                                             <td className="px-6 py-4 font-black text-slate-900 dark:text-white">{p.totalProduced}</td>
                                             <td className="px-6 py-4">

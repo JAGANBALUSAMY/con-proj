@@ -189,45 +189,46 @@ const Sidebar = ({ collapsed, onToggle }) => {
                                         }
                                     }}
                                 >
-                                    {/* Active left accent bar */}
-                                    <NavLink
-                                        to={item.path}
-                                        end={item.path.split('/').length <= 2}
-                                        className="absolute left-0 top-1 bottom-1 w-[3px] rounded-r-full bg-accent opacity-0"
-                                        style={({ isActive }) => ({ opacity: isActive ? 1 : 0 })}
-                                        tabIndex={-1}
-                                        aria-hidden
-                                    />
+                                    {({ isActive }) => (
+                                        <>
+                                            {/* Active left accent bar */}
+                                            <span
+                                                className="absolute left-0 top-1 bottom-1 w-[3px] rounded-r-full bg-accent opacity-0"
+                                                style={{ opacity: isActive ? 1 : 0 }}
+                                                aria-hidden
+                                            />
 
-                                    <item.icon size={17} className="shrink-0" />
+                                            <item.icon size={17} className="shrink-0" />
 
-                                    <AnimatePresence>
-                                        {!collapsed && (
-                                            <motion.span
-                                                initial={{ opacity: 0 }}
-                                                animate={{ opacity: 1 }}
-                                                exit={{ opacity: 0 }}
-                                                transition={{ duration: 0.15 }}
-                                                className="text-[13px] font-medium whitespace-nowrap tracking-[-0.01em]"
-                                            >
-                                                {item.label}
-                                            </motion.span>
-                                        )}
-                                    </AnimatePresence>
+                                            <AnimatePresence>
+                                                {!collapsed && (
+                                                    <motion.span
+                                                        initial={{ opacity: 0 }}
+                                                        animate={{ opacity: 1 }}
+                                                        exit={{ opacity: 0 }}
+                                                        transition={{ duration: 0.15 }}
+                                                        className="text-[13px] font-medium whitespace-nowrap tracking-[-0.01em]"
+                                                    >
+                                                        {item.label}
+                                                    </motion.span>
+                                                )}
+                                            </AnimatePresence>
 
-                                    {/* Collapsed tooltip */}
-                                    {collapsed && (
-                                        <div
-                                            className="absolute left-[calc(100%+10px)] px-3 py-1.5 text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 pointer-events-none z-50 whitespace-nowrap transition-opacity duration-150"
-                                            style={{
-                                                backgroundColor: 'var(--bs-surface)',
-                                                color: 'var(--bs-text-primary)',
-                                                border: '1px solid var(--bs-border)',
-                                                boxShadow: 'var(--shadow-3)',
-                                            }}
-                                        >
-                                            {item.label}
-                                        </div>
+                                            {/* Collapsed tooltip */}
+                                            {collapsed && (
+                                                <div
+                                                    className="absolute left-[calc(100%+10px)] px-3 py-1.5 text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 pointer-events-none z-50 whitespace-nowrap transition-opacity duration-150"
+                                                    style={{
+                                                        backgroundColor: 'var(--bs-surface)',
+                                                        color: 'var(--bs-text-primary)',
+                                                        border: '1px solid var(--bs-border)',
+                                                        boxShadow: 'var(--shadow-3)',
+                                                    }}
+                                                >
+                                                    {item.label}
+                                                </div>
+                                            )}
+                                        </>
                                     )}
                                 </NavLink>
                             ))}
