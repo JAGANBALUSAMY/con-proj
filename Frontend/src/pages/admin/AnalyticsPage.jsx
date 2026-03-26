@@ -1,13 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, RadarChart, PolarGrid, PolarAngleAxis, Radar } from 'recharts';
+import { 
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, 
+    ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, 
+    ComposedChart, Line 
+} from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@frontend/layouts/DashboardLayout';
-import MetricCard from '@frontend/components/Dashboard/MetricCard';
-import PageHeader from '@frontend/components/ui/PageHeader';
-import Button from '@frontend/components/ui/Button';
-import StatusBadge from '@frontend/components/ui/StatusBadge';
+import MetricCard from '@frontend/components/dashboard/MetricCard';
+import Badge from '@frontend/components/ui/Badge';
 import api from '@frontend/services/api';
-import { Clock, TrendingUp, AlertTriangle, RefreshCw, Calendar, ArrowLeft, BarChart3, ChevronDown, Activity, Target, Layers } from 'lucide-react';
+import { 
+    Clock, TrendingUp, AlertTriangle, RefreshCw, Calendar, 
+    ArrowLeft, BarChart3, ChevronDown, Flame, Sparkles, Zap,
+    BarChart2, PieChart as PieIcon
+} from 'lucide-react';
+
 import { useAuth } from '@frontend/store/AuthContext';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#6366f1'];
@@ -21,41 +28,65 @@ const AnalyticsPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [dateRange, setDateRange] = useState({ start: '', end: '' });
+    const [dailyReport, setDailyReport] = useState(null);
+    const [reportLoading, setReportLoading] = useState(true);
 
     const fetchAnalytics = async () => {
         setLoading(true);
         setError(null);
+        setReportLoading(true);
         try {
             const params = {};
             if (dateRange.start) params.startDate = dateRange.start;
             if (dateRange.end) params.endDate = dateRange.end;
 
-            const [effRes, perfRes, defRes] = await Promise.all([
+            // Fetch main analytics and AI report in parallel
+            const [effRes, perfRes, defRes, reportRes] = await Promise.allSettled([
                 api.get('/analytics/efficiency', { params }),
                 api.get('/analytics/performance', { params }),
-                api.get('/analytics/defects', { params })
+                api.get('/analytics/defects', { params }),
+                api.get('/reports/daily/latest')
             ]);
 
-            // Role-based filtering
-            let filteredEff = effRes.data || [];
-            let filteredPerf = perfRes.data || [];
-            let filteredDef = defRes.data || [];
+            // Role-based filtering logic
+            let rawEff = effRes.status === 'fulfilled' ? (effRes.value.data || []) : [];
+            let rawPerf = perfRes.status === 'fulfilled' ? (perfRes.value.data || []) : [];
+            let rawDef = defRes.status === 'fulfilled' ? (defRes.value.data || []) : [];
 
             if (user?.role === 'MANAGER' && user?.sections?.[0]) {
                 const managerSection = user.sections[0];
-                filteredEff = filteredEff.filter(e => e.stage === managerSection);
-                filteredPerf = filteredPerf.filter(p => p.stage === managerSection);
-                filteredDef = filteredDef.filter(d => d.stage === managerSection || !d.stage);
+                rawEff = rawEff.filter(e => e.stage === managerSection);
+                rawPerf = rawPerf.filter(p => p.stage === managerSection);
+                rawDef = rawDef.filter(d => d.stage === managerSection || !d.stage);
             }
 
-            setEfficiency(filteredEff);
-            setPerformance(filteredPerf);
-            setDefects(filteredDef);
+            setEfficiency(rawEff);
+            setPerformance(rawPerf);
+            setDefects(rawDef);
+
+            // Handle report result (safe — never blocks main analytics on failure)
+            if (reportRes.status === 'fulfilled') {
+                try {
+                    const reportData = reportRes.value.data;
+                    if (reportData && reportData.metrics) {
+                        const metrics = typeof reportData.metrics === 'string'
+                            ? JSON.parse(reportData.metrics)
+                            : reportData.metrics;
+                        setDailyReport(metrics);
+                    }
+                } catch (parseErr) {
+                    console.warn('Could not parse AI report data:', parseErr);
+                }
+            } else {
+                // 404 (no reports yet) or 500 (server error) — silently ignore
+                console.warn('AI Report not available:', reportRes.reason?.response?.status === 404 ? 'No report generated yet' : 'Server error');
+            }
         } catch (err) {
             console.error('Error fetching analytics:', err);
             setError('Operational intelligence sync failed.');
         } finally {
             setLoading(false);
+            setReportLoading(false);
         }
     };
 
@@ -75,21 +106,31 @@ const AnalyticsPage = () => {
     return (
         <DashboardLayout>
             <div className="space-y-8 pb-12">
-                <PageHeader
-                    title="Production Intelligence"
-                    subtitle="Insight engine for sectional yield"
-                    actions={
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'var(--bs-background)', padding: '8px 12px', borderRadius: '10px', border: '1px solid var(--bs-border)' }}>
-                                <Calendar size={14} style={{ color: 'var(--bs-text-muted)' }} />
-                                <input type="date" name="start" value={dateRange.start} onChange={handleDateChange} style={{ backgroundColor: 'transparent', fontSize: '12px', fontWeight: 700, outline: 'none', color: 'var(--bs-text-primary)', border: 'none' }} />
-                                <span style={{ color: 'var(--bs-text-muted)', fontSize: '12px', fontWeight: 700 }}>to</span>
-                                <input type="date" name="end" value={dateRange.end} onChange={handleDateChange} style={{ backgroundColor: 'transparent', fontSize: '12px', fontWeight: 700, outline: 'none', color: 'var(--bs-text-primary)', border: 'none' }} />
-                            </div>
-                            <Button variant="primary" size="sm" leftIcon={RefreshCw} loading={loading} onClick={fetchAnalytics}>Sync</Button>
+                {/* 1. Analytics Header Control */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm shadow-slate-200/50">
+                    <div className="flex items-center gap-4">
+                        <button className="p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border border-slate-200 dark:border-slate-700 font-bold text-slate-600 dark:text-slate-300" onClick={() => navigate(-1)}>
+                            <ArrowLeft size={20} />
+                        </button>
+                        <div>
+                            <h2 className="text-xl font-black text-slate-900 dark:text-white leading-tight uppercase tracking-tight">Production Intelligence</h2>
+                            <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Insight engine for sectional yield</p>
                         </div>
-                    }
-                />
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 px-3 py-2 rounded-xl border border-slate-100 dark:border-slate-700">
+                            <Calendar size={16} className="text-slate-400" />
+                            <input type="date" name="start" value={dateRange.start} onChange={handleDateChange} className="bg-transparent text-xs font-bold outline-none text-slate-700 dark:text-slate-300" />
+                            <span className="text-slate-300 text-xs font-bold">to</span>
+                            <input type="date" name="end" value={dateRange.end} onChange={handleDateChange} className="bg-transparent text-xs font-bold outline-none text-slate-700 dark:text-slate-300" />
+                        </div>
+                        <button className="btn-saas bg-primary text-white flex items-center gap-2 py-2.5 px-6 shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all" onClick={fetchAnalytics}>
+                            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+                            <span className="text-xs font-black tracking-widest uppercase">Sync</span>
+                        </button>
+                    </div>
+                </div>
 
                 {/* 2. Top-level Performance Metrics */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -117,190 +158,212 @@ const AnalyticsPage = () => {
                     />
                 </div>
 
-                {/* 3. Visualization Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-                    {/* Chart 1: Stage Cycle Time */}
-                    <div className="lg:col-span-12 xl:col-span-8" style={{ backgroundColor: 'var(--bs-surface)', border: '1px solid var(--bs-border)', borderRadius: '10px', padding: '24px' }}>
-                        <div className="flex items-center justify-between mb-6">
-                            <div>
-                                <h3 className="font-bold text-slate-900 dark:text-white uppercase tracking-tighter">Stage Cycle Time</h3>
-                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Avg minutes per stage per batch</p>
-                            </div>
-                            <div className="p-3 bg-primary/10 rounded-xl"><BarChart3 size={20} className="text-primary" /></div>
+                {/* 3. AI-Enhanced Intelligence Synthesis (V10 Expansion) */}
+                {dailyReport && (
+                    <div className="space-y-6">
+                        <div className="flex items-center gap-3 px-1">
+                            <Sparkles size={20} className="text-primary animate-pulse" />
+                            <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">AI-Enhanced Intelligence Synthesis</h3>
+                            <div className="h-px flex-1 bg-slate-100 dark:bg-slate-800" />
                         </div>
-                        {efficiency.length === 0 ? (
-                            <div className="h-[300px] flex items-center justify-center text-slate-400 text-xs font-bold uppercase tracking-widest">No efficiency data available</div>
-                        ) : (
-                            <div className="h-[300px] w-full">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={efficiency} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" strokeOpacity={0.4} />
-                                        <XAxis dataKey="stage" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 800, fill: '#64748B' }} />
-                                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94A3B8' }} unit="m" />
-                                        <Tooltip cursor={{ fill: 'rgba(59,130,246,0.05)' }} contentStyle={{ backgroundColor: '#0F172A', border: 'none', borderRadius: '12px', color: '#fff', fontSize: '11px' }} />
-                                        <Bar dataKey="avgDurationMinutes" name="Avg Cycle (min)" fill="#3b82f6" radius={[6, 6, 0, 0]} barSize={36} />
-                                        <Bar dataKey="logCount" name="Log Count" fill="#8b5cf6" radius={[6, 6, 0, 0]} barSize={36} />
-                                    </BarChart>
-                                </ResponsiveContainer>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            {/* 1. Factory Throughput Trend */}
+                            <div className="card-saas p-6 border-primary/10 bg-gradient-to-br from-white to-primary/5">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div>
+                                        <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-tighter">Throughput Velocity Projection</h4>
+                                        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">Daily industrial processing volume</p>
+                                    </div>
+                                    <TrendingUp size={18} className="text-primary" />
+                                </div>
+                                <div className="h-[240px] w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart data={dailyReport.throughput_trend || dailyReport.metrics?.throughput_trend || []}>
+                                            <defs>
+                                                <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                                </linearGradient>
+                                            </defs>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.1} />
+                                            <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 700 }} />
+                                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9 }} />
+                                            <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', fontSize: '10px' }} />
+                                            <Area type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                </div>
                             </div>
-                        )}
+
+                            {/* 2. Stage Bottleneck Heatmap */}
+                            <div className="card-saas p-6 border-error/10 bg-gradient-to-br from-white to-error/5">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div>
+                                        <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-tighter">Manufacturing Bottleneck Heatmap</h4>
+                                        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">Cross-stage delay factor analysis</p>
+                                    </div>
+                                    <Flame size={18} className="text-error" />
+                                </div>
+                                <div className="h-[240px] w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <ComposedChart data={dailyReport.bottleneck_heatmap || dailyReport.metrics?.bottleneck_heatmap || []}>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.1} />
+                                            <XAxis dataKey="stage" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 700 }} />
+                                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9 }} />
+                                            <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', fontSize: '10px' }} />
+                                            <Bar dataKey="delay_factor" fill="#ef4444" radius={[4, 4, 0, 0]} opacity={0.6} />
+                                            <Line type="monotone" dataKey="delay_factor" stroke="#ef4444" strokeWidth={3} dot={{ fill: '#ef4444', r: 4 }} />
+                                        </ComposedChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
+
+                            {/* 3. Operator Efficiency Ranking */}
+                            <div className="card-saas p-6 border-success/10 bg-gradient-to-br from-white to-success/5">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div>
+                                        <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-tighter">Precision Efficiency Ranking</h4>
+                                        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">Personnel performance benchmarking</p>
+                                    </div>
+                                    <Zap size={18} className="text-success" />
+                                </div>
+                                <div className="h-[240px] w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart layout="vertical" data={dailyReport.operator_efficiency || dailyReport.metrics?.operator_efficiency || []} margin={{ left: 20 }}>
+                                            <XAxis type="number" hide />
+                                            <YAxis dataKey="name" type="category" tick={{ fontSize: 9, fontWeight: 700 }} width={80} />
+                                            <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', fontSize: '10px' }} />
+                                            <Bar dataKey="score" fill="#10b981" radius={[0, 4, 4, 0]} barSize={20}>
+                                                {dailyReport.operator_efficiency?.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={index === 0 ? '#059669' : '#10b981'} />
+                                                ))}
+                                            </Bar>
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
+
+                            {/* 4. Defect Root Cause Chart */}
+                            <div className="card-saas p-6 border-warning/10 bg-gradient-to-br from-white to-warning/5">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div>
+                                        <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-tighter">Yield Root Cause Attribution</h4>
+                                        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">Categorical breakdown of quality loss</p>
+                                    </div>
+                                    <PieIcon size={18} className="text-warning" />
+                                </div>
+                                <div className="h-[240px] w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart>
+                                            <Pie
+                                                data={dailyReport.defect_root_causes || dailyReport.metrics?.defect_root_causes || []}
+                                                innerRadius={60}
+                                                outerRadius={80}
+                                                paddingAngle={5}
+                                                dataKey="percentage"
+                                                nameKey="cause"
+                                            >
+                                                {dailyReport.defect_root_causes?.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', fontSize: '10px' }} />
+                                            <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '9px', fontWeight: 700 }} />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* 4. Native Operational Analysis Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    {/* Efficiency Chart */}
+                    <div className="lg:col-span-12 xl:col-span-8 card-saas p-6">
+                        <div className="flex items-center justify-between mb-8">
+                            <div>
+                                <h3 className="font-bold text-slate-900 dark:text-white uppercase tracking-tighter">Operational Efficiency Mapping</h3>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Mapping stage efficiency anomalies</p>
+                            </div>
+                            <div className="p-3 bg-primary/10 rounded-xl">
+                                <BarChart3 size={20} className="text-primary" />
+                            </div>
+                        </div>
+                        <div className="h-[350px] w-full relative">
+                            <ResponsiveContainer width="100%" height="100%" debounce={100}>
+                                <BarChart data={efficiency} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#CBD5E1" strokeOpacity={0.2} />
+                                    <XAxis dataKey="stage" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 800, fill: '#64748B' }} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94A3B8', fontWeight: 600 }} />
+                                    <Tooltip
+                                        cursor={{ fill: 'rgba(59, 130, 246, 0.05)' }}
+                                        contentStyle={{ backgroundColor: '#0F172A', border: 'none', borderRadius: '16px', color: '#fff', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}
+                                        itemStyle={{ color: '#60A5FA', fontWeight: 900, fontSize: '10px' }}
+                                    />
+                                    <Bar dataKey="avgDurationMinutes" name="Cycle Time" fill="#3b82f6" radius={[6, 6, 0, 0]} barSize={40} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
                     </div>
 
-                    {/* Chart 2: Defect Distribution Pie */}
-                    <div className="lg:col-span-12 xl:col-span-4" style={{ backgroundColor: 'var(--bs-surface)', border: '1px solid var(--bs-border)', borderRadius: '10px', padding: '24px' }}>
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="font-bold text-slate-900 dark:text-white uppercase tracking-tighter">Yield Loss by Defect</h3>
+                    {/* Defect Distribution */}
+                    <div className="lg:col-span-12 xl:col-span-4 card-saas p-6">
+                        <div className="flex items-center justify-between mb-8">
+                            <h3 className="font-bold text-slate-900 dark:text-white uppercase tracking-tighter">Yield Loss Analysis</h3>
                             <AlertTriangle size={20} className="text-amber-500" />
                         </div>
-                        {defects.length === 0 ? (
-                            <div className="h-[280px] flex items-center justify-center text-slate-400 text-xs font-bold uppercase tracking-widest">No defect data available</div>
-                        ) : (
-                            <div className="h-[280px] w-full">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie data={defects} cx="50%" cy="45%" innerRadius={55} outerRadius={80} paddingAngle={6} dataKey="totalQuantity" nameKey="defectCode">
-                                            {defects.map((_, index) => (
-                                                <Cell key={index} fill={COLORS[index % COLORS.length]} stroke="transparent" />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip contentStyle={{ backgroundColor: '#0F172A', border: 'none', borderRadius: '12px', color: '#fff', fontSize: '11px' }} />
-                                        <Legend iconType="circle" wrapperStyle={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }} />
-                                    </PieChart>
-                                </ResponsiveContainer>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Chart 3: Stage Throughput — Input vs Output */}
-                    <div className="lg:col-span-12 xl:col-span-7" style={{ backgroundColor: 'var(--bs-surface)', border: '1px solid var(--bs-border)', borderRadius: '10px', padding: '24px' }}>
-                        <div className="flex items-center justify-between mb-6">
-                            <div>
-                                <h3 className="font-bold text-slate-900 dark:text-white uppercase tracking-tighter">Stage Throughput</h3>
-                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Units received vs produced per stage</p>
-                            </div>
-                            <div className="p-3 bg-success/10 rounded-xl"><Layers size={20} className="text-success" /></div>
-                        </div>
-                        {performance.length === 0 ? (
-                            <div className="h-[280px] flex items-center justify-center text-slate-400 text-xs font-bold uppercase tracking-widest">No throughput data available</div>
-                        ) : (
-                            <div className="h-[280px] w-full">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart
-                                        data={Object.values(performance.reduce((acc, p) => {
-                                            if (!acc[p.stage]) acc[p.stage] = { stage: p.stage, received: 0, produced: 0 };
-                                            acc[p.stage].received += p.totalReceived;
-                                            acc[p.stage].produced += p.totalProduced;
-                                            return acc;
-                                        }, {}))}
-                                        margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
+                        <div className="h-[300px] w-full relative">
+                            <ResponsiveContainer width="100%" height="100%" debounce={100}>
+                                <PieChart>
+                                    <Pie
+                                        data={defects}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={60}
+                                        outerRadius={85}
+                                        paddingAngle={8}
+                                        dataKey="totalQuantity"
+                                        nameKey="defectCode"
                                     >
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" strokeOpacity={0.4} />
-                                        <XAxis dataKey="stage" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 800, fill: '#64748B' }} />
-                                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94A3B8' }} />
-                                        <Tooltip contentStyle={{ backgroundColor: '#0F172A', border: 'none', borderRadius: '12px', color: '#fff', fontSize: '11px' }} />
-                                        <Legend wrapperStyle={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }} />
-                                        <Bar dataKey="received" name="Received" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={28} />
-                                        <Bar dataKey="produced" name="Produced" fill="#22c55e" radius={[4, 4, 0, 0]} barSize={28} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Chart 4: Defect Occurrence Bar */}
-                    <div className="lg:col-span-12 xl:col-span-5" style={{ backgroundColor: 'var(--bs-surface)', border: '1px solid var(--bs-border)', borderRadius: '10px', padding: '24px' }}>
-                        <div className="flex items-center justify-between mb-6">
-                            <div>
-                                <h3 className="font-bold text-slate-900 dark:text-white uppercase tracking-tighter">Defect Occurrence Rate</h3>
-                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Frequency per defect code</p>
-                            </div>
-                            <div className="p-3 bg-error/10 rounded-xl"><Target size={20} className="text-error" /></div>
+                                        {defects.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="transparent" />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip
+                                        contentStyle={{ backgroundColor: '#0F172A', border: 'none', borderRadius: '16px', color: '#fff', fontSize: '10px' }}
+                                    />
+                                    <Legend iconType="circle" wrapperStyle={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }} />
+                                </PieChart>
+                            </ResponsiveContainer>
                         </div>
-                        {defects.length === 0 ? (
-                            <div className="h-[280px] flex items-center justify-center text-slate-400 text-xs font-bold uppercase tracking-widest">No defect occurrences</div>
-                        ) : (
-                            <div className="h-[280px] w-full">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={defects} layout="vertical" margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
-                                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#E2E8F0" strokeOpacity={0.4} />
-                                        <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94A3B8' }} />
-                                        <YAxis type="category" dataKey="defectCode" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 800, fill: '#64748B' }} width={80} />
-                                        <Tooltip contentStyle={{ backgroundColor: '#0F172A', border: 'none', borderRadius: '12px', color: '#fff', fontSize: '11px' }} />
-                                        <Bar dataKey="occurrenceCount" name="Occurrences" fill="#ef4444" radius={[0, 6, 6, 0]} barSize={20} />
-                                        <Bar dataKey="totalQuantity" name="Qty Affected" fill="#f59e0b" radius={[0, 6, 6, 0]} barSize={20} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Chart 5: Operator Yield Rate Area Chart */}
-                    <div className="lg:col-span-12" style={{ backgroundColor: 'var(--bs-surface)', border: '1px solid var(--bs-border)', borderRadius: '10px', padding: '24px' }}>
-                        <div className="flex items-center justify-between mb-6">
-                            <div>
-                                <h3 className="font-bold text-slate-900 dark:text-white uppercase tracking-tighter">Operator Yield Rate</h3>
-                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Output efficiency % per operator</p>
-                            </div>
-                            <div className="p-3 bg-warning/10 rounded-xl"><Activity size={20} className="text-warning" /></div>
-                        </div>
-                        {performance.length === 0 ? (
-                            <div className="h-[220px] flex items-center justify-center text-slate-400 text-xs font-bold uppercase tracking-widest">No operator data available</div>
-                        ) : (
-                            <div className="h-[220px] w-full">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart
-                                        data={performance.map(p => ({
-                                            name: p.employeeCode,
-                                            yieldRate: p.totalReceived > 0 ? parseFloat(((p.totalProduced / p.totalReceived) * 100).toFixed(1)) : 0,
-                                            output: p.totalProduced
-                                        }))}
-                                        margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
-                                    >
-                                        <defs>
-                                            <linearGradient id="yieldGradient" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
-                                                <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
-                                            </linearGradient>
-                                        </defs>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" strokeOpacity={0.4} />
-                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 800, fill: '#64748B' }} />
-                                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94A3B8' }} unit="%" domain={[0, 100]} />
-                                        <Tooltip contentStyle={{ backgroundColor: '#0F172A', border: 'none', borderRadius: '12px', color: '#fff', fontSize: '11px' }} />
-                                        <Area type="monotone" dataKey="yieldRate" name="Yield Rate" stroke="#f59e0b" strokeWidth={2} fill="url(#yieldGradient)" dot={{ fill: '#f59e0b', r: 4, strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6 }} />
-                                    </AreaChart>
-                                </ResponsiveContainer>
-                            </div>
-                        )}
                     </div>
 
                     {/* Operator Leaderboard */}
-                    <div className="lg:col-span-12" style={{ backgroundColor: 'var(--bs-surface)', border: '1px solid var(--bs-border)', borderRadius: '10px', overflow: 'hidden' }}>
-                        <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--bs-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <h3 style={{ fontWeight: 700, color: 'var(--bs-text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: '13px' }}>Precision Performance Ranking</h3>
-                            <button style={{ fontSize: '10px', fontWeight: 800, color: 'var(--bs-brand)', border: 'none', backgroundColor: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>EXPORT CSV <ChevronDown size={12} /></button>
+                    <div className="lg:col-span-12 card-saas overflow-hidden">
+                        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                            <h3 className="font-bold text-slate-900 dark:text-white uppercase tracking-tight">Precision Performance Ranking</h3>
+                            <button className="text-[10px] font-black text-primary flex items-center gap-1 uppercase tracking-widest hover:underline">EXPORT CSV <ChevronDown size={12} /></button>
                         </div>
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
                                 <thead>
-                                    <tr style={{ backgroundColor: 'var(--bs-background)', fontSize: '10px', fontWeight: 800, color: 'var(--bs-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                                        <th style={{ padding: '12px 20px' }}>Sovereign Operator</th>
-                                        <th style={{ padding: '12px 20px' }}>Sectional Assignment</th>
-                                        <th style={{ padding: '12px 20px' }}>Load (In)</th>
-                                        <th style={{ padding: '12px 20px' }}>Yield (Out)</th>
-                                        <th style={{ padding: '12px 20px' }}>Efficiency Score</th>
-                                        <th style={{ padding: '12px 20px', textAlign: 'right' }}>Records</th>
+                                    <tr className="bg-slate-50/50 dark:bg-slate-900/30 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                                        <th className="px-6 py-4">Sovereign Operator</th>
+                                        <th className="px-6 py-4">Sectional Assignment</th>
+                                        <th className="px-6 py-4">Load (In)</th>
+                                        <th className="px-6 py-4">Yield (Out)</th>
+                                        <th className="px-6 py-4">Efficiency Score</th>
+                                        <th className="px-6 py-4 text-right">Records</th>
                                     </tr>
                                 </thead>
-                                <tbody style={{ borderTop: '1px solid var(--bs-border)' }}>
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                                     {(performance || []).map((p, i) => (
-                                        <tr key={i} style={{ borderBottom: '1px solid var(--bs-border)', transition: 'background 0.1s' }}
-                                            onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bs-background)'}
-                                            onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                                        >
-                                            <td style={{ padding: '14px 20px' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(14,165,233,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800, color: 'var(--bs-brand)', border: '1px solid rgba(14,165,233,0.2)', textTransform: 'uppercase' }}>
+                                        <tr key={i} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/10 transition-colors">
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-xs font-black text-primary border border-primary/20 uppercase">
                                                         {p.operatorName?.charAt(0)}
                                                     </div>
                                                     <div>
@@ -309,7 +372,7 @@ const AnalyticsPage = () => {
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4"><StatusBadge status={p.stage} /></td>
+                                            <td className="px-6 py-4"><Badge status={p.stage} /></td>
                                             <td className="px-6 py-4 font-bold text-slate-500">{p.totalReceived}</td>
                                             <td className="px-6 py-4 font-black text-slate-900 dark:text-white">{p.totalProduced}</td>
                                             <td className="px-6 py-4">

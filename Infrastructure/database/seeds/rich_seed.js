@@ -1,23 +1,5 @@
-const fs = require('fs');
-const path = require('path');
-const dotenv = require('dotenv');
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
-
-// Ensure DATABASE_URL is available regardless of where npm invokes this script from.
-const envCandidates = [
-    path.resolve(process.cwd(), '.env'),
-    path.resolve(__dirname, '../../../Backend/.env'),
-    path.resolve(__dirname, '../../../.env'),
-    path.resolve(__dirname, '../prisma/.env')
-];
-
-for (const envPath of envCandidates) {
-    if (fs.existsSync(envPath)) {
-        dotenv.config({ path: envPath });
-        break;
-    }
-}
 
 const prisma = new PrismaClient();
 

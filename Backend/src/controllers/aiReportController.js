@@ -135,53 +135,36 @@ const getAggregatedSummary = async (filters) => {
 
 const analyst = require('con-proj-ai/inference/analyst');
 
-const normalizeFilters = (rawFilters) => {
-    const normalized = {};
-
-    for (const [key, value] of Object.entries(rawFilters || {})) {
-        if (value === undefined || value === null) continue;
-        if (typeof value === 'string' && value.trim() === '') continue;
-        normalized[key] = value;
-    }
-
-    return normalized;
-};
-
 /**
  * Generate AI Report using local AI orchestration.
  */
 const generateAIReport = async (req, res) => {
     try {
         const { dateRange, stage, operatorId, isRegenerate } = req.body;
-        const filters = normalizeFilters({
+        const filters = {
             startDate: dateRange?.start,
             endDate: dateRange?.end,
             stage,
             operatorId
-        });
+        };
 
         const filterHash = generateFilterHash(filters);
 
-        // Check cache unless regeneration is requested.
-        // Cache layer failures should not block report generation.
+        // Check cache unless regeneration is requested
         if (!isRegenerate) {
-            try {
-                const cachedReport = await prisma.aIReport.findUnique({
-                    where: { filterHash }
-                });
+            const cachedReport = await prisma.aIReport.findUnique({
+                where: { filterHash }
+            });
 
-                if (cachedReport) {
-                    // Parse if it's a JSON string
-                    let reportData = cachedReport.reportText;
-                    try {
-                        reportData = JSON.parse(cachedReport.reportText);
-                    } catch (e) {
-                        // Fallback to raw text if parsing fails (legacy reports)
-                    }
-                    return res.json({ report: reportData, cached: true });
+            if (cachedReport) {
+                // Parse if it's a JSON string
+                let reportData = cachedReport.reportText;
+                try {
+                    reportData = JSON.parse(cachedReport.reportText);
+                } catch (e) {
+                    // Fallback to raw text if parsing fails (legacy reports)
                 }
-            } catch (cacheReadError) {
-                console.warn('AI report cache read skipped:', cacheReadError.message);
+                return res.json({ report: reportData, cached: true });
             }
         }
 
@@ -194,26 +177,21 @@ const generateAIReport = async (req, res) => {
             fallbackOnFailure: process.env.AI_FALLBACK_ON_FAILURE !== 'false'
         });
 
-        // Save to cache (update if exists during regenerate).
-        // Do not fail the API if persistence is unavailable.
-        try {
-            await prisma.aIReport.upsert({
-                where: { filterHash },
-                update: {
-                    reportText: JSON.stringify(result.data),
-                    generatedAt: new Date(),
-                    generatedBy: req.user.userId
-                },
-                create: {
-                    filterHash,
-                    filters: filters,
-                    reportText: JSON.stringify(result.data),
-                    generatedBy: req.user.userId
-                }
-            });
-        } catch (cacheWriteError) {
-            console.warn('AI report cache write skipped:', cacheWriteError.message);
-        }
+        // Save to cache (update if exists during regenerate)
+        const report = await prisma.aIReport.upsert({
+            where: { filterHash },
+            update: {
+                reportText: JSON.stringify(result.data),
+                generatedAt: new Date(),
+                generatedBy: req.user.userId
+            },
+            create: {
+                filterHash,
+                filters: filters,
+                reportText: JSON.stringify(result.data),
+                generatedBy: req.user.userId
+            }
+        });
 
         return res.json({
             report: result.data, // Send the object directly

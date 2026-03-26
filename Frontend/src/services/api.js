@@ -22,13 +22,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        const status = error.response?.status;
-        const message = String(error.response?.data?.error || '').toLowerCase();
-        const shouldResetSession =
-            status === 401 ||
-            (status === 403 && message.includes('inactive or disabled'));
-
-        if (shouldResetSession) {
+        if (error.response?.status === 401) {
             console.warn('🔌 Session expired or unauthorized. Redirecting to login...');
             localStorage.removeItem('token');
             localStorage.removeItem('user');
