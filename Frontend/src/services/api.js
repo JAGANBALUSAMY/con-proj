@@ -1,7 +1,11 @@
 import axios from 'axios';
 
+const apiBaseUrl =
+    import.meta.env.VITE_API_BASE_URL ||
+    (import.meta.env.DEV ? 'http://localhost:5005/api' : '/api');
+
 const api = axios.create({
-    baseURL: '/api'
+    baseURL: apiBaseUrl
 });
 
 // Request interceptor to add JWT token
@@ -22,7 +26,11 @@ api.interceptors.request.use(
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response?.status === 401) {
+        const status = error.response?.status;
+        const requestUrl = error.config?.url || '';
+        const isAuthLoginRequest = requestUrl.includes('/auth/login');
+
+        if (status === 401 && !isAuthLoginRequest) {
             console.warn('🔌 Session expired or unauthorized. Redirecting to login...');
             localStorage.removeItem('token');
             localStorage.removeItem('user');

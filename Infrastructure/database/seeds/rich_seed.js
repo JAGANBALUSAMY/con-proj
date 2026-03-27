@@ -1,54 +1,148 @@
+const path = require('path');
+const dotenv = require('dotenv');
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 
+const RICH_SEED_LOCK_KEY = 92837465;
+const TOTAL_BATCHES = Number(process.env.RICH_SEED_BATCH_COUNT ?? 200);
+const MIN_ACTIVE_BATCHES = Number(process.env.RICH_SEED_MIN_ACTIVE ?? 8);
+
+// Ensure DATABASE_URL is loaded when script is run from workspace root.
+dotenv.config({ path: path.resolve(__dirname, '../../../Backend/.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+
 const prisma = new PrismaClient();
+let seedLockAcquired = false;
+
+const acquireSeedLock = async () => {
+    const result = await prisma.$queryRaw`SELECT pg_try_advisory_lock(${RICH_SEED_LOCK_KEY}) AS locked`;
+    const locked = result?.[0]?.locked;
+
+    if (!locked) {
+        console.warn('⚠️ Advisory lock unavailable. Continuing without lock; ensure no other seed is running.');
+        return false;
+    }
+
+    return true;
+};
+
+const releaseSeedLock = async () => {
+    try {
+        await prisma.$queryRaw`SELECT pg_advisory_unlock(${RICH_SEED_LOCK_KEY})`;
+    } catch (_) {
+        // Ignore unlock errors during shutdown.
+    }
+};
+
+const buildDailyMetrics = ({ reportDate, unitsProcessed, defectRate, batchCount }) => ({
+    executive_summary: `Factory throughput remained stable on ${reportDate.toLocaleDateString()} with controlled quality leakage and manageable queue pressure in STITCHING.`,
+    summary: 'Stable output with moderate stitching bottleneck risk.',
+    kpis: {
+        total_batches: batchCount,
+        units_processed: unitsProcessed,
+        defect_rate: defectRate,
+        top_operator: 'OP_STI_03'
+    },
+    stage_efficiency: [
+        { stage: 'CUTTING', avg_time: 23 },
+        { stage: 'STITCHING', avg_time: 40 },
+        { stage: 'QUALITY_CHECK', avg_time: 21 },
+        { stage: 'LABELING', avg_time: 15 },
+        { stage: 'FOLDING', avg_time: 14 },
+        { stage: 'PACKING', avg_time: 13 }
+    ],
+    defect_distribution: [
+        { defect: 'STITCH_FRAY', count: 12 + Math.floor(Math.random() * 8) },
+        { defect: 'FABRIC_TEAR', count: 7 + Math.floor(Math.random() * 6) },
+        { defect: 'COLOR_BLEED', count: 4 + Math.floor(Math.random() * 4) },
+        { defect: 'SIZE_MISMATCH', count: 3 + Math.floor(Math.random() * 3) }
+    ],
+    operator_performance: [
+        { operator: 'OP_STI_03', units: 540 },
+        { operator: 'OP_CUT_01', units: 500 },
+        { operator: 'OP_QUA_02', units: 470 }
+    ],
+    throughput_trend: [
+        { label: 'D-6', value: 3400 },
+        { label: 'D-5', value: 3520 },
+        { label: 'D-4', value: 3480 },
+        { label: 'D-3', value: 3600 },
+        { label: 'D-2', value: 3690 },
+        { label: 'D-1', value: 3820 },
+        { label: 'Today', value: unitsProcessed }
+    ],
+    bottleneck_heatmap: [
+        { stage: 'CUTTING', delay_factor: 0.21 },
+        { stage: 'STITCHING', delay_factor: 0.7 },
+        { stage: 'QUALITY_CHECK', delay_factor: 0.34 },
+        { stage: 'LABELING', delay_factor: 0.2 },
+        { stage: 'FOLDING', delay_factor: 0.18 },
+        { stage: 'PACKING', delay_factor: 0.2 }
+    ],
+    operator_efficiency: [
+        { name: 'OP_STI_03', score: 95 },
+        { name: 'OP_CUT_01', score: 92 },
+        { name: 'OP_QUA_02', score: 89 }
+    ],
+    defect_root_causes: [
+        { cause: 'Machine calibration drift', percentage: 40 },
+        { cause: 'Operator handling variance', percentage: 29 },
+        { cause: 'Material inconsistency', percentage: 18 },
+        { cause: 'Line handoff delay', percentage: 13 }
+    ],
+    operational_analysis: 'Throughput across all sections is consistent. Queue buildup remains concentrated in STITCHING during high-load windows.',
+    risk_assessment: 'Moderate risk of spillover from STITCHING to QUALITY_CHECK if machine balancing is not adjusted.',
+    recommendations: 'Reassign two operators to STITCHING during peak hours and run preventive checks on STI-M-01/STI-M-02.'
+});
 
 async function main() {
     console.log('🚀 Starting Rich Production Data Seeding...');
 
-    // 0. Clean Database
-    console.log('🧹 Cleaning existing production data...');
-    const cleanup = async (modelName) => {
-        try {
-            if (prisma[modelName]) {
-                await prisma[modelName].deleteMany();
-                console.log(`   ✅ ${modelName} cleaned`);
-            } else {
-                console.log(`   ⚠️ ${modelName} model not found in Prisma client`);
-            }
-        } catch (err) {
-            console.log(`   ❌ Failed to clean ${modelName}: ${err.message}`);
-        }
-    };
-
-    const modelsToClean = [
-        'defectRecord', 'reworkRecord', 'productionLog',
-        'sectionTransferRequest', 'sectionAssignment', 'box',
-        'batch', 'machine', 'dailyReport', 'user'
-    ];
-
-    for (const model of modelsToClean) {
-        await cleanup(model);
+    seedLockAcquired = await acquireSeedLock();
+    if (seedLockAcquired) {
+        console.log('🔒 Seed lock acquired');
     }
+
+    console.log('🧹 Cleaning existing production data...');
+    await prisma.$executeRawUnsafe(`
+        TRUNCATE TABLE
+            "DefectRecord",
+            "ReworkRecord",
+            "ProductionLog",
+            "SectionTransferRequest",
+            "SectionAssignment",
+            "Box",
+            "Batch",
+            "Machine",
+            "DailyReport",
+            "AIReport",
+            "User"
+        RESTART IDENTITY CASCADE;
+    `);
+    console.log('   ✅ Database cleanup completed');
 
     const hashedPassword = await bcrypt.hash('123456', 10);
 
-    // 1. Create Admin
     console.log('👤 Creating/Updating Admin...');
     await prisma.user.upsert({
         where: { employeeCode: 'ADMIN' },
-        update: { fullName: 'System Administrator', password: hashedPassword, role: 'ADMIN', status: 'ACTIVE', verificationStatus: 'VERIFIED' },
+        update: {
+            fullName: 'System Administrator',
+            password: hashedPassword,
+            role: 'ADMIN',
+            status: 'ACTIVE',
+            verificationStatus: 'VERIFIED'
+        },
         create: {
             employeeCode: 'ADMIN',
             fullName: 'System Administrator',
             password: hashedPassword,
             role: 'ADMIN',
             status: 'ACTIVE',
-            verificationStatus: 'VERIFIED',
+            verificationStatus: 'VERIFIED'
         }
     });
 
-    // 2. Setup Stages and Lists
     const stages = ['CUTTING', 'STITCHING', 'QUALITY_CHECK', 'LABELING', 'FOLDING', 'PACKING'];
     const managers = [];
     const operators = [];
@@ -59,14 +153,18 @@ async function main() {
 
     const getRandomName = () => `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`;
 
-    // 3. Create Managers (2 per stage)
     console.log('👨‍💼 Creating Managers...');
     for (const stage of stages) {
         for (let i = 1; i <= 2; i++) {
             const mCode = `MGR_${stage.substring(0, 3)}_${i.toString().padStart(2, '0')}`;
-            const m = await prisma.user.upsert({
+            const manager = await prisma.user.upsert({
                 where: { employeeCode: mCode },
-                update: { fullName: `${getRandomName()} (${stage} Mgr)`, role: 'MANAGER', status: 'ACTIVE', verificationStatus: 'VERIFIED' },
+                update: {
+                    fullName: `${getRandomName()} (${stage} Mgr)`,
+                    role: 'MANAGER',
+                    status: 'ACTIVE',
+                    verificationStatus: 'VERIFIED'
+                },
                 create: {
                     employeeCode: mCode,
                     fullName: `${getRandomName()} (${stage} Mgr)`,
@@ -77,19 +175,25 @@ async function main() {
                     sectionAssignments: { create: { stage } }
                 }
             });
-            managers.push(m);
+            managers.push(manager);
         }
     }
 
-    // 4. Create Operators (5 per stage)
     console.log('👷 Creating Operators...');
     for (const stage of stages) {
-        const stageManager = managers.find(m => m.employeeCode.startsWith(`MGR_${stage.substring(0, 3)}`));
+        const stageManager = managers.find((m) => m.employeeCode.startsWith(`MGR_${stage.substring(0, 3)}`));
+
         for (let i = 1; i <= 5; i++) {
             const opCode = `OP_${stage.substring(0, 3)}_${i.toString().padStart(2, '0')}`;
-            const op = await prisma.user.upsert({
+            const operator = await prisma.user.upsert({
                 where: { employeeCode: opCode },
-                update: { fullName: getRandomName(), role: 'OPERATOR', status: 'ACTIVE', verificationStatus: 'VERIFIED', createdByUserId: stageManager ? stageManager.id : null },
+                update: {
+                    fullName: getRandomName(),
+                    role: 'OPERATOR',
+                    status: 'ACTIVE',
+                    verificationStatus: 'VERIFIED',
+                    createdByUserId: stageManager ? stageManager.id : null
+                },
                 create: {
                     employeeCode: opCode,
                     fullName: getRandomName(),
@@ -101,15 +205,14 @@ async function main() {
                     sectionAssignments: { create: { stage } }
                 }
             });
-            operators.push({ ...op, stage });
+            operators.push({ ...operator, stage });
         }
     }
 
-    // 5. Create Machines (3 per stage)
     console.log('🤖 Creating Machines...');
     for (const stage of stages) {
         for (let i = 1; i <= 3; i++) {
-            const mac = await prisma.machine.create({
+            const machine = await prisma.machine.create({
                 data: {
                     machineCode: `${stage.substring(0, 3)}-M-${i.toString().padStart(2, '0')}`,
                     name: `${stage} Machine ${i}`,
@@ -117,47 +220,51 @@ async function main() {
                     status: 'OPERATIONAL'
                 }
             });
-            machines.push({ ...mac, stage });
+            machines.push({ ...machine, stage });
         }
     }
 
-    // 6. Create Batches and Logs over 90 Days
-    console.log('📦 Generating Batches and Logs (90-day window)...');
+    console.log(`📦 Generating Batches and Logs (90-day window): ${TOTAL_BATCHES} batches`);
+    if (TOTAL_BATCHES === 0) {
+        console.warn('⚠️ RICH_SEED_BATCH_COUNT=0: no batches/logs will be created, so Active Production and log-driven analytics will appear empty.');
+    }
+
     const now = new Date();
     const batchTypes = ['Standard Polo', 'Executive Shirt', 'Summer T-Shirt', 'Denim Jacket', 'Cotton Trousers'];
+    const forcedActiveBatchCount = Math.min(TOTAL_BATCHES, MIN_ACTIVE_BATCHES);
 
-    for (let i = 1; i <= 200; i++) {
-        // Random date within last 90 days
-        const daysAgo = Math.floor(Math.random() * 90);
+    for (let i = 1; i <= TOTAL_BATCHES; i++) {
+        const shouldForceActive = i <= forcedActiveBatchCount;
+        const daysAgo = shouldForceActive ? Math.floor(Math.random() * 2) : Math.floor(Math.random() * 90);
         const batchDate = new Date(now);
         batchDate.setDate(now.getDate() - daysAgo);
+        if (shouldForceActive) {
+            batchDate.setHours(now.getHours() - Math.floor(Math.random() * 6), Math.floor(Math.random() * 60), 0, 0);
+        }
 
         const totalQty = 50 + Math.floor(Math.random() * 450);
         const type = batchTypes[Math.floor(Math.random() * batchTypes.length)];
 
         const batch = await prisma.batch.create({
             data: {
-                batchNumber: `B${batchDate.getFullYear()}${(batchDate.getMonth() + 1).toString().padStart(2, '0')}${batchDate.getDate().toString().padStart(2, '0')}-${i.toString().padStart(3, '0')}`,
+                batchNumber: `B${batchDate.getFullYear()}${String(batchDate.getMonth() + 1).padStart(2, '0')}${String(batchDate.getDate()).padStart(2, '0')}-${String(i).padStart(3, '0')}`,
                 briefTypeName: type,
                 totalQuantity: totalQty,
                 usableQuantity: 0,
                 currentStage: 'CUTTING',
-                status: daysAgo < 2 ? 'IN_PROGRESS' : 'COMPLETED',
+                status: shouldForceActive || daysAgo < 2 ? 'IN_PROGRESS' : 'COMPLETED',
                 createdAt: batchDate
             }
         });
 
-        // Generate logs for this batch
         let currentTime = new Date(batchDate);
         let currentQty = totalQty;
-
-        // Determine how many stages this batch completed
-        const stagesCompleted = daysAgo < 2 ? 1 + Math.floor(Math.random() * 4) : 6;
+        const stagesCompleted = shouldForceActive || daysAgo < 2 ? 1 + Math.floor(Math.random() * 4) : 6;
 
         for (let sIdx = 0; sIdx < stagesCompleted; sIdx++) {
             const stage = stages[sIdx];
-            const stageOperators = operators.filter(o => o.stage === stage);
-            const stageMachines = machines.filter(m => m.stage === stage);
+            const stageOperators = operators.filter((o) => o.stage === stage);
+            const stageMachines = machines.filter((m) => m.stage === stage);
 
             const operator = stageOperators[Math.floor(Math.random() * stageOperators.length)];
             const machine = stageMachines.length > 0 ? stageMachines[Math.floor(Math.random() * stageMachines.length)] : null;
@@ -167,33 +274,32 @@ async function main() {
             const endTime = new Date(startTime);
             endTime.setHours(endTime.getHours() + durationHrs);
 
-            // Random yield loss
             let yieldLoss = 0;
             if (stage === 'QUALITY_CHECK') {
-                yieldLoss = Math.floor(currentQty * (Math.random() * 0.05)); // 0-5% defects
+                yieldLoss = Math.floor(currentQty * (Math.random() * 0.05));
             }
 
             const qtyOut = currentQty - yieldLoss;
+            const approvingManager = managers.find((m) => m.employeeCode.includes(stage.substring(0, 3)));
 
             await prisma.productionLog.create({
                 data: {
                     batchId: batch.id,
-                    stage: stage,
+                    stage,
                     operatorUserId: operator.id,
                     recordedByUserId: operator.id,
                     machineId: machine ? machine.id : null,
-                    startTime: startTime,
-                    endTime: endTime,
+                    startTime,
+                    endTime,
                     quantityIn: currentQty,
                     quantityOut: qtyOut,
                     approvalStatus: 'APPROVED',
-                    approvedByUserId: managers.find(m => m.employeeCode.includes(stage.substring(0, 3)))?.id,
+                    approvedByUserId: approvingManager ? approvingManager.id : null,
                     approvedAt: endTime,
                     createdAt: startTime
                 }
             });
 
-            // Create Defect Records in QC stage
             if (stage === 'QUALITY_CHECK' && yieldLoss > 0) {
                 const defectCodes = ['STITCH_FRAY', 'FABRIC_TEAR', 'COLOR_BLEED', 'SIZE_MISMATCH', 'BUTTON_MISSING'];
                 await prisma.defectRecord.create({
@@ -209,7 +315,6 @@ async function main() {
                 });
             }
 
-            // Update batch state
             await prisma.batch.update({
                 where: { id: batch.id },
                 data: {
@@ -221,12 +326,42 @@ async function main() {
 
             currentQty = qtyOut;
             currentTime = new Date(endTime);
-            currentTime.setMinutes(currentTime.getMinutes() + 15); // Gap between stages
+            currentTime.setMinutes(currentTime.getMinutes() + 15);
+        }
+
+        if (i % 25 === 0 || i === TOTAL_BATCHES) {
+            console.log(`   ⏳ Progress: ${i}/${TOTAL_BATCHES} batches generated`);
         }
     }
 
+    console.log('🧠 Generating Daily AI Reports (7-day window)...');
+    for (let day = 6; day >= 0; day--) {
+        const reportDate = new Date(now);
+        reportDate.setDate(now.getDate() - day);
+        reportDate.setUTCHours(0, 0, 0, 0);
+
+        const unitsProcessed = 3000 + Math.floor(Math.random() * 1300);
+        const defectRate = Number((1.6 + Math.random() * 1.8).toFixed(2));
+        const batchCount = Math.max(1, Math.floor(Math.max(TOTAL_BATCHES, 1) / 7));
+        const metrics = buildDailyMetrics({ reportDate, unitsProcessed, defectRate, batchCount });
+
+        await prisma.dailyReport.upsert({
+            where: { reportDate },
+            update: {
+                summary: `Executive synthesis for ${reportDate.toISOString().split('T')[0]}`,
+                metrics,
+                generatedAt: new Date()
+            },
+            create: {
+                reportDate,
+                summary: `Executive synthesis for ${reportDate.toISOString().split('T')[0]}`,
+                metrics
+            }
+        });
+    }
+
     console.log('✅ Rich Seeding completed successfully!');
-    console.log(`Created: ${managers.length} Managers, ${operators.length} Operators, 200 Batches`);
+    console.log(`Created: ${managers.length} Managers, ${operators.length} Operators, ${TOTAL_BATCHES} Batches`);
 }
 
 main()
@@ -235,5 +370,8 @@ main()
         process.exit(1);
     })
     .finally(async () => {
+        if (seedLockAcquired) {
+            await releaseSeedLock();
+        }
         await prisma.$disconnect();
     });

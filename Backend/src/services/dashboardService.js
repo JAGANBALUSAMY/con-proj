@@ -19,6 +19,8 @@ const getAdminStats = async (query) => {
     return {
         stats: {
             ...counts,
+            // Frontend admin card reads `managers`; keep both keys for compatibility.
+            managers: counts.managerCount || 0,
             activeBatchList,
             batchHistory,
             pagination: {

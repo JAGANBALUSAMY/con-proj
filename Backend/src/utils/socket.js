@@ -2,11 +2,21 @@ const { Server } = require('socket.io');
 
 let io;
 
+const getAllowedOrigins = () => (
+    (process.env.CORS_ORIGIN || '')
+        .split(',')
+        .map((origin) => origin.trim())
+        .filter(Boolean)
+);
+
 const init = (server) => {
+    const allowedOrigins = getAllowedOrigins();
+
     io = new Server(server, {
         cors: {
-            origin: "*", // Adjust in production
-            methods: ["GET", "POST", "PATCH", "PUT", "DELETE"]
+            origin: allowedOrigins.length ? allowedOrigins : true,
+            methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
+            credentials: true
         }
     });
 

@@ -1,6 +1,6 @@
 const prisma = require('#infra/database/client');
 const crypto = require('crypto');
-const axios = require('axios');
+const mockAnalyst = require('#ai/inference/mockAnalyst');
 
 /**
  * Generate a deterministic hash for filters to be used as a cache key.
@@ -16,6 +16,47 @@ const generateFilterHash = (filters) => {
 
     const filterString = JSON.stringify(sortedFilters);
     return crypto.createHash('sha256').update(filterString).digest('hex');
+};
+
+const buildSummarySkeleton = () => ({
+    totalBatches: 0,
+    completedBatches: 0,
+    avgStageTimes: {},
+    defectSummaryTop5: [],
+    topOperatorsTop5: []
+});
+
+const normalizeReportPayload = (payload, summaryForFallback) => {
+    if (payload && typeof payload === 'object') return payload;
+
+    const fallback = mockAnalyst.analyzeProduction(summaryForFallback || buildSummarySkeleton());
+    if (typeof payload === 'string' && payload.trim()) {
+        return {
+            ...fallback,
+            executive_summary: payload.slice(0, 600)
+        };
+    }
+    return fallback;
+};
+
+const persistDailyReport = async (reportData) => {
+    const reportDate = new Date();
+    reportDate.setUTCHours(0, 0, 0, 0);
+    const reportSummary = reportData?.executive_summary || reportData?.summary || 'Production Report Summary';
+
+    await prisma.dailyReport.upsert({
+        where: { reportDate },
+        update: {
+            summary: reportSummary,
+            metrics: reportData,
+            generatedAt: new Date()
+        },
+        create: {
+            reportDate,
+            summary: reportSummary,
+            metrics: reportData
+        }
+    });
 };
 
 /**
@@ -157,12 +198,11 @@ const generateAIReport = async (req, res) => {
             });
 
             if (cachedReport) {
-                // Parse if it's a JSON string
-                let reportData = cachedReport.reportText;
+                let reportData;
                 try {
                     reportData = JSON.parse(cachedReport.reportText);
                 } catch (e) {
-                    // Fallback to raw text if parsing fails (legacy reports)
+                    reportData = normalizeReportPayload(cachedReport.reportText, buildSummarySkeleton());
                 }
                 return res.json({ report: reportData, cached: true });
             }
@@ -172,29 +212,50 @@ const generateAIReport = async (req, res) => {
         const summary = await getAggregatedSummary(filters);
 
         // Analyze using orchestrated analyst
-        const result = await analyst.getAnalysis(summary, {
-            model: process.env.AI_MODEL || 'llama3',
-            fallbackOnFailure: process.env.AI_FALLBACK_ON_FAILURE !== 'false'
-        });
+        let result;
+        try {
+            result = await analyst.getAnalysis(summary, {
+                model: process.env.AI_MODEL || 'llama3',
+                fallbackOnFailure: process.env.AI_FALLBACK_ON_FAILURE !== 'false'
+            });
+        } catch (analysisError) {
+            console.warn('AI analysis failed. Serving system fallback report:', analysisError.message);
+            result = {
+                data: normalizeReportPayload(null, summary),
+                method: 'SYSTEM_FALLBACK_ERROR'
+            };
+        }
+
+        const finalReport = normalizeReportPayload(result.data, summary);
 
         // Save to cache (update if exists during regenerate)
-        const report = await prisma.aIReport.upsert({
-            where: { filterHash },
-            update: {
-                reportText: JSON.stringify(result.data),
-                generatedAt: new Date(),
-                generatedBy: req.user.userId
-            },
-            create: {
-                filterHash,
-                filters: filters,
-                reportText: JSON.stringify(result.data),
-                generatedBy: req.user.userId
-            }
-        });
+        try {
+            await prisma.aIReport.upsert({
+                where: { filterHash },
+                update: {
+                    reportText: JSON.stringify(finalReport),
+                    generatedAt: new Date(),
+                    generatedBy: req.user.userId
+                },
+                create: {
+                    filterHash,
+                    filters: filters,
+                    reportText: JSON.stringify(finalReport),
+                    generatedBy: req.user.userId
+                }
+            });
+        } catch (cacheErr) {
+            console.warn('AI report cache save skipped:', cacheErr.message);
+        }
+
+        try {
+            await persistDailyReport(finalReport);
+        } catch (dailyErr) {
+            console.warn('Daily report sync skipped:', dailyErr.message);
+        }
 
         return res.json({
-            report: result.data, // Send the object directly
+            report: finalReport,
             cached: false,
             method: result.method
         });

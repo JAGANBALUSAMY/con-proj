@@ -17,10 +17,20 @@ import {
 import { generateProductionReportPDF } from '@frontend/utils/exportProductionReport';
 import Badge from '@frontend/components/ui/Badge';
 import { SkeletonLoader } from '@frontend/components/UI/StateFeedback';
+import {
+    MOCK_ADMIN_STATS,
+    MOCK_AI_REPORT,
+    MOCK_LATEST_DAILY_REPORT,
+    MOCK_OPERATORS,
+    isFrontendMockMode
+} from '@frontend/mocks/adminMockData';
 
 const CHART_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#6366f1'];
 
 const ReportsPage = () => {
+    const useMockData = isFrontendMockMode();
+    const useMockFallbackOnError = import.meta.env.VITE_MOCK_FALLBACK_ON_ERROR === 'true';
+
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -58,16 +68,29 @@ const ReportsPage = () => {
         }
     }, [aiReport]);
 
-    const [availableStages] = useState(['CUTTING', 'STITCHING', 'QUALITY_CHECK', 'LABELING', 'PACKING']);
+    const [availableStages] = useState(['CUTTING', 'STITCHING', 'QUALITY_CHECK', 'LABELING', 'FOLDING', 'PACKING']);
     const [operators, setOperators] = useState([]);
 
     const fetchLatestReport = async () => {
         setLatestAiLoading(true);
+
+        if (useMockData) {
+            setLatestReport(MOCK_LATEST_DAILY_REPORT);
+            setLatestAiLoading(false);
+            return;
+        }
+
         try {
             const response = await api.get('/reports/daily/latest');
             setLatestReport(response.data);
         } catch (error) {
-            console.error('Failed to fetch latest report:', error);
+            if (error?.response?.status === 404) {
+                setLatestReport(null);
+            } else if (useMockFallbackOnError) {
+                setLatestReport(MOCK_LATEST_DAILY_REPORT);
+            } else {
+                console.error('Failed to fetch latest report:', error);
+            }
         } finally {
             setLatestAiLoading(false);
         }
@@ -75,6 +98,15 @@ const ReportsPage = () => {
 
     const fetchReportData = async () => {
         setLoading(true);
+
+        if (useMockData) {
+            setData(MOCK_ADMIN_STATS.batchHistory || []);
+            setOperators(MOCK_OPERATORS);
+            setLatestReport(MOCK_LATEST_DAILY_REPORT);
+            setLoading(false);
+            return;
+        }
+
         try {
             const response = await api.get('/dashboard/admin');
             const history = response.data.stats.batchHistory || [];
@@ -88,6 +120,11 @@ const ReportsPage = () => {
             fetchLatestReport();
         } catch (error) {
             console.error('Failed to fetch reports:', error);
+            if (useMockFallbackOnError) {
+                setData(MOCK_ADMIN_STATS.batchHistory || []);
+                setOperators(MOCK_OPERATORS);
+                setLatestReport(MOCK_LATEST_DAILY_REPORT);
+            }
         } finally {
             setLoading(false);
         }
@@ -96,6 +133,14 @@ const ReportsPage = () => {
     const generateAIReport = async (isRegenerateEntries = false) => {
         setAiLoading(true);
         setAiError(null);
+
+        if (useMockData) {
+            setAiReport(MOCK_AI_REPORT);
+            setIsCached(false);
+            setAiLoading(false);
+            return;
+        }
+
         try {
             const response = await api.post('/ai/report', {
                 ...filters,
@@ -105,7 +150,13 @@ const ReportsPage = () => {
             setIsCached(response.data.cached);
         } catch (error) {
             console.error('AI Report Generation Failed:', error);
-            setAiError(error.response?.data?.error || 'Local AI service unavailable. Please ensure Ollama is running.');
+            if (useMockFallbackOnError) {
+                setAiReport(MOCK_AI_REPORT);
+                setIsCached(true);
+                setAiError(null);
+            } else {
+                setAiError(error.response?.data?.error || 'Local AI service unavailable. Please ensure Ollama is running.');
+            }
         } finally {
             setAiLoading(false);
         }
@@ -135,15 +186,13 @@ const ReportsPage = () => {
         console.log("PDF Export Clicked. report status:", !!reportToExport);
         
         if (!reportToExport) {
-            window.alert('Diagnostic: No report data available to export.');
+            setAiError('No report data available to export. Generate a report first.');
             return;
         }
 
         setIsExporting(true);
-        window.alert('Industrial Intelligence Engine: Preparing PDF Export...');
         
         try {
-            console.log("Calling generateProductionReportPDF...");
             await generateProductionReportPDF(reportToExport, {
                 efficiency: efficiencyRef,
                 defects: defectsRef,
@@ -153,9 +202,10 @@ const ReportsPage = () => {
                 efficiencyRanking: efficiencyRankingRef,
                 rootCause: rootCauseRef
             });
+            setAiError(null);
         } catch (error) {
             console.error('Export Wrapper Catch:', error);
-            alert(`Export failed: ${error.message}`);
+            setAiError(`Export failed: ${error.message}`);
         } finally {
             setIsExporting(false);
         }
@@ -445,7 +495,7 @@ const ReportsPage = () => {
                                 </div>
                             </div>
                         </div>
-                    ) : aiReport ? (
+                    ) : aiReport && parsedReport ? (
                         <div className="card-saas p-8 bg-gradient-to-br from-white to-slate-50/50 dark:from-card-dark dark:to-slate-900/50 border-primary/20 relative overflow-hidden">
                             <div className="absolute top-0 right-0 p-4">
                                 <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${isCached ? 'bg-slate-100 text-slate-500' : 'bg-primary/10 text-primary animate-pulse'}`}>
@@ -709,6 +759,16 @@ const ReportsPage = () => {
 
                             {/* Decorative background brain icon */}
                             <Brain size={120} className="absolute -bottom-8 -right-8 text-primary/5 -rotate-12 pointer-events-none" />
+                        </div>
+                    ) : aiReport ? (
+                        <div className="card-saas p-6 border-amber-200 bg-amber-50/50 dark:bg-amber-900/10 dark:border-amber-900/30">
+                            <div className="flex items-start gap-4">
+                                <AlertCircle className="text-amber-500 shrink-0" size={20} />
+                                <div>
+                                    <h4 className="font-bold text-amber-900 dark:text-amber-400 text-sm">Legacy AI Report Format</h4>
+                                    <p className="text-xs text-amber-700 dark:text-amber-500/80 mt-1 whitespace-pre-wrap">{String(aiReport)}</p>
+                                </div>
+                            </div>
                         </div>
                     ) : (
                         <div className="card-saas p-12 border-dashed border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center">

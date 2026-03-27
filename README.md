@@ -93,9 +93,21 @@ con-proj/
     PORT=5000
     ```
 
+    For hosted frontend testing without full backend/AI availability, create `Frontend/.env.production` (or `Frontend/.env`) and add:
+    ```env
+    VITE_API_BASE_URL="https://your-api-domain/api"
+    VITE_USE_MOCK_DATA="true"
+    VITE_MOCK_FALLBACK_ON_ERROR="true"
+    ```
+
+    Notes:
+    * `VITE_USE_MOCK_DATA=true` forces Admin dashboard and Reports page to load frontend mock data.
+    * `VITE_MOCK_FALLBACK_ON_ERROR=true` keeps UI usable by falling back to mock data when API/AI calls fail.
+    * Set both values to `false` for real backend/AI data.
+
 4.  **Database Initialization**
     ```bash
-    # Generate Prisma Client
+    # Generate Prisma Client    
     npm run prisma:generate
     
     # Run Migrations

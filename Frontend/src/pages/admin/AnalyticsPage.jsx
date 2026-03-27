@@ -78,8 +78,10 @@ const AnalyticsPage = () => {
                     console.warn('Could not parse AI report data:', parseErr);
                 }
             } else {
-                // 404 (no reports yet) or 500 (server error) — silently ignore
-                console.warn('AI Report not available:', reportRes.reason?.response?.status === 404 ? 'No report generated yet' : 'Server error');
+                // 404 means no generated report yet; keep UI quiet and continue rendering analytics.
+                if (reportRes.reason?.response?.status !== 404) {
+                    console.warn('AI Report not available: Server error');
+                }
             }
         } catch (err) {
             console.error('Error fetching analytics:', err);

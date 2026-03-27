@@ -27,6 +27,7 @@ import OperatorLeaderboard from '@frontend/components/dashboard/OperatorLeaderbo
 import FactoryTimeline from '@frontend/components/dashboard/FactoryTimeline';
 import CreateManagerModal from './CreateManagerModal';
 import CreateBatchModal from './CreateBatchModal';
+import { MOCK_ADMIN_STATS, MOCK_ADMIN_TIMELINE_EVENTS, isFrontendMockMode } from '@frontend/mocks/adminMockData';
 
 const AdminDashboard = () => {
     const { user } = useAuth();
@@ -39,18 +40,23 @@ const AdminDashboard = () => {
     const [timelineEvents, setTimelineEvents] = useState([]);
 
     const fetchStats = async () => {
+        if (isFrontendMockMode()) {
+            setStats(MOCK_ADMIN_STATS);
+            setTimelineEvents(MOCK_ADMIN_TIMELINE_EVENTS);
+            setLoading(false);
+            setIsRefreshing(false);
+            return;
+        }
+
         try {
             const response = await api.get('/dashboard/admin');
             setStats(response.data.stats);
-            // Mocking timeline if not in backend yet
-            setTimelineEvents([
-                { id: 1, type: 'BATCH', message: 'Batch #B104 created in CUTTING', batchId: 'B104', timestamp: '12:01 PM' },
-                { id: 2, type: 'STAGE', message: 'Batch #B102 moved to STITCHING', batchId: 'B102', timestamp: '11:45 AM' },
-                { id: 3, type: 'QC', message: 'Quality Check passed: Batch #A993', batchId: 'A993', timestamp: '11:30 AM', meta: 'Inspector: J. Doe' },
-                { id: 4, type: 'ALERT', message: 'Predictive Maintenance: M-01 Lubrication required', timestamp: '10:15 AM' },
-            ]);
+            // Timeline is still frontend-driven while backend event feed is being finalized.
+            setTimelineEvents(MOCK_ADMIN_TIMELINE_EVENTS);
         } catch (error) {
             console.error('Stats failed', error);
+            setStats((prev) => prev || MOCK_ADMIN_STATS);
+            setTimelineEvents(MOCK_ADMIN_TIMELINE_EVENTS);
         } finally {
             setLoading(false);
             setIsRefreshing(false);

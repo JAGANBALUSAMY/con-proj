@@ -7,36 +7,44 @@ export const useSocket = () => useContext(SocketContext);
 
 export const SocketProvider = ({ children }) => {
     const [socket, setSocket] = useState(null);
-    const [connected, setConnected] = useState(false);
 
     useEffect(() => {
-        // Corrected port to 5005 based on backend configuration
-        const newSocket = io('http://localhost:5005', {
+        let isUnmounting = false;
+
+        const socketUrl =
+            import.meta.env.VITE_SOCKET_URL ||
+            (import.meta.env.DEV ? 'http://localhost:5005' : window.location.origin);
+
+        const newSocket = io(socketUrl, {
             autoConnect: true,
             reconnection: true,
             reconnectionAttempts: 10,
             reconnectionDelay: 1000,
-            timeout: 5000
+            timeout: 10000,
+            // Polling-first avoids noisy websocket upgrade failures during local dev startup.
+            transports: ['polling', 'websocket']
         });
 
         newSocket.on('connect', () => {
-            console.log('🔌 WebSocket Connected (Port 5005)');
-            setConnected(true);
+            console.log('🔌 WebSocket Connected');
         });
 
         newSocket.on('disconnect', (reason) => {
             console.log('🔌 WebSocket Disconnected:', reason);
-            setConnected(false);
         });
 
         newSocket.on('connect_error', (error) => {
+            // React StrictMode mounts/unmounts twice in dev; ignore expected transient errors.
+            if (import.meta.env.DEV && (isUnmounting || error?.message === 'websocket error')) {
+                return;
+            }
             console.error('🔌 WebSocket Error:', error.message);
-            setConnected(false);
         });
 
         setSocket(newSocket);
 
         return () => {
+            isUnmounting = true;
             newSocket.disconnect();
         };
     }, []);
