@@ -1,0 +1,22 @@
+﻿On branch master
+Your branch is up to date with 'origin/master'.
+
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+	renamed:    Frontend/src/components/UI/Badge.jsx -> Frontend/src/components/ui/Badge.jsx
+	renamed:    Frontend/src/components/UI/Button.jsx -> Frontend/src/components/ui/Button.jsx
+	renamed:    Frontend/src/components/UI/DataTable.jsx -> Frontend/src/components/ui/DataTable.jsx
+	renamed:    Frontend/src/components/UI/EmptyState.jsx -> Frontend/src/components/ui/EmptyState.jsx
+	renamed:    Frontend/src/components/UI/Modal.jsx -> Frontend/src/components/ui/Modal.jsx
+	renamed:    Frontend/src/components/UI/NotificationPanel.jsx -> Frontend/src/components/ui/NotificationPanel.jsx
+	renamed:    Frontend/src/components/UI/PageHeader.jsx -> Frontend/src/components/ui/PageHeader.jsx
+	renamed:    Frontend/src/components/UI/SkeletonCard.jsx -> Frontend/src/components/ui/SkeletonCard.jsx
+	renamed:    Frontend/src/components/UI/StatCard.jsx -> Frontend/src/components/ui/StatCard.jsx
+	renamed:    Frontend/src/components/UI/StateFeedback.jsx -> Frontend/src/components/ui/StateFeedback.jsx
+	renamed:    Frontend/src/components/UI/StatusBadge.jsx -> Frontend/src/components/ui/StatusBadge.jsx
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	tmp/git_files.txt
+	tmp/status.txt
+
