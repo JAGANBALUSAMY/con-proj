@@ -16,7 +16,11 @@ export const useProductionStats = () => {
     const fetchStats = useCallback(async () => {
         try {
             setLoading(true);
-            const endpoint = user?.role === 'ADMIN' ? '/dashboard/admin' : '/dashboard/manager';
+            let endpoint;
+            if (user?.role === 'ADMIN') endpoint = '/dashboard/admin';
+            else if (user?.role === 'MANAGER') endpoint = '/dashboard/manager';
+            else endpoint = '/dashboard/operator';
+            
             const response = await api.get(endpoint);
             setStats(response.data.stats || response.data);
             setError(null);
@@ -54,9 +58,12 @@ export const useBatches = (status = 'ACTIVE') => {
     const fetchBatches = useCallback(async () => {
         try {
             setLoading(true);
-            // In a real system, we'd have a specific endpoint or filters
-            // For now, we fetch dashboard data which contains batch lists
-            const endpoint = user?.role === 'ADMIN' ? '/dashboard/admin' : '/dashboard/manager';
+            // Route each role to its own protected dashboard endpoint
+            let endpoint;
+            if (user?.role === 'ADMIN') endpoint = '/dashboard/admin';
+            else if (user?.role === 'MANAGER') endpoint = '/dashboard/manager';
+            else endpoint = '/dashboard/operator'; // OPERATOR must NOT call /manager
+
             const response = await api.get(endpoint);
 
             let batchList = [];
@@ -65,9 +72,8 @@ export const useBatches = (status = 'ACTIVE') => {
             } else if (user?.role === 'MANAGER') {
                 batchList = response.data.activeBatches || [];
             } else if (user?.role === 'OPERATOR') {
-                // For operators, we filter based on their assigned section
-                const section = user.sections?.[0];
-                batchList = (response.data.batches || []).filter(b => b.currentStage === section);
+                // Operator dashboard returns { batches: [...] }
+                batchList = response.data.batches || [];
             }
 
             setBatches(batchList);
@@ -149,12 +155,17 @@ export const useOperators = () => {
     const fetchOperators = useCallback(async () => {
         try {
             setLoading(true);
-            const endpoint = user?.role === 'ADMIN' ? '/users' : '/dashboard/manager';
+            let endpoint = '/dashboard/manager';
+            if (user?.role === 'ADMIN') endpoint = '/users';
+            else if (user?.role === 'OPERATOR') endpoint = '/dashboard/operator'; // Safeback, operators might not need this hook
+            
             const response = await api.get(endpoint);
 
             const list = user?.role === 'ADMIN'
                 ? (Array.isArray(response.data.users) ? response.data.users.filter(u => u.role === 'OPERATOR') : [])
-                : response.data.operators || [];
+                : user?.role === 'OPERATOR' 
+                    ? [] // Operators don't manage other operators
+                    : response.data.operators || [];
 
             setOperators(list);
             setError(null);
