@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ShieldCheck, AlertCircle, CheckCircle2, X } from 'lucide-react';
-import Modal from '@frontend/components/UI/Modal';
+import Modal from '@frontend/components/ui/Modal';
 import api from '@frontend/services/api';
 
 const QCInspectionModal = ({ isOpen, onClose, batch, onSuccess }) => {

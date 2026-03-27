@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Loader2, Zap, AlertCircle } from 'lucide-react';
 import api from '@frontend/services/api';
-import Modal from '@frontend/components/UI/Modal';
+import Modal from '@frontend/components/ui/Modal';
 
 const CreateOperatorModal = ({ isOpen, onClose, onSuccess }) => {
     const [formData, setFormData] = useState({

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@frontend/layouts/DashboardLayout';
 import OperatorView from '@frontend/pages/admin/OperatorView';
 import CreateOperatorModal from '@frontend/pages/admin/CreateOperatorModal';
-import UserActionModal from '@frontend/components/Dashboard/UserActionModal';
+import UserActionModal from '@frontend/components/dashboard/UserActionModal';
 import PageHeader from '@frontend/components/ui/PageHeader';
 import Button from '@frontend/components/ui/Button';
 import api from '@frontend/services/api';

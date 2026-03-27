@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Shield, Key, Power, LogOut, Edit, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import api from '@frontend/services/api';
-import Modal from '@frontend/components/UI/Modal';
+import Modal from '@frontend/components/ui/Modal';
 
 const UserActionModal = ({ user, isOpen, onClose, onUpdate }) => {
     const [actionLoading, setActionLoading] = useState(null); // 'password', 'status', 'logout', 'sections'

@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTheme } from '@frontend/store/ThemeContext';
-import NotificationPanel from '@frontend/components/UI/NotificationPanel';
+import NotificationPanel from '@frontend/components/ui/NotificationPanel';
 import { useState } from 'react';
 
 const TopNav = ({ systemStatus = 'healthy', title }) => {

@@ -16,7 +16,7 @@ import {
 } from 'recharts';
 import { generateProductionReportPDF } from '@frontend/utils/exportProductionReport';
 import Badge from '@frontend/components/ui/Badge';
-import { SkeletonLoader } from '@frontend/components/UI/StateFeedback';
+import { SkeletonLoader } from '@frontend/components/ui/StateFeedback';
 import {
     MOCK_ADMIN_STATS,
     MOCK_AI_REPORT,

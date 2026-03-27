@@ -8,7 +8,7 @@ import api from '@frontend/services/api';
 import { Clock, TrendingUp, AlertTriangle, RefreshCw, Calendar, ArrowLeft, BarChart3, Users, ChevronDown } from 'lucide-react';
 
 import { useAuth } from '@frontend/store/AuthContext';
-import { SkeletonLoader, ErrorState, EmptyState } from '@frontend/components/UI/StateFeedback';
+import { SkeletonLoader, ErrorState, EmptyState } from '@frontend/components/ui/StateFeedback';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#6366f1'];
 
